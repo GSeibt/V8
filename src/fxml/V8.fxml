@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<GridPane hgap="5.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="786.0" prefWidth="1024.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.Controller">
+  <columnConstraints>
+    <ColumnConstraints hgrow="SOMETIMES" percentWidth="15.0" />
+<ColumnConstraints hgrow="SOMETIMES" percentWidth="15.0" />
+    <ColumnConstraints hgrow="SOMETIMES" />
+  </columnConstraints>
+  <rowConstraints>
+    <RowConstraints vgrow="NEVER" />
+    <RowConstraints vgrow="SOMETIMES" />
+  </rowConstraints>
+<children>
+<VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2147483647">
+<children><Label text="Files" /><ListView fx:id="filesList" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2147483647" VBox.vgrow="ALWAYS">
+<GridPane.margin>
+<Insets bottom="5.0" />
+</GridPane.margin></ListView>
+</children>
+<GridPane.margin>
+<Insets bottom="5.0" />
+</GridPane.margin>
+</VBox>
+<VBox spacing="5.0" GridPane.rowIndex="1" GridPane.rowSpan="2147483647">
+<children><Label text="Directories" /><ListView fx:id="directoriesList" GridPane.rowIndex="1" GridPane.rowSpan="2147483647" VBox.vgrow="ALWAYS">
+<GridPane.margin>
+<Insets bottom="5.0" left="5.0" />
+</GridPane.margin></ListView>
+</children>
+<GridPane.margin>
+<Insets bottom="5.0" left="5.0" />
+</GridPane.margin>
+</VBox><MenuBar GridPane.columnSpan="2147483647">
+  <menus>
+    <Menu mnemonicParsing="false" text="File">
+      <items>
+        <MenuItem mnemonicParsing="false" onAction="#addDirectoryClicked" text="Add Directory" />
+      </items>
+    </Menu>
+  </menus>
+</MenuBar><TabPane tabClosingPolicy="UNAVAILABLE" GridPane.columnIndex="2" GridPane.rowIndex="1">
+  <tabs>
+    <Tab text="Image">
+<content><ImageView fx:id="imageView" pickOnBounds="true" preserveRatio="true" />
+</content></Tab>
+    <Tab text="Mesh">
+<content><MeshView fx:id="meshView" />
+</content></Tab>
+  </tabs>
+<GridPane.margin>
+<Insets bottom="5.0" right="5.0" />
+</GridPane.margin>
+</TabPane>
+</children>
+</GridPane>
