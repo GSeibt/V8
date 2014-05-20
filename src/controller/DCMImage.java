@@ -16,6 +16,9 @@ import org.dcm4che3.imageio.plugins.dcm.DicomImageReader;
 import org.dcm4che3.imageio.plugins.dcm.DicomImageReaderSpi;
 import org.dcm4che3.imageio.plugins.dcm.DicomMetaData;
 
+/**
+ * A lazy loading DICOM image constructed from a file.
+ */
 public class DCMImage {
 
     private static ImageReaderSpi spi = new DicomImageReaderSpi();
@@ -33,10 +36,22 @@ public class DCMImage {
     private BufferedImage awtImage;
     private WritableImage fxImage;
 
+    /**
+     * Constructs a new <code>DCMImage</code> from the given <code>File</code>.
+     *
+     * @param file
+     *      the .dcm <code>File</code>
+     */
     public DCMImage(File file) {
         this.file = file;
     }
 
+    /**
+     * Gets a <code>WritableImage</code> representation of this DICOM image.
+     *
+     * @return
+     *      the resulting <code>WritableImage</code>
+     */
     public WritableImage getImage() {
 
         BufferedImage image = getAWTImage();
@@ -48,6 +63,12 @@ public class DCMImage {
         return SwingFXUtils.toFXImage(image, fxImage);
     }
 
+    /**
+     * Gets the AWT <code>BufferedImage</code> representing this DICOM image.
+     *
+     * @return
+     *      the resulting <code>BufferedImage</code>
+     */
     private BufferedImage getAWTImage() {
 
         if (awtImage == null) {
@@ -61,6 +82,14 @@ public class DCMImage {
         return awtImage;
     }
 
+    /**
+     * Reads the AWT image from the <code>file</code>.
+     *
+     * @return
+     *      the resulting <code>BufferedImage</code>
+     * @throws IOException
+     *      if there is an exception reading from disk
+     */
     private BufferedImage readAWTImage() throws IOException {
         BufferedImage bufferedImage;
         ImageInputStream inputStream = new FileImageInputStream(file);
@@ -71,6 +100,12 @@ public class DCMImage {
         return bufferedImage;
     }
 
+    /**
+     * Gets the raw image raster as a 2D Array of integers. Sub-arrays are rows of pixels.
+     *
+     * @return
+     *      the raster
+     */
     public int[][] getImageRaster() {
         Raster raster = getAWTImage().getRaster();
 
@@ -85,6 +120,12 @@ public class DCMImage {
         return pixels;
     }
 
+    /**
+     * Gets the DICOM attributes of this <code>DCMImage</code>.
+     *
+     * @return
+     *      the <code>Attributes</code>
+     */
     public Attributes getAttributes() {
         Attributes attributes;
 
@@ -99,6 +140,9 @@ public class DCMImage {
         return attributes;
     }
 
+    /**
+     * Resets the cached data this <code>DCMImage</code> holds.
+     */
     public void reset() {
         awtImage = null;
         fxImage = null;
