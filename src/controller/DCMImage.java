@@ -100,46 +100,6 @@ public class DCMImage {
     }
 
     /**
-     * Gets the raw image raster as a 2D Array of integers. Sub-arrays are rows of pixels.
-     *
-     * @return
-     *      the raster
-     */
-    public int[][] getIntRaster() {
-        Raster raster = getAWTImage().getRaster();
-
-        int w = raster.getWidth();
-        int h = raster.getHeight();
-
-        int[][] pixels = new int[h][];
-        for (int i = 0; i < h; i++) {
-            pixels[i] = raster.getPixels(0, i, w, 1, new int[w]);
-        }
-
-        return pixels;
-    }
-
-    /**
-     * Gets the raw image raster as a 2D Array of floats. Sub-arrays are rows of pixels.
-     *
-     * @return
-     *      the raster
-     */
-    public float[][] getFloatRaster() {
-        Raster raster = getAWTImage().getRaster();
-
-        int w = raster.getWidth();
-        int h = raster.getHeight();
-
-        float[][] pixels = new float[h][];
-        for (int i = 0; i < h; i++) {
-            pixels[i] = raster.getPixels(0, i, w, 1, new float[w]);
-        }
-
-        return pixels;
-    }
-
-    /**
      * Gets the raw image raster as a 2D Array of doubles. Sub-arrays are rows of pixels.
      *
      * @return
