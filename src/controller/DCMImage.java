@@ -4,7 +4,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
-
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.FileImageInputStream;
 import javax.imageio.stream.ImageInputStream;
@@ -106,7 +105,7 @@ public class DCMImage {
      * @return
      *      the raster
      */
-    public int[][] getImageRaster() {
+    public int[][] getIntRaster() {
         Raster raster = getAWTImage().getRaster();
 
         int w = raster.getWidth();
@@ -115,6 +114,46 @@ public class DCMImage {
         int[][] pixels = new int[h][];
         for (int i = 0; i < h; i++) {
             pixels[i] = raster.getPixels(0, i, w, 1, new int[w]);
+        }
+
+        return pixels;
+    }
+
+    /**
+     * Gets the raw image raster as a 2D Array of floats. Sub-arrays are rows of pixels.
+     *
+     * @return
+     *      the raster
+     */
+    public float[][] getFloatRaster() {
+        Raster raster = getAWTImage().getRaster();
+
+        int w = raster.getWidth();
+        int h = raster.getHeight();
+
+        float[][] pixels = new float[h][];
+        for (int i = 0; i < h; i++) {
+            pixels[i] = raster.getPixels(0, i, w, 1, new float[w]);
+        }
+
+        return pixels;
+    }
+
+    /**
+     * Gets the raw image raster as a 2D Array of doubles. Sub-arrays are rows of pixels.
+     *
+     * @return
+     *      the raster
+     */
+    public double[][] getDoubleRaster() {
+        Raster raster = getAWTImage().getRaster();
+
+        int w = raster.getWidth();
+        int h = raster.getHeight();
+
+        double[][] pixels = new double[h][];
+        for (int i = 0; i < h; i++) {
+            pixels[i] = raster.getPixels(0, i, w, 1, new double[w]);
         }
 
         return pixels;
