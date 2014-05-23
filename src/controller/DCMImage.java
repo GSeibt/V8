@@ -100,20 +100,20 @@ public class DCMImage {
     }
 
     /**
-     * Gets the raw image raster as a 2D Array of doubles. Sub-arrays are rows of pixels.
+     * Gets the raw image raster as a 2D Array of floats. Sub-arrays are rows of pixels.
      *
      * @return
      *      the raster
      */
-    public double[][] getDoubleRaster() {
+    public float[][] getImageRaster() {
         Raster raster = getAWTImage().getRaster();
 
         int w = raster.getWidth();
         int h = raster.getHeight();
 
-        double[][] pixels = new double[h][];
+        float[][] pixels = new float[h][];
         for (int i = 0; i < h; i++) {
-            pixels[i] = raster.getPixels(0, i, w, 1, new double[w]);
+            pixels[i] = raster.getPixels(0, i, w, 1, new float[w]);
         }
 
         return pixels;
