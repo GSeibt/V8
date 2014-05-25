@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import controller.mc_alg.service.MCComplete;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -218,5 +219,19 @@ public class Controller {
 
     public void setStage(Stage stage) {
         this.stage = stage;
+    }
+
+    @FXML
+    private void cubesClicked() {
+        List<DCMImage> images = filesList.getItems();
+        float[][][] data = new float[images.size()][][];
+
+        long time = System.nanoTime(); //TODO remove
+        for (int i = 0; i < images.size(); i++) {
+            data[i] = images.get(i).getImageRaster();
+        }
+        System.out.println("Images: " + (System.nanoTime() - time) / Math.pow(10, 6) + " ms"); //TODO remove
+
+        new MCComplete(5, data).start();
     }
 }
