@@ -30,4 +30,16 @@ public class Cube {
     public Point3D getEdge(int index) {
         return edges[index];
     }
+
+    public int getIndex(float level) {
+        int index = 0;
+
+        for (int i = 0; i < 8; i++) {
+            if (getWeight(i) < level) {
+                index |= (int) Math.pow(2, i);
+            }
+        }
+
+        return index;
+    }
 }
