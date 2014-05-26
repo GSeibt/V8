@@ -1,7 +1,5 @@
 package controller.mc_alg;
 
-import javafx.geometry.Point3D;
-
 public class Cube {
 
     private Vertex[] vertexes;

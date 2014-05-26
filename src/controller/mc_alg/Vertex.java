@@ -1,7 +1,5 @@
 package controller.mc_alg;
 
-import javafx.geometry.Point3D;
-
 public class Vertex {
 
     private Point3D location;
@@ -16,15 +14,19 @@ public class Vertex {
         this.weight = weight;
     }
 
-    public double getX() {
+    public Point3D getLocation() {
+        return location;
+    }
+
+    public float getX() {
         return location.getX();
     }
 
-    public double getY() {
+    public float getY() {
         return location.getY();
     }
 
-    public double getZ() {
+    public float getZ() {
         return location.getZ();
     }
 
