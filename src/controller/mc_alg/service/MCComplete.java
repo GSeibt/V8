@@ -1,6 +1,7 @@
 package controller.mc_alg.service;
 
 import controller.mc_alg.Cube;
+import controller.mc_alg.Tables;
 import controller.mc_alg.Vertex;
 import javafx.concurrent.Task;
 import javafx.scene.shape.Mesh;
@@ -98,6 +99,9 @@ public class MCComplete extends MCService {
                         cube = new Cube(v0, v1, v2, v3, v4, v5, v6, v7);
                         currentSlice[y][x] = cube;
 
+                        computeEdges(x, y, z, cube, currentSlice);
+                        updateMesh(cube, mesh);
+
                         doneCubes++;
                     }
 
@@ -108,6 +112,109 @@ public class MCComplete extends MCService {
             System.out.println("Cubes: " + (System.nanoTime() - time) / Math.pow(10, 6) + " ms"); //TODO remove
 
             return mesh;
+        }
+
+        private void computeEdges(int x, int y, int z, Cube cube, Cube[][] currentSlice) {
+            int cubeIndex = cube.getIndex(level);
+            int edgeIndex = Tables.getEdgeIndex(cubeIndex);
+
+            if (edgeIndex == 0) {
+                return;
+            }
+
+            if ((edgeIndex & 1) == 1) { // Edge 0
+                if (y != 0) {
+                    cube.setEdge(0, currentSlice[y - 1][x].getEdge(2));
+                } else if (z != 0) {
+                    cube.setEdge(0, lowerSlice[y][x].getEdge(4));
+                } else {
+                    cube.setEdge(0, interpolate(cube.getVertex(0), cube.getVertex(1), level));
+                }
+            }
+
+            if ((edgeIndex & 2) == 2) { // Edge 1
+                if (z != 0) {
+                    cube.setEdge(1, lowerSlice[y][x].getEdge(5));
+                } else {
+                    cube.setEdge(1, interpolate(cube.getVertex(1), cube.getVertex(2), level));
+                }
+            }
+
+            if ((edgeIndex & 4) == 4) { // Edge 2
+                if (z != 0) {
+                    cube.setEdge(2, lowerSlice[y][x].getEdge(6));
+                } else {
+                    cube.setEdge(2, interpolate(cube.getVertex(2), cube.getVertex(3), level));
+                }
+            }
+
+            if ((edgeIndex & 8) == 8) { // Edge 3
+                if (x != 0) {
+                    cube.setEdge(3, currentSlice[y][x - 1].getEdge(1));
+                } else if (z != 0) {
+                    cube.setEdge(3, lowerSlice[y][x].getEdge(7));
+                } else {
+                    cube.setEdge(3, interpolate(cube.getVertex(3), cube.getVertex(0), level));
+                }
+            }
+
+            if ((edgeIndex & 16) == 16) { // Edge 4
+                if (y != 0) {
+                    cube.setEdge(4, currentSlice[y - 1][x].getEdge(6));
+                } else {
+                    cube.setEdge(4, interpolate(cube.getVertex(4), cube.getVertex(5), level));
+                }
+            }
+
+            if ((edgeIndex & 32) == 32) { // Edge 5
+                cube.setEdge(5, interpolate(cube.getVertex(5), cube.getVertex(6), level));
+            }
+
+            if ((edgeIndex & 64) == 64) { // Edge 6
+                cube.setEdge(6, interpolate(cube.getVertex(6), cube.getVertex(7), level));
+            }
+
+            if ((edgeIndex & 128) == 128) { // Edge 7
+                if (x != 0) {
+                    cube.setEdge(7, currentSlice[y][x - 1].getEdge(5));
+                } else {
+                    cube.setEdge(7, interpolate(cube.getVertex(7), cube.getVertex(4), level));
+                }
+            }
+
+            if ((edgeIndex & 256) == 256) { // Edge 8
+                if (x != 0) {
+                    cube.setEdge(8, currentSlice[y][x - 1].getEdge(9));
+                } else if (y != 0) {
+                    cube.setEdge(8, currentSlice[y - 1][x].getEdge(11));
+                } else {
+                    cube.setEdge(8, interpolate(cube.getVertex(4), cube.getVertex(0), level));
+                }
+            }
+
+            if ((edgeIndex & 512) == 512) { // Edge 9
+                if (y != 0) {
+                    cube.setEdge(9, currentSlice[y - 1][x].getEdge(10));
+                } else {
+                    cube.setEdge(9, interpolate(cube.getVertex(5), cube.getVertex(1), level));
+                }
+            }
+
+            if ((edgeIndex & 1024) == 1024) { // Edge 10
+                cube.setEdge(10, interpolate(cube.getVertex(6), cube.getVertex(2), level));
+            }
+
+            if ((edgeIndex & 2048) == 2048) { // Edge 11
+                if (x != 0) {
+                    cube.setEdge(11, currentSlice[y][x - 1].getEdge(8));
+                } else {
+                    cube.setEdge(11, interpolate(cube.getVertex(7), cube.getVertex(3), level));
+                }
+            }
+        }
+
+        private void updateMesh(Cube cube, TriangleMesh mesh) {
+
         }
     }
 
