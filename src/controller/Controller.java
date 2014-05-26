@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import controller.mc_alg.service.MCComplete;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.Camera;
 import javafx.scene.Group;
@@ -19,6 +20,7 @@ import javafx.scene.PerspectiveCamera;
 import javafx.scene.SubScene;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -33,6 +35,8 @@ import static javafx.scene.SceneAntialiasing.DISABLED;
 
 public class Controller {
 
+    @FXML
+    private ProgressBar meshProgress;
     @FXML
     private ListView<File> directoriesList;
     @FXML
@@ -55,7 +59,6 @@ public class Controller {
         directories = directoriesList.getItems();
 
         directoriesList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            System.out.println("peng");
             filesList.setItems(dirCache.get(newValue));
         });
 
@@ -224,14 +227,31 @@ public class Controller {
     @FXML
     private void cubesClicked() {
         List<DCMImage> images = filesList.getItems();
-        float[][][] data = new float[images.size()][][];
 
-        long time = System.nanoTime(); //TODO remove
-        for (int i = 0; i < images.size(); i++) {
-            data[i] = images.get(i).getImageRaster();
-        }
-        System.out.println("Images: " + (System.nanoTime() - time) / Math.pow(10, 6) + " ms"); //TODO remove
+        Task<float[][][]> rasterLoader = new Task<float[][][]>() {
 
-        new MCComplete(5, data).start();
+            @Override
+            protected float[][][] call() throws Exception {
+                float[][][] data = new float[images.size()][][];
+
+                long time = System.nanoTime(); //TODO remove
+                for (int i = 0; i < images.size(); i++) {
+                    data[i] = images.get(i).getImageRaster();
+                    updateProgress(i, images.size());
+                }
+                System.out.println("Images: " + (System.nanoTime() - time) / Math.pow(10, 6) + " ms"); //TODO remove
+
+                return data;
+            }
+        };
+
+        rasterLoader.setOnSucceeded(event -> {
+            MCComplete mc = new MCComplete(5, rasterLoader.getValue());
+            meshProgress.progressProperty().bind(mc.progressProperty());
+            mc.start();
+        });
+
+        meshProgress.progressProperty().bind(rasterLoader.progressProperty());
+        new Thread(rasterLoader).start();
     }
 }

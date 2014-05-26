@@ -7,6 +7,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 <GridPane hgap="5.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1500.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.Controller">
@@ -67,7 +68,14 @@
         </VBox><Pane fx:id="imagePane" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2147483647">
 <children>
                                 <ImageView fx:id="imageView" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-</children></Pane><Pane fx:id="subScenePane" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="2" GridPane.rowIndex="1" GridPane.rowSpan="2147483647" />
+</children></Pane>
+<VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1" GridPane.rowSpan="2">
+<children><Pane fx:id="subScenePane" GridPane.columnIndex="2" GridPane.rowIndex="1" GridPane.rowSpan="2147483647" VBox.vgrow="ALWAYS" /><ProgressBar fx:id="meshProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" />
+</children>
+<padding>
+<Insets right="5.0" />
+</padding>
+</VBox>
     </children>
 <padding>
 <Insets bottom="5.0" />
