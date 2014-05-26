@@ -21,6 +21,8 @@ public class Cube {
         return vertexes[index];
     }
 
+    public Float getWeight(int index) {return vertexes[index].getWeight();}
+
     public void setEdge(int index, Point3D edge) {
         edges[index] = edge;
     }
