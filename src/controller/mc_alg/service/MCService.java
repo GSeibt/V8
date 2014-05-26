@@ -13,12 +13,12 @@ public abstract class MCService extends Service<Mesh> {
     protected Cube[][] lowerSlice;
     protected Cube[][] upperSlice;
 
-    public MCService(float level, float[][][] data) {
+    protected MCService(float level, float[][][] data) {
         this.level = level;
         this.data = data;
     }
 
-    public Point3D interpolate(Vertex v1, Vertex v2, float level) {
+    protected static Point3D interpolate(Vertex v1, Vertex v2, float level) {
         float x, y, z;
         float alpha;
 
