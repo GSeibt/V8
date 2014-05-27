@@ -29,7 +29,7 @@ public class Camera {
 
     public Camera(float fov, float aspect, float nearClip, float farClip) {
         this.position = new Vector3f(0, 0, 0);
-        this.forward = new Vector3f(0, 0, 1);
+        this.forward = new Vector3f(0, 0, -1);
         this.upward = new Vector3f(0, 1, 0);
 
         this.fov = fov;
@@ -63,44 +63,47 @@ public class Camera {
         }
 
         if(Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-            rotateX(0.1f);
+            pitch(0.1f);
         }
         if(Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-            rotateX(-0.1f);
+            pitch(-0.1f);
         }
         if(Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-            rotateY(0.1f);
+            yaw(-0.1f);
         }
         if(Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-            rotateY(-0.1f);
+            yaw(0.1f);
+        }
+        if(Keyboard.isKeyDown(Keyboard.KEY_Q)) {
+            roll(-0.1f);
+        }
+        if(Keyboard.isKeyDown(Keyboard.KEY_E)) {
+            roll(0.1f);
         }
     }
 
     public void useView() {
-        double xAngle = Math.toDegrees(Math.acos(forward.dot(xAxis))) - 90;
-        double yAngle = Math.toDegrees(Math.acos(forward.dot(yAxis))) - 90;
-
-        glRotated(yAngle, 1, 0, 0);
-        glRotated(xAngle, 0, 1, 0);
-        glTranslatef(position.getX(), position.getY(), position.getZ());
+        gluLookAt(position.getX(), position.getY(), position.getZ(), position.getX() + forward.getX(),position.getY() + forward.getY(),position.getZ() + forward.getZ(),
+                upward.getX(), upward.getY(), upward.getZ());
     }
 
     public void move(Vector3f dir, float amount) {
         position = position.add(dir.mul(amount));
     }
 
-    public void rotateY(float angle) {
-        Vector3f horizontalAxis = yAxis.cross(forward).normalized();
-
-        forward = forward.rotate(yAxis, angle).normalized();
-        upward = forward.cross(horizontalAxis).normalized();
+    public void roll(float angle) {
+        upward = upward.rotate(forward, angle);
     }
 
-    public void rotateX(float angle) {
-        Vector3f horizontalAxis = yAxis.cross(forward).normalized();
+    public void pitch(float angle) {
+        Vector3f cross = upward.cross(forward);
 
-        forward = forward.rotate(horizontalAxis, angle).normalized();
-        upward = forward.cross(horizontalAxis).normalized();
+        upward = upward.rotate(cross, angle);
+        forward = forward.rotate(cross, angle);
+    }
+
+    public void yaw(float angle) {
+        forward = forward.rotate(upward, angle);
     }
 
     public Vector3f getLeft() {

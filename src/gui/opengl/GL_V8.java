@@ -27,8 +27,8 @@ public class GL_V8 {
             System.exit(0);
         }
 
-        float aspect = Display.getWidth() / (float) Display.getHeight();
-        camera = new Camera(DEFAULT_FOV, aspect, 0.3f, 1000);
+        float aspect = (float) Display.getWidth() / (float) Display.getHeight();
+        camera = new Camera(DEFAULT_FOV, aspect, 0.1f, 10000);
     }
 
     private void initDisplay() throws LWJGLException {
@@ -48,7 +48,6 @@ public class GL_V8 {
             draw();
             Display.update();
             Display.sync(30);
-            x += 1f;
         }
 
         cleanup();
@@ -58,8 +57,6 @@ public class GL_V8 {
         camera.input();
     }
 
-    float x;
-
     private void draw() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glLoadIdentity();
@@ -68,7 +65,6 @@ public class GL_V8 {
         glPushMatrix();
         {
             glTranslatef(0, 0, -10);
-            glRotatef(x, 1, 1, 0);
             glBegin(GL_QUAD_STRIP);
                 glColor3f(0f, 0.5f, 0.5f);
                 glVertex3f(-1,-1,-1);
