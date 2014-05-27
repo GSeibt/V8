@@ -1,10 +1,11 @@
 package gui.opengl;
 
-import javafx.geometry.Point3D;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.util.glu.GLU.*;
+import static org.lwjgl.util.glu.GLU.gluLookAt;
+import static org.lwjgl.util.glu.GLU.gluPerspective;
 
 public class Camera {
 
@@ -49,6 +50,27 @@ public class Camera {
     }
 
     public void input() {
+        keyboard();
+        mouse();
+    }
+
+    private void mouse() {
+
+        while (Mouse.next()) {
+
+            if (!Mouse.isButtonDown(0)) {
+                continue;
+            }
+
+            int dx = Mouse.getEventDX();
+            int dy = Mouse.getEventDY();
+
+            yaw(dx * -0.01f);
+            pitch(dy * -0.01f);
+        }
+    }
+
+    private void keyboard() {
         if(Keyboard.isKeyDown(Keyboard.KEY_W)) {
             move(forward, 0.3f);
         }
@@ -83,8 +105,9 @@ public class Camera {
     }
 
     public void useView() {
-        gluLookAt(position.getX(), position.getY(), position.getZ(), position.getX() + forward.getX(),position.getY() + forward.getY(),position.getZ() + forward.getZ(),
-                upward.getX(), upward.getY(), upward.getZ());
+        gluLookAt(position.getX(), position.getY(), position.getZ(), position.getX() + forward.getX(),
+                position.getY() + forward.getY(), position.getZ() + forward.getZ(), upward.getX(), upward.getY(),
+                upward.getZ());
     }
 
     public void move(Vector3f dir, float amount) {
@@ -96,7 +119,7 @@ public class Camera {
     }
 
     public void pitch(float angle) {
-        Vector3f cross = upward.cross(forward);
+        Vector3f cross = getLeft();
 
         upward = upward.rotate(cross, angle);
         forward = forward.rotate(cross, angle);

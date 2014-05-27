@@ -11,11 +11,6 @@ import static org.lwjgl.opengl.GL11.*;
 public class GL_V8 {
 
     private final int DEFAULT_FOV = 70;
-
-    public static void main(String[] args) {
-        new GL_V8().show();
-    }
-
     private Camera camera;
 
     public GL_V8() {
@@ -41,7 +36,11 @@ public class GL_V8 {
         Mouse.create();
     }
 
-    private void show() {
+    public static void main(String[] args) {
+        new GL_V8().show();
+    }
+
+    public void show() {
 
         while (!Display.isCloseRequested()) {
             input();
