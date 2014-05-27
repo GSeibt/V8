@@ -1,10 +1,13 @@
 package controller.mc_alg.service;
 
 import controller.mc_alg.Cube;
+import controller.mc_alg.Point3D;
 import controller.mc_alg.Tables;
 import controller.mc_alg.Vertex;
+import javafx.collections.ObservableFloatArray;
 import javafx.concurrent.Task;
 import javafx.scene.shape.Mesh;
+import javafx.scene.shape.ObservableFaceArray;
 import javafx.scene.shape.TriangleMesh;
 
 public class MCComplete extends MCService {
@@ -16,7 +19,9 @@ public class MCComplete extends MCService {
             long time = System.nanoTime(); //TODO remove
 
             TriangleMesh mesh = new TriangleMesh();
+            mesh.getTexCoords().addAll(0, 0, 0, 1, 1, 1);
 
+            int cubeIndex;
             Cube cube;
             Cube[][] currentSlice;
             Vertex v0, v1, v2, v3, v4, v5, v6, v7;
@@ -99,8 +104,12 @@ public class MCComplete extends MCService {
                         cube = new Cube(v0, v1, v2, v3, v4, v5, v6, v7);
                         currentSlice[y][x] = cube;
 
-                        computeEdges(x, y, z, cube, currentSlice);
-                        updateMesh(cube, mesh);
+                        cubeIndex = cube.getIndex(level);
+
+                        if ((cubeIndex != 0) && (cubeIndex != 255)) {
+                            computeEdges(x, y, z, cube, cubeIndex, currentSlice);
+                            updateMesh(cube, cubeIndex, mesh);
+                        }
 
                         doneCubes++;
                     }
@@ -114,13 +123,8 @@ public class MCComplete extends MCService {
             return mesh;
         }
 
-        private void computeEdges(int x, int y, int z, Cube cube, Cube[][] currentSlice) {
-            int cubeIndex = cube.getIndex(level);
+        private void computeEdges(int x, int y, int z, Cube cube, int cubeIndex, Cube[][] currentSlice) {
             int edgeIndex = Tables.getEdgeIndex(cubeIndex);
-
-            if (edgeIndex == 0) {
-                return;
-            }
 
             if ((edgeIndex & 1) == 1) { // Edge 0
                 if (y != 0) {
@@ -206,15 +210,36 @@ public class MCComplete extends MCService {
 
             if ((edgeIndex & 2048) == 2048) { // Edge 11
                 if (x != 0) {
-                    cube.setEdge(11, currentSlice[y][x - 1].getEdge(8));
+                    cube.setEdge(11, currentSlice[y][x - 1].getEdge(10));
                 } else {
                     cube.setEdge(11, interpolate(cube.getVertex(7), cube.getVertex(3), level));
                 }
             }
         }
 
-        private void updateMesh(Cube cube, TriangleMesh mesh) {
+        private void updateMesh(Cube cube, int cubeIndex, TriangleMesh mesh) {
+            ObservableFaceArray faces = mesh.getFaces();
+            ObservableFloatArray points = mesh.getPoints();
 
+            int oldPointsLength = points.size();
+            int[] triangles = Tables.getTriangleIndex(cubeIndex);
+
+            for (int i = 0; i < triangles.length; i += 3) {
+
+                if (triangles[i] == -1) {
+                    break;
+                }
+
+                Point3D edge = cube.getEdge(triangles[i]);
+                points.addAll(edge.getX(), edge.getY(), edge.getZ());
+                faces.addAll(oldPointsLength / mesh.getPointElementSize() + i, 0);
+                edge = cube.getEdge(triangles[i + 1]);
+                points.addAll(edge.getX(), edge.getY(), edge.getZ());
+                faces.addAll(oldPointsLength / mesh.getPointElementSize() + i + 1, 1);
+                edge = cube.getEdge(triangles[i + 2]);
+                points.addAll(edge.getX(), edge.getY(), edge.getZ());
+                faces.addAll(oldPointsLength / mesh.getPointElementSize() + i + 2, 2);
+            }
         }
     }
 
