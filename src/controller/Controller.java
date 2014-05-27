@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,11 +22,14 @@ import javafx.scene.SubScene;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
+import javafx.scene.shape.MeshView;
+import javafx.scene.shape.TriangleMesh;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.DirectoryChooser;
@@ -35,6 +39,8 @@ import static javafx.scene.SceneAntialiasing.DISABLED;
 
 public class Controller {
 
+    @FXML
+    private TextField levelTextField;
     @FXML
     private ProgressBar meshProgress;
     @FXML
@@ -47,11 +53,17 @@ public class Controller {
     private Pane imagePane;
     @FXML
     private Pane subScenePane;
+
     private Group world;
 
     private Map<File, ObservableList<DCMImage>> dirCache;
     private ObservableList<File> directories;
+    private List<MeshView> loadedMeshes = new LinkedList<>();
     private Stage stage;
+    private double mousePosX;
+    private double mousePosY;
+    private double mouseOldX;
+    private double mouseOldY;
 
     @FXML
     private void initialize() {
@@ -131,11 +143,6 @@ public class Controller {
         world.getChildren().addAll(xAxis, yAxis, zAxis);
     }
 
-    private double mousePosX;
-    private double mousePosY;
-    private double mouseOldX;
-    private double mouseOldY;
-
     private Camera setupCamera(SubScene subScene) {
         PerspectiveCamera camera = new PerspectiveCamera(true);
 
@@ -156,6 +163,9 @@ public class Controller {
         subScene.setOnKeyPressed(event -> {
 
             switch (event.getCode()) {
+                case C:
+                    loadedMeshes.forEach(mesh -> world.getChildren().remove(mesh));
+                    break;
                 case W:
                     translate.setY(translate.getY() - 5);
                     break;
@@ -205,7 +215,7 @@ public class Controller {
     @FXML
     private void addDirectoryClicked() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setInitialDirectory(new File("D:\\Code\\IntelliJ Projects\\V8\\sample")); //TODO remove
+        directoryChooser.setInitialDirectory(new File("D:\\Code\\IntelliJ Projects\\V8")); //TODO remove
         File dir = directoryChooser.showDialog(stage.getScene().getWindow());
 
         if (dir == null || directories.contains(dir)) {
@@ -228,6 +238,18 @@ public class Controller {
     private void cubesClicked() {
         List<DCMImage> images = filesList.getItems();
 
+        if (images.isEmpty()) {
+            return;
+        }
+
+        final int level;
+        try {
+            level = Integer.parseInt(levelTextField.getText().trim());
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid level. " + levelTextField.getText());
+            return;
+        }
+
         Task<float[][][]> rasterLoader = new Task<float[][][]>() {
 
             @Override
@@ -246,7 +268,21 @@ public class Controller {
         };
 
         rasterLoader.setOnSucceeded(event -> {
-            MCComplete mc = new MCComplete(5, rasterLoader.getValue());
+            MCComplete mc = new MCComplete(level, rasterLoader.getValue());
+            mc.setOnSucceeded(e -> {
+                MeshView meshView = new MeshView(mc.getValue());
+                meshView.setMaterial(new PhongMaterial(Color.CRIMSON));
+
+                world.getChildren().addAll(meshView);
+                System.out.println("Added " + meshView.toString());
+                System.out.println(((TriangleMesh) meshView.getMesh()).getFaces().size() / 2);
+                loadedMeshes.add(meshView);
+            });
+
+            mc.setOnFailed(e -> {
+                mc.getException().printStackTrace();
+            });
+
             meshProgress.progressProperty().bind(mc.progressProperty());
             mc.start();
         });

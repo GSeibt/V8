@@ -94,7 +94,7 @@ public class DCMImage {
         ImageInputStream inputStream = new FileImageInputStream(file);
 
         imageReader.setInput(inputStream);
-        bufferedImage = imageReader.read(0);
+        bufferedImage = imageReader.read(0, imageReader.getDefaultReadParam());
 
         return bufferedImage;
     }
