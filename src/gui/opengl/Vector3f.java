@@ -26,12 +26,43 @@ public class Vector3f {
     }
 
     /**
+     * Returns a new <code>Vector</code> representing <code>this</code> normalized.
+     *
+     * @return the new normalized <code>Vector</code>
+     */
+    public Vector3f normalized() {
+        float length = length();
+
+        return new Vector3f(x / length, y / length, z / length);
+    }
+
+    /**
      * Returns the length of the vector.
      *
      * @return the length
      */
     public float length() {
         return (float) Math.sqrt(x * x + y * y + z * z);
+    }
+
+    /**
+     * Returns a new <code>Vector</code> representing <code>this</code> <code>Vector</code> rotated around the given
+     * <code>axis</code> by the given <code>angle</code>.
+     *
+     * @param axis
+     *         the rotation axis
+     * @param angle
+     *         the angle of rotation
+     *
+     * @return the new rotated <code>Vector</code>
+     */
+    public Vector3f rotate(Vector3f axis, float angle) {
+        float sinAngle = (float) Math.sin(-angle);
+        float cosAngle = (float) Math.cos(-angle);
+
+        return this.cross(axis.mul(sinAngle)).add( //Rotation on local X
+                (this.mul(cosAngle)).add( //Rotation on local Z
+                        axis.mul(this.dot(axis.mul(1 - cosAngle))))); //Rotation on local Y
     }
 
     /**
@@ -64,37 +95,6 @@ public class Vector3f {
     }
 
     /**
-     * Returns a new <code>Vector</code> representing <code>this</code> normalized.
-     *
-     * @return the new normalized <code>Vector</code>
-     */
-    public Vector3f normalized() {
-        float length = length();
-
-        return new Vector3f(x / length, y / length, z / length);
-    }
-
-    /**
-     * Returns a new <code>Vector</code> representing <code>this</code> <code>Vector</code> rotated around the given
-     * <code>axis</code> by the given <code>angle</code>.
-     *
-     * @param axis
-     *         the rotation axis
-     * @param angle
-     *         the angle of rotation
-     *
-     * @return the new rotated <code>Vector</code>
-     */
-    public Vector3f rotate(Vector3f axis, float angle) {
-        float sinAngle = (float) Math.sin(-angle);
-        float cosAngle = (float) Math.cos(-angle);
-
-        return this.cross(axis.mul(sinAngle)).add( //Rotation on local X
-                (this.mul(cosAngle)).add( //Rotation on local Z
-                        axis.mul(this.dot(axis.mul(1 - cosAngle))))); //Rotation on local Y
-    }
-
-    /**
      * Returns a new <code>Vector</code> representing the sum of <code>this</code> <code>Vector</code> and the given
      * one.
      *
@@ -105,6 +105,43 @@ public class Vector3f {
      */
     public Vector3f add(Vector3f r) {
         return new Vector3f(x + r.getX(), y + r.getY(), z + r.getZ());
+    }
+
+    public float getX() {
+        return x;
+    }
+
+    public void setX(float x) {
+        this.x = x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    public void setY(float y) {
+        this.y = y;
+    }
+
+    public float getZ() {
+        return z;
+    }
+
+    public void setZ(float z) {
+        this.z = z;
+    }
+
+    /**
+     * Returns a new <code>Vector</code> representing the product of <code>this</code> <code>Vector</code> and the
+     * given scalar.
+     *
+     * @param scalar
+     *         the scalar
+     *
+     * @return the product of the <code>Vector</code> and the scalar
+     */
+    public Vector3f mul(float scalar) {
+        return new Vector3f(x * scalar, y * scalar, z * scalar);
     }
 
     /**
@@ -160,19 +197,6 @@ public class Vector3f {
     }
 
     /**
-     * Returns a new <code>Vector</code> representing the product of <code>this</code> <code>Vector</code> and the
-     * given scalar.
-     *
-     * @param scalar
-     *         the scalar
-     *
-     * @return the product of the <code>Vector</code> and the scalar
-     */
-    public Vector3f mul(float scalar) {
-        return new Vector3f(x * scalar, y * scalar, z * scalar);
-    }
-
-    /**
      * Returns a new <code>Vector</code> representing the quotient of <code>this</code> <code>Vector</code> and the
      * given one.
      *
@@ -208,31 +232,39 @@ public class Vector3f {
     }
 
     @Override
+    public int hashCode() {
+        int result = (x != +0.0f ? Float.floatToIntBits(x) : 0);
+        result = 31 * result + (y != +0.0f ? Float.floatToIntBits(y) : 0);
+        result = 31 * result + (z != +0.0f ? Float.floatToIntBits(z) : 0);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        Vector3f vector3f = (Vector3f) o;
+
+        if (Float.compare(vector3f.x, x) != 0) {
+            return false;
+        }
+        if (Float.compare(vector3f.y, y) != 0) {
+            return false;
+        }
+        if (Float.compare(vector3f.z, z) != 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
     public String toString() {
         return String.format("(%s %s %s)", x, y, z);
-    }
-
-    public float getX() {
-        return x;
-    }
-
-    public void setX(float x) {
-        this.x = x;
-    }
-
-    public float getY() {
-        return y;
-    }
-
-    public void setY(float y) {
-        this.y = y;
-    }
-
-    public float getZ() {
-        return z;
-    }
-
-    public void setZ(float z) {
-        this.z = z;
     }
 }
