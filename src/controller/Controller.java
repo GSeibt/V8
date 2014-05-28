@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import controller.mc_alg.service.MCComplete;
+import gui.opengl.GL_V8;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -29,7 +29,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
 import javafx.scene.shape.MeshView;
-import javafx.scene.shape.TriangleMesh;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.DirectoryChooser;
@@ -256,35 +255,19 @@ public class Controller {
             protected float[][][] call() throws Exception {
                 float[][][] data = new float[images.size()][][];
 
-                long time = System.nanoTime(); //TODO remove
                 for (int i = 0; i < images.size(); i++) {
                     data[i] = images.get(i).getImageRaster();
                     updateProgress(i, images.size());
                 }
-                System.out.println("Images: " + (System.nanoTime() - time) / Math.pow(10, 6) + " ms"); //TODO remove
 
                 return data;
             }
         };
 
         rasterLoader.setOnSucceeded(event -> {
-            MCComplete mc = new MCComplete(level, rasterLoader.getValue());
-            mc.setOnSucceeded(e -> {
-                MeshView meshView = new MeshView(mc.getValue());
-                meshView.setMaterial(new PhongMaterial(Color.CRIMSON));
+            float[][][] data = rasterLoader.getValue();
 
-                world.getChildren().addAll(meshView);
-                System.out.println("Added " + meshView.toString());
-                System.out.println(((TriangleMesh) meshView.getMesh()).getFaces().size() / 2);
-                loadedMeshes.add(meshView);
-            });
-
-            mc.setOnFailed(e -> {
-                mc.getException().printStackTrace();
-            });
-
-            meshProgress.progressProperty().bind(mc.progressProperty());
-            mc.start();
+            new Thread(() -> new GL_V8(data, level).show()).start();
         });
 
         meshProgress.progressProperty().bind(rasterLoader.progressProperty());
