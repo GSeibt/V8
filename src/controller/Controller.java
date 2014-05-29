@@ -50,19 +50,10 @@ public class Controller {
     private ImageView imageView;
     @FXML
     private Pane imagePane;
-    @FXML
-    private Pane subScenePane;
-
-    private Group world;
 
     private Map<File, ObservableList<DCMImage>> dirCache;
     private ObservableList<File> directories;
-    private List<MeshView> loadedMeshes = new LinkedList<>();
     private Stage stage;
-    private double mousePosX;
-    private double mousePosY;
-    private double mouseOldX;
-    private double mouseOldY;
 
     @FXML
     private void initialize() {
@@ -90,7 +81,6 @@ public class Controller {
         });
 
         setupImageView();
-        setupSubScene();
     }
 
     private void setupImageView() {
@@ -99,122 +89,10 @@ public class Controller {
         imageView.fitWidthProperty().bind(imagePane.widthProperty());
     }
 
-    private void setupSubScene() {
-        world = new Group();
-
-        SubScene subScene = new SubScene(world, subScenePane.getWidth(), subScenePane.getHeight(), true, DISABLED);
-        subScene.widthProperty().bind(subScenePane.widthProperty());
-        subScene.heightProperty().bind(subScenePane.heightProperty());
-
-        Camera camera = setupCamera(subScene);
-
-        subScene.setFill(Color.GRAY);
-        subScene.setCamera(camera);
-
-        subScenePane.getChildren().addAll(subScene);
-
-        addAxis(); //TODO remove
-    }
-
-    private void addAxis() { //TODO remove
-        Box xAxis = new Box(1000, 1, 1);
-        xAxis.setTranslateX(500);
-        Box yAxis = new Box(1, 1000, 1);
-        yAxis.setTranslateY(500);
-        Box zAxis = new Box(1, 1, 1000);
-        zAxis.setTranslateZ(500);
-
-        PhongMaterial redMaterial = new PhongMaterial();
-        redMaterial.setDiffuseColor(Color.DARKRED);
-        redMaterial.setSpecularColor(Color.RED);
-        xAxis.setMaterial(redMaterial);
-
-        PhongMaterial greenMaterial = new PhongMaterial();
-        greenMaterial.setDiffuseColor(Color.DARKGREEN);
-        greenMaterial.setSpecularColor(Color.GREEN);
-        yAxis.setMaterial(greenMaterial);
-
-        PhongMaterial blueMaterial = new PhongMaterial();
-        blueMaterial.setDiffuseColor(Color.DARKBLUE);
-        blueMaterial.setSpecularColor(Color.BLUE);
-        zAxis.setMaterial(blueMaterial);
-
-        world.getChildren().addAll(xAxis, yAxis, zAxis);
-    }
-
-    private Camera setupCamera(SubScene subScene) {
-        PerspectiveCamera camera = new PerspectiveCamera(true);
-
-        camera.setNearClip(0.1);
-        camera.setFarClip(10000.0);
-
-        Translate translate = new Translate();
-        Translate pivot = new Translate();
-        Rotate rotX = new Rotate();
-        Rotate rotY = new Rotate();
-        Rotate rotZ = new Rotate();
-        rotX.setAxis(Rotate.X_AXIS);
-        rotY.setAxis(Rotate.Y_AXIS);
-        rotZ.setAxis(Rotate.Z_AXIS);
-
-        camera.getTransforms().addAll(translate, pivot, rotX, rotY, rotZ);
-
-        subScene.setOnKeyPressed(event -> {
-
-            switch (event.getCode()) {
-                case C:
-                    loadedMeshes.forEach(mesh -> world.getChildren().remove(mesh));
-                    break;
-                case W:
-                    translate.setY(translate.getY() - 5);
-                    break;
-                case S:
-                    translate.setY(translate.getY() + 5);
-                    break;
-                case A:
-                    translate.setX(translate.getX() - 5);
-                    break;
-                case D:
-                    translate.setX(translate.getX() + 5);
-                    break;
-                case Q:
-                    translate.setZ(translate.getZ() - 5);
-                    break;
-                case E:
-                    translate.setZ(translate.getZ() + 5);
-                    break;
-            }
-        });
-
-        subScene.setOnMousePressed(event -> {
-            subScene.requestFocus();
-            mousePosX = event.getSceneX();
-            mousePosY = event.getSceneY();
-            mouseOldX = event.getSceneX();
-            mouseOldY = event.getSceneY();
-        });
-
-        subScene.setOnMouseDragged(event -> {
-            mouseOldX = mousePosX;
-            mouseOldY = mousePosY;
-            mousePosX = event.getSceneX();
-            mousePosY = event.getSceneY();
-            double mouseDeltaX = (mousePosX - mouseOldX);
-            double mouseDeltaY = (mousePosY - mouseOldY);
-
-            rotY.setAngle(rotY.getAngle() + mouseDeltaX * 0.1);
-            rotX.setAngle(rotX.getAngle() - mouseDeltaY * 0.1);
-        });
-
-        translate.setZ(-1000);
-
-        return camera;
-    }
-
     @FXML
     private void addDirectoryClicked() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setInitialDirectory(new File("D:\\Code\\IntelliJ Projects\\V8")); //TODO remove
+       // directoryChooser.setInitialDirectory(new File("D:\\Code\\IntelliJ Projects\\V8")); //TODO remove
         File dir = directoryChooser.showDialog(stage.getScene().getWindow());
 
         if (dir == null || directories.contains(dir)) {
