@@ -1,9 +1,11 @@
 package controller.mc_alg;
 
+import gui.opengl.Vector3f;
+
 public class Cube {
 
     private Vertex[] vertexes;
-    private Point3D[] edges;
+    private Vector3f[] edges;
 
     public Cube(Vertex... vertexes) {
 
@@ -12,20 +14,18 @@ public class Cube {
         }
 
         this.vertexes = vertexes;
-        this.edges = new Point3D[12];
+        this.edges = new Vector3f[12];
     }
 
     public Vertex getVertex(int index) {
         return vertexes[index];
     }
 
-    public Float getWeight(int index) {return vertexes[index].getWeight();}
-
-    public void setEdge(int index, Point3D edge) {
+    public void setEdge(int index, Vector3f edge) {
         edges[index] = edge;
     }
 
-    public Point3D getEdge(int index) {
+    public Vector3f getEdge(int index) {
         return edges[index];
     }
 
@@ -40,4 +40,6 @@ public class Cube {
 
         return index;
     }
+
+    public Float getWeight(int index) {return vertexes[index].getWeight();}
 }

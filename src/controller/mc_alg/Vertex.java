@@ -1,20 +1,22 @@
 package controller.mc_alg;
 
+import gui.opengl.Vector3f;
+
 public class Vertex {
 
-    private Point3D location;
+    private Vector3f location;
     private Float weight;
 
     public Vertex(float x, float y, float z, Float weight) {
-        this(new Point3D(x, y, z), weight);
+        this(new Vector3f(x, y, z), weight);
     }
 
-    public Vertex(Point3D location, Float weight) {
+    public Vertex(Vector3f location, Float weight) {
         this.location = location;
         this.weight = weight;
     }
 
-    public Point3D getLocation() {
+    public Vector3f getLocation() {
         return location;
     }
 
