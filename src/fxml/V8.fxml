@@ -56,6 +56,7 @@
 <GridPane GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2">
 <columnConstraints>
 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+<ColumnConstraints />
 </columnConstraints>
 <rowConstraints>
 <RowConstraints vgrow="SOMETIMES" />
