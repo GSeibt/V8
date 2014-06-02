@@ -18,6 +18,7 @@ public class MCRunner implements Runnable {
     private float level;
     private float[][][] data;
     private volatile boolean stop;
+    private volatile boolean interrupted = false;
     private Type type;
     private BiConsumer<FloatBuffer, IntBuffer> meshConsumer;
 
@@ -45,7 +46,7 @@ public class MCRunner implements Runnable {
         Cube cube;
         Cube[][] currentSlice;
 
-        for (int z = 0; z < data.length - 1; z++) {
+        for (int z = 0; z < data.length - 1 && !interrupted; z++) {
 
             currentSlice = updateSlices();
 
@@ -72,9 +73,11 @@ public class MCRunner implements Runnable {
             if (type == SLICE) {
                 outputMesh();
             }
+
+            interrupted = Thread.interrupted();
         }
 
-        if (type == COMPLETE) {
+        if ((type == COMPLETE) && !interrupted) {
             outputMesh();
         }
 
@@ -107,6 +110,7 @@ public class MCRunner implements Runnable {
                 try {
                     wait();
                 } catch (InterruptedException e) {
+                    interrupted = true;
                     break;
                 }
             }
