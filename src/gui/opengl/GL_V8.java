@@ -8,12 +8,7 @@ import controller.mc_alg.MCRunner;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.*;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -76,6 +71,7 @@ public class GL_V8 {
 
     private void initDisplay() throws LWJGLException {
         Display.setDisplayMode(new DisplayMode(800, 600));
+        Display.setTitle("V8");
         Display.create();
     }
 
@@ -85,10 +81,10 @@ public class GL_V8 {
     }
 
     public void show() {
-        Thread t = new Thread(mcRunner);
-        t.setName("MCRunner");
+        Thread runner = new Thread(mcRunner);
+        runner.setName("MCRunner");
 
-        t.start();
+        runner.start();
         while (!Display.isCloseRequested()) {
             useUpdate();
             input();
@@ -97,7 +93,7 @@ public class GL_V8 {
             Display.sync(30);
         }
 
-        t.interrupt();
+        runner.interrupt();
         cleanup();
     }
 
