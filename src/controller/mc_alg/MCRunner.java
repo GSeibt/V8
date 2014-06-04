@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import gui.opengl.Vector3f;
 import org.lwjgl.BufferUtils;
 
 import static controller.mc_alg.MCRunner.Type.*;
@@ -25,7 +26,7 @@ public class MCRunner implements Runnable {
     private Cube[][] lowerSlice;
     private Cube[][] upperSlice;
 
-    private Map<Point3D, Integer> points;
+    private Map<Vector3f, Integer> points;
     private ArrayList<Integer> indices;
 
     public MCRunner(float[][][] data, float level, Type type, BiConsumer<FloatBuffer, IntBuffer> meshConsumer) {
@@ -40,8 +41,6 @@ public class MCRunner implements Runnable {
 
     @Override
     public void run() {
-        long time = System.nanoTime(); //TODO remove
-
         int cubeIndex;
         Cube cube;
         Cube[][] currentSlice;
@@ -80,8 +79,6 @@ public class MCRunner implements Runnable {
         if ((type == COMPLETE) && !interrupted) {
             outputMesh();
         }
-
-        System.out.println("Cubes: " + (System.nanoTime() - time) / Math.pow(10, 6) + " ms"); //TODO remove
     }
 
     private void outputMesh() {
@@ -289,7 +286,7 @@ public class MCRunner implements Runnable {
         }
     }
 
-    private static Point3D interpolate(Vertex v1, Vertex v2, float level) {
+    private static Vector3f interpolate(Vertex v1, Vertex v2, float level) {
         float x, y, z;
         float alpha;
         double min = Math.pow(10, -4);
@@ -311,11 +308,11 @@ public class MCRunner implements Runnable {
         y = alpha * v1.getY() + (1 - alpha) * v2.getY();
         z = alpha * v1.getZ() + (1 - alpha) * v2.getZ();
 
-        return new Point3D(x, y, z);
+        return new Vector3f(x, y, z);
     }
 
     private void updateMesh(Cube cube, int cubeIndex) {
-        Point3D edge;
+        Vector3f edge;
         Integer index;
         int newIndex = points.size();
         int[] triangles = Tables.getTriangleIndex(cubeIndex);
