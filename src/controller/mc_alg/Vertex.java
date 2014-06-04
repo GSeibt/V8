@@ -5,19 +5,26 @@ import gui.opengl.Vector3f;
 public class Vertex {
 
     private Vector3f location;
-    private Float weight;
+    private Vector3f normal;
 
-    public Vertex(float x, float y, float z, Float weight) {
-        this(new Vector3f(x, y, z), weight);
+    public Vertex(float x, float y, float z) {
+        this(new Vector3f(x, y, z));
     }
 
-    public Vertex(Vector3f location, Float weight) {
+    public Vertex(Vector3f location) {
         this.location = location;
-        this.weight = weight;
     }
 
     public Vector3f getLocation() {
         return location;
+    }
+
+    public Vector3f getNormal() {
+        return normal;
+    }
+
+    public void setNormal(Vector3f normal) {
+        this.normal = normal;
     }
 
     public float getX() {
@@ -30,9 +37,5 @@ public class Vertex {
 
     public float getZ() {
         return location.getZ();
-    }
-
-    public Float getWeight() {
-        return weight;
     }
 }

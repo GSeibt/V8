@@ -5,10 +5,16 @@ import java.nio.IntBuffer;
 import java.util.concurrent.SynchronousQueue;
 
 import controller.mc_alg.MCRunner;
+import controller.mc_alg.Mesh;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.DisplayMode;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -26,12 +32,13 @@ public class GL_V8 {
 
     }
     private final int DEFAULT_FOV = 70;
-    private SynchronousQueue<MeshChange> newBuffer = new SynchronousQueue<>();
+    private SynchronousQueue<Mesh> newBuffer = new SynchronousQueue<>();
     private MCRunner mcRunner;
     private Camera camera;
-    private int vaoId;
-    private int vboId;
-    private int vboiId;
+    private int vaoId;  // Vertex Array Object ID
+    private int vboId;  // Vertex Buffer Object ID (Points)
+    private int vboiId; // Vertex Buffer Object ID (Indices)
+    private int vbonId; // Vertex Buffer Object ID (Normals)
     private int indicesCount;
 
     public GL_V8(float[][][] data, float level) {
@@ -51,21 +58,28 @@ public class GL_V8 {
 
     private void initGLObjects() {
 
-        // create a new Vertex Array Object in memory and select it (bind)
+        // create a new Vertex Array Object in memory and select it
         vaoId = GL30.glGenVertexArrays();
         GL30.glBindVertexArray(vaoId);
 
-        // create a new Vertex Buffer Object in memory and select it (bind)
+        // create a new Vertex Buffer Object for the vertexes
         vboId = GL15.glGenBuffers();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
 
-        // put the VBO in the attributes list at index 0
+        // put the Vertex Buffer Object in the attributes list at index 0
         GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
+
+        // create a new Vertex Buffer Object for the normals
+        vbonId = GL15.glGenBuffers();
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbonId);
+
+        // put the Vertex Buffer Object in the attributes list at index 1
+        GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 0, 0);
 
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         GL30.glBindVertexArray(0);
 
-        // Create a new VBO for the indices
+        // create a new Vertex Buffer Object for the indices
         vboiId = GL15.glGenBuffers();
     }
 
@@ -98,18 +112,21 @@ public class GL_V8 {
     }
 
     private void useUpdate() {
-        MeshChange change = newBuffer.poll();
+        Mesh change = newBuffer.poll();
 
         if (change != null) {
-            indicesCount = change.indices.limit();
+            indicesCount = change.getIndices().limit();
 
             GL30.glBindVertexArray(vaoId);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
 
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, change.vertexes, GL15.GL_STATIC_DRAW);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, change.getVertexes(), GL15.GL_STATIC_DRAW);
 
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
-            GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, change.indices, GL15.GL_STATIC_DRAW);
+            GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, change.getIndices(), GL15.GL_STATIC_DRAW);
+
+            GL15.glBindBuffer(GL15.GL_NORMAL_ARRAY_BUFFER_BINDING, vbonId);
+            GL15.glBufferData(GL15.GL_NORMAL_ARRAY_BUFFER_BINDING, change.getNormals(), GL15.GL_STATIC_DRAW);
 
             // Deselect (bind to 0) the VBO
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -131,6 +148,7 @@ public class GL_V8 {
         // Bind to the VAO that has all the information about the vertices
         GL30.glBindVertexArray(vaoId);
         GL20.glEnableVertexAttribArray(0);
+        GL20.glEnableVertexAttribArray(1);
 
         // Bind to the index VBO that has all the information about the order of the vertices
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
@@ -173,10 +191,10 @@ public class GL_V8 {
         GL30.glDeleteVertexArrays(vaoId);
     }
 
-    private void receiveUpdate(FloatBuffer vertexes, IntBuffer indices) {
+    private void receiveUpdate(Mesh mesh) {
 
         try {
-            newBuffer.put(new MeshChange(vertexes, indices));
+            newBuffer.put(mesh);
         } catch (InterruptedException ignored) {
         }
     }
