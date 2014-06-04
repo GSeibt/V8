@@ -4,9 +4,10 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.FileImageInputStream;
-import javax.imageio.stream.ImageInputStream;
 
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.WritableImage;
@@ -34,15 +35,38 @@ public class DCMImage {
     private File file;
     private BufferedImage awtImage;
     private WritableImage fxImage;
+    private int frameIndex;
 
     /**
      * Constructs a new <code>DCMImage</code> from the given <code>File</code>.
      *
      * @param file
      *      the .dcm <code>File</code>
+     * @param  frameIndex
+     *      the index of the image in the file
      */
-    public DCMImage(File file) {
+    private DCMImage(File file, int frameIndex) {
         this.file = file;
+        this.frameIndex = frameIndex;
+    }
+
+    public static List<DCMImage> getDCMImages(File file) {
+        List<DCMImage> images = new LinkedList<>();
+        int numImages;
+
+        try {
+            imageReader.setInput(new FileImageInputStream(file));
+            numImages = imageReader.getNumImages(true);
+
+            for (int i = 0; i < numImages; i++) {
+                images.add(new DCMImage(file, i));
+            }
+        } catch (Exception e) {
+            System.err.println("Could not read the images in " + file.getName());
+            System.err.println(e.toString() + " " + e.getMessage());
+        }
+
+        return images;
     }
 
     /**
@@ -91,10 +115,13 @@ public class DCMImage {
      */
     private BufferedImage readAWTImage() throws IOException {
         BufferedImage bufferedImage;
-        ImageInputStream inputStream = new FileImageInputStream(file);
 
-        imageReader.setInput(inputStream);
-        bufferedImage = imageReader.read(0, imageReader.getDefaultReadParam());
+        imageReader.setInput(new FileImageInputStream(file));
+        bufferedImage = imageReader.read(frameIndex, imageReader.getDefaultReadParam());
+
+        if (bufferedImage == null) {
+            System.err.println("Could not read a BufferedImage from an image." + file);
+        }
 
         return bufferedImage;
     }

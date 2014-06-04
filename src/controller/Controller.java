@@ -1,13 +1,13 @@
 package controller;
 
 import java.io.File;
-import java.io.FileFilter;
-import java.util.Arrays;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import gui.opengl.GL_V8;
@@ -15,26 +15,14 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.Camera;
-import javafx.scene.Group;
-import javafx.scene.PerspectiveCamera;
-import javafx.scene.SubScene;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Box;
-import javafx.scene.shape.MeshView;
-import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Translate;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-
-import static javafx.scene.SceneAntialiasing.DISABLED;
 
 public class Controller {
 
@@ -92,16 +80,20 @@ public class Controller {
     @FXML
     private void addDirectoryClicked() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
-       // directoryChooser.setInitialDirectory(new File("D:\\Code\\IntelliJ Projects\\V8")); //TODO remove
         File dir = directoryChooser.showDialog(stage.getScene().getWindow());
+        List<DCMImage> images;
 
         if (dir == null || directories.contains(dir)) {
             return;
         }
 
-        FileFilter filter = pathname -> pathname.getName().endsWith(".dcm");
-        Stream<DCMImage> s = Arrays.stream(dir.listFiles(filter)).map(DCMImage::new);
-        List<DCMImage> images = s.collect(Collectors.toList());
+        try (Stream<Path> fileStream = Files.list(dir.toPath()).filter(name -> name.toString().endsWith(".dcm"))) {
+            Stream<List<DCMImage>> imageStream = fileStream.map(path -> DCMImage.getDCMImages(path.toFile()));
+            images = imageStream.reduce(new LinkedList<DCMImage>(), (l1, l2) -> {l1.addAll(l2); return l1; });
+        } catch (IOException e) {
+            System.err.println("Could not list the files in directory " + dir.getName());
+            return;
+        }
 
         dirCache.put(dir, FXCollections.observableList(images));
         directories.add(dir);
