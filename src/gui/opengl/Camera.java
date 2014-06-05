@@ -3,18 +3,12 @@ package gui.opengl;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
-import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.util.glu.GLU.gluLookAt;
-import static org.lwjgl.util.glu.GLU.gluPerspective;
 
 /**
  * A <code>Camera</code> for an OpenGL scene.
  */
 public class Camera {
-
-    public static final Vector3f xAxis = new Vector3f(1, 0, 0);
-    public static final Vector3f yAxis = new Vector3f(0, 1, 0);
-    public static final Vector3f zAxis = new Vector3f(0, 0, 1);
 
     // position
     private Vector3f position;
@@ -23,53 +17,14 @@ public class Camera {
     private Vector3f forward;
     private Vector3f upward;
 
-    // field of view
-    private float fov;
-    private float aspect;
-
-    // clipping planes
-    private float nearClip;
-    private float farClip;
-
     /**
      * Constructs a new <code>Camera</code> using the given parameters.
      * The <code>Camera</code> will be placed at (0,0,0) looking along the negative z-axis.
-     * OpenGL calls that initialize the projection matrix and enable the depth test for the
-     * model-view matrix will be made.
-     *
-     * @param fov
-     *         the field of view in degrees
-     * @param aspect
-     *         the aspect ratio for the camera
-     * @param nearClip
-     *         the near clipping plane
-     * @param farClip
-     *         the far clipping plane
      */
-    public Camera(float fov, float aspect, float nearClip, float farClip) {
+    public Camera() {
         this.position = new Vector3f(0, 0, 0);
         this.forward = new Vector3f(0, 0, -1);
         this.upward = new Vector3f(0, 1, 0);
-
-        this.fov = fov;
-        this.aspect = aspect;
-        this.nearClip = nearClip;
-        this.farClip = farClip;
-
-        initGLProjection();
-    }
-
-    /**
-     * Initializes the projection-and model-view matrix as noted in the constructor documentation.
-     */
-    private void initGLProjection() {
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        gluPerspective(fov, aspect, nearClip, farClip);
-        glMatrixMode(GL_MODELVIEW);
-        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
     }
 
     /**
@@ -104,16 +59,16 @@ public class Camera {
      */
     private void keyboard() {
         if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-            move(forward, 0.3f);
+            move(forward, 1f);
         }
         if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-            move(forward, -0.3f);
+            move(forward, -1f);
         }
         if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-            move(getLeft(), 0.3f);
+            move(getLeft(), 1f);
         }
         if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-            move(getRight(), 0.3f);
+            move(getRight(), 1f);
         }
 
         if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
