@@ -80,6 +80,7 @@ public class Controller {
     @FXML
     private void addDirectoryClicked() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setInitialDirectory(new File("D:\\Dropbox\\Studium\\3D Bildverarbeitung und -druck\\Flöte"));
         File dir = directoryChooser.showDialog(stage.getScene().getWindow());
         List<DCMImage> images;
 

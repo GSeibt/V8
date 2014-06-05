@@ -67,7 +67,9 @@ public class Camera {
         glLoadIdentity();
         gluPerspective(fov, aspect, nearClip, farClip);
         glMatrixMode(GL_MODELVIEW);
+        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
         glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
     }
 
     /**

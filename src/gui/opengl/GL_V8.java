@@ -11,12 +11,11 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
 
+import static org.lwjgl.opengl.ARBBufferObject.*;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
+import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 
 public class GL_V8 {
 
@@ -26,7 +25,6 @@ public class GL_V8 {
     private MCRunner mcRunner;
     private Camera camera;
 
-    private int vaoId;  // Vertex Array Object ID
     private int vboId;  // Vertex Buffer Object ID (Points)
     private int vboiId; // Vertex Buffer Object ID (Indices)
     private int vbonId; // Vertex Buffer Object ID (Normals)
@@ -35,6 +33,7 @@ public class GL_V8 {
     public GL_V8(float[][][] data, float level) {
         try {
             initDisplay();
+            initGL();
             initGLLight();
             initGLObjects();
             initInput();
@@ -48,65 +47,63 @@ public class GL_V8 {
         this.mcRunner = new MCRunner(data, level, MCRunner.Type.SLICE, this::receiveUpdate);
     }
 
+    private void initGL() {
+        glClearColor(0.5f,0.5f,0.5f,1f);
+        glClearDepth(1.0f);
+    }
+
     private void initGLLight() {
         glEnable(GL_LIGHTING);
+        glEnable(GL_LIGHT0);
         glEnable(GL_COLOR_MATERIAL);
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
-        glEnable(GL_LIGHT0);
-
         IntBuffer position = BufferUtils.createIntBuffer(4);
-        position.put(new int[] {1, 1, 0, 0}).flip();
+        position.put(new int[] {1, 1, 1, 0}).flip();
 
         IntBuffer ambient = BufferUtils.createIntBuffer(4);
-        ambient.put(new int[] {0,0,0,1}).flip();
+        ambient.put(new int[] {0, 0, 0, 1}).flip();
 
         IntBuffer diffuse = BufferUtils.createIntBuffer(4);
-        diffuse.put(new int[] {1,1,1,1}).flip();
+        diffuse.put(new int[] {1, 1, 1, 1}).flip();
 
         IntBuffer specular = BufferUtils.createIntBuffer(4);
-        specular.put(new int[] {1,1,1,1}).flip();
+        specular.put(new int[] {1, 1, 1, 1}).flip();
 
         glLight(GL_LIGHT0, GL_POSITION, position);
         glLight(GL_LIGHT0, GL_AMBIENT, ambient);
         glLight(GL_LIGHT0, GL_DIFFUSE, diffuse);
         glLight(GL_LIGHT0, GL_SPECULAR, specular);
 
+//        FloatBuffer lModelAmbient = BufferUtils.createFloatBuffer(4);
+//        lModelAmbient.put(new float[] {0.5f, 0.5f, 0.5f, 1}).flip();
+
+//        glLightModel(GL_LIGHT_MODEL_AMBIENT, lModelAmbient);
+
         IntBuffer emission = BufferUtils.createIntBuffer(4);
         emission.put(new int[] {0, 0, 0, 1}).flip();
 
-        glMaterial(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
+       glMaterial(GL_FRONT, GL_SPECULAR, specular);
+//        glMaterialf(GL_FRONT, GL_SHININESS, 50f);
         glMaterial(GL_FRONT_AND_BACK, GL_EMISSION, emission);
     }
 
     private void initGLObjects() {
 
-        // create a new Vertex Array Object in memory and select it
-        vaoId = GL30.glGenVertexArrays();
-        GL30.glBindVertexArray(vaoId);
-
-        GL20.glEnableVertexAttribArray(0);
-        GL20.glEnableVertexAttribArray(1);
-
         // create a new Vertex Buffer Object for the vertexes
-        vboId = GL15.glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-
-        // put the Vertex Buffer Object in the attributes list at index 0
-        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
+        vboId = glGenBuffersARB();
+        glBindBufferARB(GL_ARRAY_BUFFER, vboId);
 
         // create a new Vertex Buffer Object for the normals
-        vbonId = GL15.glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbonId);
-
-        // put the Vertex Buffer Object in the attributes list at index 1
-        GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 0, 0);
-
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-        GL30.glBindVertexArray(0);
+        vbonId = glGenBuffersARB();
+        glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
 
         // create a new Vertex Buffer Object for the indices
-        vboiId = GL15.glGenBuffers();
+        vboiId = glGenBuffersARB();
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboId);
+
+        glBindBufferARB(GL_ARRAY_BUFFER, 0);
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     private void initDisplay() throws LWJGLException {
@@ -143,20 +140,17 @@ public class GL_V8 {
         if (change != null) {
             indicesCount = change.getIndices().limit();
 
-            GL30.glBindVertexArray(vaoId);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+            glBindBufferARB(GL_ARRAY_BUFFER, vboId);
+            glBufferDataARB(GL_ARRAY_BUFFER, change.getVertexes(), GL_STATIC_DRAW_ARB);
 
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, change.getVertexes(), GL15.GL_STATIC_DRAW);
+            glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
+            glBufferDataARB(GL_ARRAY_BUFFER, change.getNormals(), GL_STATIC_DRAW_ARB);
 
-            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
-            GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, change.getIndices(), GL15.GL_STATIC_DRAW);
+            glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboiId);
+            glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, change.getIndices(), GL_STATIC_DRAW_ARB);
 
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbonId);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, change.getNormals(), GL15.GL_STATIC_DRAW);
-
-            // Deselect (bind to 0) the VBO
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-            GL30.glBindVertexArray(0);
+            glBindBufferARB(GL_ARRAY_BUFFER, 0);
+            glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
 
         mcRunner.continueRun();
@@ -171,54 +165,44 @@ public class GL_V8 {
         glLoadIdentity();
         camera.useView();
 
-        // Bind to the VAO that has all the information about the vertices
-        GL30.glBindVertexArray(vaoId);
+//        glColor3f(0.1f, 0.4f, 0.9f);
+//        Sphere s = new Sphere();
+//        s.draw(1f, 10, 10);
 
-        // Bind to the index VBO that has all the information about the order of the vertices
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glBindBufferARB(GL_ARRAY_BUFFER, vboId);
+        glVertexPointer(3, GL_FLOAT, 0, 0);
 
-        // Draw the vertices
-        GL11.glColor3f(1f, 0, 0);
-        GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_INT, 0);
+        glEnableClientState(GL_NORMAL_ARRAY);
+        glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
+        glNormalPointer(GL_FLOAT, 0, 0);
 
-        // Put everything back to default (deselect)
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-        GL20.glDisableVertexAttribArray(0);
-        GL20.glDisableVertexAttribArray(1);
-        GL30.glBindVertexArray(0);
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboiId);
+
+        glColor3f(0, 1f, 0);
+        glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_INT, 0);
+
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glDisableClientState(GL_NORMAL_ARRAY);
+
+        glBindBufferARB(GL_ARRAY_BUFFER, 0);
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     private void cleanup() {
         cleanupBuffers();
-
         Display.destroy();
         Keyboard.destroy();
         Mouse.destroy();
     }
 
     private void cleanupBuffers() {
-
-        // Disable the VBO index from the VAO attributes list
-        GL20.glDisableVertexAttribArray(0);
-
-        // Delete the vertex VBO
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-        GL15.glDeleteBuffers(vboId);
-
-        // Delete the index VBO
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-        GL15.glDeleteBuffers(vboiId);
-
-        // Delete the VAO
-        GL30.glBindVertexArray(0);
-        GL30.glDeleteVertexArrays(vaoId);
+        glDeleteBuffersARB(vboId);
+        glDeleteBuffersARB(vboiId);
+        glDeleteBuffersARB(vbonId);
     }
 
     private void receiveUpdate(Mesh mesh) {
-
-        try {
-            newBuffer.put(mesh);
-        } catch (InterruptedException ignored) {
-        }
+        try { newBuffer.put(mesh); } catch (InterruptedException ignored) {}
     }
 }
