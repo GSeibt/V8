@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import gui.Histogram;
 import gui.opengl.GL_V8;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -143,5 +144,10 @@ public class Controller {
 
         meshProgress.progressProperty().bind(rasterLoader.progressProperty());
         new Thread(rasterLoader).start();
+    }
+
+    @FXML
+    private void histogramClicked() {
+        new Histogram(filesList.getFocusModel().getFocusedItem()).show();
     }
 }
