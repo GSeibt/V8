@@ -3,7 +3,7 @@ package gui.opengl;
 /**
  * A vector in 3D space.
  */
-public class Vector3f {
+public class Vector3f implements Cloneable {
 
     private float x;
     private float y;
@@ -129,6 +129,12 @@ public class Vector3f {
 
     public void setZ(float z) {
         this.z = z;
+    }
+
+    public void setXYZ(float x, float y, float z) {
+        setX(x);
+        setY(y);
+        setZ(z);
     }
 
     /**
@@ -266,5 +272,10 @@ public class Vector3f {
     @Override
     public String toString() {
         return String.format("(%s %s %s)", x, y, z);
+    }
+
+    @Override
+    public Vector3f clone() throws CloneNotSupportedException {
+        return (Vector3f) super.clone();
     }
 }

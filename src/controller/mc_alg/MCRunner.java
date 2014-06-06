@@ -11,12 +11,11 @@ import java.util.function.Consumer;
 import gui.opengl.Vector3f;
 import org.lwjgl.BufferUtils;
 
-import static controller.mc_alg.MCRunner.Type.COMPLETE;
-import static controller.mc_alg.MCRunner.Type.SLICE;
+import static controller.mc_alg.MCRunner.Type.*;
 
 public class MCRunner implements Runnable {
 
-    public enum Type {SLICE, COMPLETE}
+    public enum Type {CUBE, SLICE, COMPLETE}
 
     private final int SAVED_SLICES = 2;
     private final int POINTS_CAPACITY = 100000;
@@ -28,8 +27,8 @@ public class MCRunner implements Runnable {
     private Type type;
     private Consumer<Mesh> meshConsumer;
 
-    private Cube[][][] slices;
-    private int sliceIndex;
+    private Cube[][] upperSlice;
+    private Cube[][] lowerSlice;
 
     private Map<Vertex, Integer> points;
     private List<Integer> indices;
@@ -42,8 +41,7 @@ public class MCRunner implements Runnable {
         this.interrupted = false;
         this.type = type;
         this.meshConsumer = meshConsumer;
-        this.slices = new Cube[SAVED_SLICES][][];
-        this.sliceIndex = 0;
+
         this.points = new LinkedHashMap<>(POINTS_CAPACITY);
         this.indices = new LinkedList<>();
         this.normals = new LinkedList<>();
@@ -52,24 +50,28 @@ public class MCRunner implements Runnable {
     @Override
     public void run() {
         int cubeIndex;
+        Cube[][] currentSlice;
         Cube cube;
 
         for (int z = 0; z < data.length - 1 && !interrupted; z++) {
 
-            updateSlices();
+            currentSlice = updateSlices();
 
             for (int y = 0; y < data[z].length - 1; y++) {
 
                 for (int x = 0; x < data[z][y].length - 1; x++) {
 
-                    cube = computeVertexes(x, y, z);
-                    slices[sliceIndex][y][x] = cube;
-
+                    computeVertexes(x, y, z, currentSlice);
+                    cube = currentSlice[y][x];
                     cubeIndex = cube.getIndex(level);
 
                     if ((cubeIndex != 0) && (cubeIndex != 255)) {
-                        computeEdges(x, y, z, cube, cubeIndex);
+                        computeEdges(x, y, z, cube, cubeIndex, currentSlice);
                         updateMesh(cube, cubeIndex);
+                    }
+
+                    if (type == CUBE) {
+                        outputMesh();
                     }
                 }
             }
@@ -92,9 +94,9 @@ public class MCRunner implements Runnable {
         IntBuffer indices = BufferUtils.createIntBuffer(this.indices.size());
 
         this.points.forEach((p, i) -> {
-            points.put(p.getX());
-            points.put(p.getY());
-            points.put(p.getZ());
+            points.put(p.getLocation().getX());
+            points.put(p.getLocation().getY());
+            points.put(p.getLocation().getZ());
         });
         this.normals.forEach(v -> normals.put(v.getX()).put(v.getY()).put(v.getZ()));
         this.indices.forEach(indices::put);
@@ -122,104 +124,127 @@ public class MCRunner implements Runnable {
         }
     }
 
-    private void updateSlices() {
-        int lastArrayIndex = slices.length - 1;
+    private Cube[][] updateSlices() {
+        Cube[][] currentSlice;
 
-        if (sliceIndex < lastArrayIndex) {
-            sliceIndex++;
-            slices[sliceIndex] = new Cube[data[0].length - 1][data[0][0].length - 1];
+        if (lowerSlice == null) {
+            lowerSlice = new Cube[data[0].length - 1][data[0][0].length - 1];
+
+            for (Cube[] cubes : lowerSlice) {
+                for (int i = 0; i < cubes.length; i++) {
+                    cubes[i] = new Cube();
+                }
+            }
+
+            currentSlice = lowerSlice;
+        } else if (upperSlice == null) {
+            upperSlice = new Cube[data[0].length - 1][data[0][0].length - 1];
+
+            for (Cube[] cubes : upperSlice) {
+                for (int i = 0; i < cubes.length; i++) {
+                    cubes[i] = new Cube();
+                }
+            }
+
+            currentSlice = upperSlice;
         } else {
-            System.arraycopy(slices, 1, slices, 0, lastArrayIndex);
-            slices[lastArrayIndex] = new Cube[data[0].length - 1][data[0][0].length - 1];
+            currentSlice = lowerSlice;
+            lowerSlice = upperSlice;
+            upperSlice = currentSlice;
         }
-//
-//        if (lowerSlice == null) {
-//            lowerSlice = new Cube[data[0].length - 1][data[0][0].length - 1];
-//            currentSlice = lowerSlice;
-//        } else if (upperSlice == null) {
-//            upperSlice = new Cube[data[0].length - 1][data[0][0].length - 1];
-//            currentSlice = upperSlice;
-//        } else {
-//            lowerSlice = upperSlice;
-//            upperSlice = new Cube[data[0].length - 1][data[0][0].length - 1];
-//            currentSlice = upperSlice;
-//        }
+
+        return currentSlice;
     }
 
-    private Cube computeVertexes(int x, int y, int z) {
-        WeightedVertex v0, v1, v2, v3, v4, v5, v6, v7;
+    private void computeVertexes(int x, int y, int z, Cube[][] currentSlice) {
+        WeightedVertex v;
+        Cube cube = currentSlice[y][x];
 
         if (x != 0) {
-            v0 = slices[sliceIndex][y][x - 1].getVertex(1);
+            cube.setVertex(0, currentSlice[y][x - 1].getVertex(1));
         } else if (y != 0) {
-            v0 = slices[sliceIndex][y - 1][x].getVertex(3);
+            cube.setVertex(0, currentSlice[y - 1][x].getVertex(3));
         } else if (z != 0) {
-            v0 = slices[sliceIndex - 1][y][x].getVertex(4);
+            cube.setVertex(0, lowerSlice[y][x].getVertex(4));
         } else {
-            v0 = new WeightedVertex(x, y, z, weight(x, y, z));
-            v0.setNormal(computeGradient(x, y, z));
+            v = cube.getVertex(0);
+            v.setLocation(x, y, z);
+            v.setWeight(weight(x, y, z));
+            computeGradient(x, y, z, v);
         }
 
         if (y != 0) {
-            v1 = slices[sliceIndex][y - 1][x].getVertex(2);
+            cube.setVertex(1, currentSlice[y - 1][x].getVertex(2));
         } else if (z != 0) {
-            v1 = slices[sliceIndex - 1][y][x].getVertex(5);
+            cube.setVertex(1, lowerSlice[y][x].getVertex(5));
         } else {
-            v1 = new WeightedVertex(x + 1, y, z, weight(x + 1, y, z));
-            v1.setNormal(computeGradient(x + 1, y, z));
+            v = cube.getVertex(1);
+            v.setLocation(x + 1, y, z);
+            v.setWeight(weight(x + 1, y, z));
+            computeGradient(x + 1, y, z, v);
         }
 
         if (z != 0) {
-            v2 = slices[sliceIndex - 1][y][x].getVertex(6);
+            cube.setVertex(2, lowerSlice[y][x].getVertex(6));
         } else {
-            v2 = new WeightedVertex(x + 1, y + 1, z, weight(x + 1, y + 1, z));
-            v2.setNormal(computeGradient(x + 1, y + 1, z));
+            v = cube.getVertex(2);
+            v.setLocation(x + 1, y + 1, z);
+            v.setWeight(weight(x + 1, y + 1, z));
+            computeGradient(x + 1, y + 1, z, v);
         }
 
         if (x != 0) {
-            v3 = slices[sliceIndex][y][x - 1].getVertex(2);
+            cube.setVertex(3, currentSlice[y][x - 1].getVertex(2));
         } else if (z != 0) {
-            v3 = slices[sliceIndex - 1][y][x].getVertex(7);
+            cube.setVertex(3, lowerSlice[y][x].getVertex(7));
         } else {
-            v3 = new WeightedVertex(x, y + 1, z, weight(x, y + 1, z));
-            v3.setNormal(computeGradient(x, y + 1, z));
+            v = cube.getVertex(3);
+            v.setLocation(x, y + 1, z);
+            v.setWeight(weight(x, y + 1, z));
+            computeGradient(x, y + 1, z, v);
         }
 
         if (x != 0) {
-            v4 = slices[sliceIndex][y][x - 1].getVertex(5);
+            cube.setVertex(4, currentSlice[y][x - 1].getVertex(5));
         } else if (y != 0) {
-            v4 = slices[sliceIndex][y - 1][x].getVertex(7);
+            cube.setVertex(4, currentSlice[y - 1][x].getVertex(7));
         } else {
-            v4 = new WeightedVertex(x, y, z + 1, weight(x, y, z + 1));
-            v4.setNormal(computeGradient(x, y, z + 1));
+            v = cube.getVertex(4);
+            v.setLocation(x, y, z + 1);
+            v.setWeight(weight(x, y, z + 1));
+            computeGradient(x, y, z + 1, v);
         }
 
         if (y != 0) {
-            v5 = slices[sliceIndex][y - 1][x].getVertex(6);
+            cube.setVertex(5, currentSlice[y - 1][x].getVertex(6));
         } else {
-            v5 = new WeightedVertex(x + 1, y, z + 1, weight(x + 1, y, z + 1));
-            v5.setNormal(computeGradient(x + 1, y, z + 1));
+            v = cube.getVertex(5);
+            v.setLocation(x + 1, y, z + 1);
+            v.setWeight(weight(x + 1, y, z + 1));
+            computeGradient(x + 1, y, z + 1, v);
         }
 
-        v6 = new WeightedVertex(x + 1, y + 1, z + 1, weight(x + 1, y + 1, z + 1));
-        v6.setNormal(computeGradient(x + 1, y + 1, z + 1));
+        v = cube.getVertex(6);
+        v.setLocation(x + 1, y + 1, z + 1);
+        v.setWeight(weight(x + 1, y + 1, z + 1));
+        computeGradient(x + 1, y + 1, z + 1, v);
 
         if (x != 0) {
-            v7 = slices[sliceIndex][y][x - 1].getVertex(6);
+            cube.setVertex(7, currentSlice[y][x - 1].getVertex(6));
         } else {
-            v7 = new WeightedVertex(x, y + 1, z + 1, weight(x, y + 1, z + 1));
-            v7.setNormal(computeGradient(x, y + 1, z + 1));
+            v = cube.getVertex(7);
+            v.setLocation(x, y + 1, z + 1);
+            v.setWeight(weight(x, y + 1, z + 1));
+            computeGradient(x, y + 1, z + 1, v);
         }
-
-        return new Cube(v0, v1, v2, v3, v4, v5, v6, v7);
     }
 
-    private Vector3f computeGradient(int x, int y, int z) {
+    private void computeGradient(int x, int y, int z, WeightedVertex v) {
         float gX = weight(x + 1, y, z) - weight(x - 1, y, z);
         float gY = weight(x, y + 1, z) - weight(x, y - 1, z);
         float gZ = weight(x, y, z + 1) - weight(x, y, z - 1);
 
-        return new Vector3f(gX, gY, gZ);
+        v.setNormal(gX, gY, gZ);
     }
 
     private float weight(int x, int y, int z) {
@@ -239,117 +264,122 @@ public class MCRunner implements Runnable {
         return data[z][y][x];
     }
 
-    private void computeEdges(int x, int y, int z, Cube cube, int cubeIndex) {
+    private void computeEdges(int x, int y, int z, Cube cube, int cubeIndex, Cube[][] currentSlice) {
         int edgeIndex = Tables.getEdgeIndex(cubeIndex);
 
         if ((edgeIndex & 1) == 1) { // Edge 0
             if (y != 0) {
-                cube.setEdge(0, slices[sliceIndex][y - 1][x].getEdge(2));
+                cube.setEdge(0, currentSlice[y - 1][x].getEdge(2));
             } else if (z != 0) {
-                cube.setEdge(0, slices[sliceIndex - 1][y][x].getEdge(4));
+                cube.setEdge(0, lowerSlice[y][x].getEdge(4));
             } else {
-                cube.setEdge(0, interpolate(cube.getVertex(0), cube.getVertex(1), level));
+                interpolate(cube.getVertex(0), cube.getVertex(1), cube.getEdge(0), level);
             }
         }
 
         if ((edgeIndex & 2) == 2) { // Edge 1
             if (z != 0) {
-                cube.setEdge(1, slices[sliceIndex - 1][y][x].getEdge(5));
+                cube.setEdge(1, lowerSlice[y][x].getEdge(5));
             } else {
-                cube.setEdge(1, interpolate(cube.getVertex(1), cube.getVertex(2), level));
+                interpolate(cube.getVertex(1), cube.getVertex(2), cube.getEdge(1), level);
             }
         }
 
         if ((edgeIndex & 4) == 4) { // Edge 2
             if (z != 0) {
-                cube.setEdge(2, slices[sliceIndex - 1][y][x].getEdge(6));
+                cube.setEdge(2, lowerSlice[y][x].getEdge(6));
             } else {
-                cube.setEdge(2, interpolate(cube.getVertex(2), cube.getVertex(3), level));
+                interpolate(cube.getVertex(2), cube.getVertex(3), cube.getEdge(2), level);
             }
         }
 
         if ((edgeIndex & 8) == 8) { // Edge 3
             if (x != 0) {
-                cube.setEdge(3, slices[sliceIndex][y][x - 1].getEdge(1));
+                cube.setEdge(3, currentSlice[y][x - 1].getEdge(1));
             } else if (z != 0) {
-                cube.setEdge(3, slices[sliceIndex - 1][y][x].getEdge(7));
+                cube.setEdge(3, lowerSlice[y][x].getEdge(7));
             } else {
-                cube.setEdge(3, interpolate(cube.getVertex(3), cube.getVertex(0), level));
+                interpolate(cube.getVertex(3), cube.getVertex(0), cube.getEdge(3), level);
             }
         }
 
         if ((edgeIndex & 16) == 16) { // Edge 4
             if (y != 0) {
-                cube.setEdge(4, slices[sliceIndex][y - 1][x].getEdge(6));
+                cube.setEdge(4, currentSlice[y - 1][x].getEdge(6));
             } else {
-                cube.setEdge(4, interpolate(cube.getVertex(4), cube.getVertex(5), level));
+                interpolate(cube.getVertex(4), cube.getVertex(5), cube.getEdge(4), level);
             }
         }
 
         if ((edgeIndex & 32) == 32) { // Edge 5
-            cube.setEdge(5, interpolate(cube.getVertex(5), cube.getVertex(6), level));
+            interpolate(cube.getVertex(5), cube.getVertex(6), cube.getEdge(5), level);
         }
 
         if ((edgeIndex & 64) == 64) { // Edge 6
-            cube.setEdge(6, interpolate(cube.getVertex(6), cube.getVertex(7), level));
+            interpolate(cube.getVertex(6), cube.getVertex(7), cube.getEdge(6), level);
         }
 
         if ((edgeIndex & 128) == 128) { // Edge 7
             if (x != 0) {
-                cube.setEdge(7, slices[sliceIndex][y][x - 1].getEdge(5));
+                cube.setEdge(7, currentSlice[y][x - 1].getEdge(5));
             } else {
-                cube.setEdge(7, interpolate(cube.getVertex(7), cube.getVertex(4), level));
+                interpolate(cube.getVertex(7), cube.getVertex(4), cube.getEdge(7), level);
             }
         }
 
         if ((edgeIndex & 256) == 256) { // Edge 8
             if (x != 0) {
-                cube.setEdge(8, slices[sliceIndex][y][x - 1].getEdge(9));
+                cube.setEdge(8, currentSlice[y][x - 1].getEdge(9));
             } else if (y != 0) {
-                cube.setEdge(8, slices[sliceIndex][y - 1][x].getEdge(11));
+                cube.setEdge(8, currentSlice[y - 1][x].getEdge(11));
             } else {
-                cube.setEdge(8, interpolate(cube.getVertex(4), cube.getVertex(0), level));
+                interpolate(cube.getVertex(4), cube.getVertex(0), cube.getEdge(8), level);
             }
         }
 
         if ((edgeIndex & 512) == 512) { // Edge 9
             if (y != 0) {
-                cube.setEdge(9, slices[sliceIndex][y - 1][x].getEdge(10));
+                cube.setEdge(9, currentSlice[y - 1][x].getEdge(10));
             } else {
-                cube.setEdge(9, interpolate(cube.getVertex(5), cube.getVertex(1), level));
+                interpolate(cube.getVertex(5), cube.getVertex(1), cube.getEdge(9), level);
             }
         }
 
         if ((edgeIndex & 1024) == 1024) { // Edge 10
-            cube.setEdge(10, interpolate(cube.getVertex(6), cube.getVertex(2), level));
+            interpolate(cube.getVertex(6), cube.getVertex(2), cube.getEdge(10), level);
         }
 
         if ((edgeIndex & 2048) == 2048) { // Edge 11
             if (x != 0) {
-                cube.setEdge(11, slices[sliceIndex][y][x - 1].getEdge(10));
+                cube.setEdge(11, currentSlice[y][x - 1].getEdge(10));
             } else {
-                cube.setEdge(11, interpolate(cube.getVertex(7), cube.getVertex(3), level));
+                interpolate(cube.getVertex(7), cube.getVertex(3), cube.getEdge(11), level);
             }
         }
     }
 
-    private static Vertex interpolate(WeightedVertex v1, WeightedVertex v2, float level) {
+    private static void interpolate(WeightedVertex v1, WeightedVertex v2, Vertex edge, float level) {
         float edgeX, edgeY, edgeZ;
         float normalX, normalY, normalZ;
         double min = Math.pow(10, -4);
         float alpha;
-        Vertex edge;
 
         if (Math.abs(level - v1.getWeight()) < min) {
-            return v1;
+            edge.setLocation(v1.getLocation());
+            edge.setNormal(v1.getNormal());
+            return;
         }
 
         if (Math.abs(level - v2.getWeight()) < min) {
-            return v2;
+            edge.setLocation(v2.getLocation());
+            edge.setNormal(v2.getNormal());
+            return;
         }
 
         if (Math.abs(v1.getWeight() - v2.getWeight()) < min) {
-            return v1;
+            edge.setLocation(v1.getLocation());
+            edge.setNormal(v1.getNormal());
+            return;
         }
 
         alpha = (level - v2.getWeight()) / (v1.getWeight() - v2.getWeight());
@@ -358,14 +388,12 @@ public class MCRunner implements Runnable {
         normalY = alpha * v1.getNormal().getY() + (1 - alpha) * v2.getNormal().getY();
         normalZ = alpha * v1.getNormal().getZ() + (1 - alpha) * v2.getNormal().getZ();
 
-        edgeX = alpha * v1.getX() + (1 - alpha) * v2.getX();
-        edgeY = alpha * v1.getY() + (1 - alpha) * v2.getY();
-        edgeZ = alpha * v1.getZ() + (1 - alpha) * v2.getZ();
+        edgeX = alpha * v1.getLocation().getX() + (1 - alpha) * v2.getLocation().getX();
+        edgeY = alpha * v1.getLocation().getY() + (1 - alpha) * v2.getLocation().getY();
+        edgeZ = alpha * v1.getLocation().getZ() + (1 - alpha) * v2.getLocation().getZ();
 
-        edge = new Vertex(edgeX, edgeY, edgeZ);
-        edge.setNormal(new Vector3f(normalX, normalY, normalZ));
-
-        return edge;
+        edge.setLocation(edgeX, edgeY, edgeZ);
+        edge.setNormal(normalX, normalY, normalZ);
     }
 
     private void updateMesh(Cube cube, int cubeIndex) {
@@ -381,8 +409,16 @@ public class MCRunner implements Runnable {
             }
 
             for (int j = 0; j < 3; j++) {
-                edge = cube.getEdge(triangles[i + j]);
+
+                try {
+                    edge = cube.getEdge(triangles[i + j]).clone();
+                } catch (CloneNotSupportedException e) {
+                    e.printStackTrace();
+                    return;
+                }
+
                 index = points.get(edge);
+
                 if (index == null) {
                     points.put(edge, newIndex);
                     normals.add(edge.getNormal());

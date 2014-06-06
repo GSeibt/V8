@@ -5,26 +5,41 @@ public class Cube {
     private WeightedVertex[] vertexes;
     private Vertex[] edges;
 
-    public Cube(WeightedVertex... vertexes) {
+    public Cube() {
+        this.vertexes = new WeightedVertex[8];
+        this.edges = new Vertex[12];
 
-        if (vertexes == null || vertexes.length != 8) {
-            throw new IllegalArgumentException("You must supply exactly 8 vertexes that make up the Cube.");
+        for (int i = 0; i < vertexes.length; i++) {
+            vertexes[i] = new WeightedVertex(0f, 0f, 0f, 0f);
         }
 
-        this.vertexes = vertexes;
-        this.edges = new Vertex[12];
+        for (int i = 0; i < edges.length; i++) {
+            edges[i] = new Vertex(0f, 0f, 0f);
+        }
     }
 
     public WeightedVertex getVertex(int index) {
         return vertexes[index];
     }
 
-    public void setEdge(int index, Vertex edge) {
-        edges[index] = edge;
+    public void setVertex(int index, WeightedVertex vertex) {
+        vertexes[index].setLocation(vertex.getLocation());
+        vertexes[index].setNormal(vertex.getNormal());
+        vertexes[index].setWeight(vertex.getWeight());
     }
+
 
     public Vertex getEdge(int index) {
         return edges[index];
+    }
+
+    public void setEdge(int index, Vertex edge) {
+        edges[index].setLocation(edge.getLocation());
+        edges[index].setNormal(edge.getNormal());
+    }
+
+    public Float getWeight(int index) {
+        return vertexes[index].getWeight();
     }
 
     public int getIndex(float level) {
@@ -38,6 +53,4 @@ public class Cube {
 
         return index;
     }
-
-    public Float getWeight(int index) {return vertexes[index].getWeight();}
 }

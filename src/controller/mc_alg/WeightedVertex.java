@@ -1,8 +1,6 @@
 package controller.mc_alg;
 
-import gui.opengl.Vector3f;
-
-public class WeightedVertex extends Vertex {
+public class WeightedVertex extends Vertex implements Cloneable {
 
     private Float weight;
 
@@ -11,12 +9,19 @@ public class WeightedVertex extends Vertex {
         this.weight = weight;
     }
 
-    public WeightedVertex(Vector3f location, Float weight) {
-        super(location);
-        this.weight = weight;
-    }
-
     public Float getWeight() {
         return weight;
+    }
+
+    public void setWeight(Float weight) { this.weight = weight; }
+
+    @Override
+    public String toString() {
+        return String.format("location=%s, normal=%s, weight=%s", getLocation(), getNormal(), weight);
+    }
+
+    @Override
+    protected WeightedVertex clone() throws CloneNotSupportedException {
+        return (WeightedVertex) super.clone();
     }
 }
