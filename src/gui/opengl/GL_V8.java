@@ -69,80 +69,49 @@ public class GL_V8 {
 
     private void initGLLight() {
         glMatrixMode(GL_MODELVIEW);
+        glShadeModel(GL_SMOOTH);
 
         FloatBuffer matSpecular = BufferUtils.createFloatBuffer(4);
         matSpecular.put(new float[] {1, 1, 1, 1}).flip();
 
-        FloatBuffer whiteLight = BufferUtils.createFloatBuffer(4);
-        whiteLight.put(new float[] {1, 1, 1, 1}).flip();
-
-        FloatBuffer lModelAmbient = BufferUtils.createFloatBuffer(4);
-        lModelAmbient.put(new float[] {0.5f, 0.5f, 0.5f, 1.0f}).flip();
-
-        glShadeModel(GL_SMOOTH);
         glMaterial(GL_FRONT_AND_BACK, GL_SPECULAR, matSpecular);
 
+        FloatBuffer matEmission = BufferUtils.createFloatBuffer(4);
+        matEmission.put(new float[] {0, 0, 0, 1}).flip();
+
+        glMaterial(GL_FRONT_AND_BACK, GL_EMISSION, matEmission);
+
         FloatBuffer position = BufferUtils.createFloatBuffer(4);
-        position.put(new float[] {1, 1, 1, 0}).flip();
+        position.put(new float[] {1, 1, 0, 0}).flip();
+
+        glLight(GL_LIGHT0, GL_POSITION, position);
 
         FloatBuffer ambient = BufferUtils.createFloatBuffer(4);
         ambient.put(new float[] {0, 0, 0, 1}).flip();
 
+        glLight(GL_LIGHT0, GL_AMBIENT, ambient);
+
         FloatBuffer diffuse = BufferUtils.createFloatBuffer(4);
         diffuse.put(new float[] {1, 1, 1, 1}).flip();
+
+        glLight(GL_LIGHT0, GL_DIFFUSE, diffuse);
 
         FloatBuffer specular = BufferUtils.createFloatBuffer(4);
         specular.put(new float[] {1, 1, 1, 1}).flip();
 
-        glLight(GL_LIGHT0, GL_POSITION, position);
-        glLight(GL_LIGHT0, GL_AMBIENT, ambient);
-        glLight(GL_LIGHT0, GL_DIFFUSE, diffuse);
         glLight(GL_LIGHT0, GL_SPECULAR, specular);
 
-        glLightModel(GL_LIGHT_MODEL_AMBIENT, lModelAmbient);
+        FloatBuffer modelAmbient = BufferUtils.createFloatBuffer(4);
+        modelAmbient.put(new float[] {0.2f, 0.2f, 0.2f, 1.0f}).flip();
+
+        glLightModel(GL_LIGHT_MODEL_AMBIENT, modelAmbient);
 
         glEnable(GL_LIGHTING);
         glEnable(GL_LIGHT0);
 
         glEnable(GL_COLOR_MATERIAL);
-        glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     }
-
-//    private void initGLLight() {
-//        glEnable(GL_LIGHTING);
-//        glEnable(GL_LIGHT0);
-//        glEnable(GL_COLOR_MATERIAL);
-//        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-//
-//        IntBuffer position = BufferUtils.createIntBuffer(4);
-//        position.put(new int[] {1, 1, 1, 0}).flip();
-//
-//        IntBuffer ambient = BufferUtils.createIntBuffer(4);
-//        ambient.put(new int[] {0, 0, 0, 1}).flip();
-//
-//        IntBuffer diffuse = BufferUtils.createIntBuffer(4);
-//        diffuse.put(new int[] {1, 1, 1, 1}).flip();
-//
-//        IntBuffer specular = BufferUtils.createIntBuffer(4);
-//        specular.put(new int[] {1, 1, 1, 1}).flip();
-//
-//        glLight(GL_LIGHT0, GL_POSITION, position);
-//        glLight(GL_LIGHT0, GL_AMBIENT, ambient);
-//        glLight(GL_LIGHT0, GL_DIFFUSE, diffuse);
-//        glLight(GL_LIGHT0, GL_SPECULAR, specular);
-//
-////        FloatBuffer lModelAmbient = BufferUtils.createFloatBuffer(4);
-////        lModelAmbient.put(new float[] {0.5f, 0.5f, 0.5f, 1}).flip();
-//
-////        glLightModel(GL_LIGHT_MODEL_AMBIENT, lModelAmbient);
-//
-//        IntBuffer emission = BufferUtils.createIntBuffer(4);
-//        emission.put(new int[] {0, 0, 0, 1}).flip();
-//
-//       glMaterial(GL_FRONT, GL_SPECULAR, specular);
-////        glMaterialf(GL_FRONT, GL_SHININESS, 50f);
-//        glMaterial(GL_FRONT_AND_BACK, GL_EMISSION, emission);
-//    }
 
     private void initGLObjects() {
 
@@ -190,6 +159,38 @@ public class GL_V8 {
         cleanup();
     }
 
+    private void draw() {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glLoadIdentity();
+        camera.useView();
+
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glBindBufferARB(GL_ARRAY_BUFFER, vboId);
+        glVertexPointer(3, GL_FLOAT, 0, 0);
+
+        glEnableClientState(GL_NORMAL_ARRAY);
+        glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
+        glNormalPointer(GL_FLOAT, 0, 0);
+
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboiId);
+
+        glColor3f(1f, 0, 0);
+
+        if (wireframe) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        } else {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
+        glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_INT, 0);
+
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glDisableClientState(GL_NORMAL_ARRAY);
+
+        glBindBufferARB(GL_ARRAY_BUFFER, 0);
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
     private void useUpdate() {
         Mesh change = newBuffer.poll();
 
@@ -220,43 +221,6 @@ public class GL_V8 {
                 wireframe = !wireframe;
             }
         }
-    }
-
-    private void draw() {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glLoadIdentity();
-        camera.useView();
-
-//        glTranslatef(0, 0, -10);
-//        glColor3f(0.1f, 0.4f, 0.9f);
-//        Sphere s = new Sphere();
-//        s.draw(1f, 10, 10);
-
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glBindBufferARB(GL_ARRAY_BUFFER, vboId);
-        glVertexPointer(3, GL_FLOAT, 0, 0);
-
-        glEnableClientState(GL_NORMAL_ARRAY);
-        glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
-        glNormalPointer(GL_FLOAT, 0, 0);
-
-        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboiId);
-
-        glColor3f(0, 1f, 0);
-
-        if (wireframe) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        } else {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-
-        glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_INT, 0);
-
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_NORMAL_ARRAY);
-
-        glBindBufferARB(GL_ARRAY_BUFFER, 0);
-        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     private void cleanup() {
