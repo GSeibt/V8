@@ -21,12 +21,11 @@ import static org.lwjgl.util.glu.GLU.gluPerspective;
 public class GL_V8 {
 
     private final int DEFAULT_FOV = 70;
-
+    FloatBuffer position = (FloatBuffer) BufferUtils.createFloatBuffer(4).put(new float[] {1, 1, 0, 0}).flip();
     private SynchronousQueue<Mesh> newBuffer = new SynchronousQueue<>();
     private MCRunner mcRunner;
     private Camera camera;
     private boolean wireframe = false;
-
     private int vboId;  // Vertex Buffer Object ID (Points)
     private int vboiId; // Vertex Buffer Object ID (Indices)
     private int vbonId; // Vertex Buffer Object ID (Normals)
@@ -80,11 +79,6 @@ public class GL_V8 {
         matEmission.put(new float[] {0, 0, 0, 1}).flip();
 
         glMaterial(GL_FRONT_AND_BACK, GL_EMISSION, matEmission);
-
-        FloatBuffer position = BufferUtils.createFloatBuffer(4);
-        position.put(new float[] {1, 1, 0, 0}).flip();
-
-        glLight(GL_LIGHT0, GL_POSITION, position);
 
         FloatBuffer ambient = BufferUtils.createFloatBuffer(4);
         ambient.put(new float[] {0, 0, 0, 1}).flip();
@@ -163,6 +157,8 @@ public class GL_V8 {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glLoadIdentity();
         camera.useView();
+
+        glLight(GL_LIGHT0, GL_POSITION, position);
 
         glEnableClientState(GL_VERTEX_ARRAY);
         glBindBufferARB(GL_ARRAY_BUFFER, vboId);
