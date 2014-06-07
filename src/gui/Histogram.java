@@ -63,9 +63,9 @@ public class Histogram extends Stage {
                         ceil = Math.ceil(pixelValue);
 
                         if ((pixelValue - floor) < (ceil - pixelValue)) {
-                            values[((int) floor)]++;
+                            values[(int) floor]++;
                         } else {
-                            values[((int) ceil)]++;
+                            values[(int) ceil]++;
                         }
                     }
                 }

@@ -17,7 +17,6 @@ public class MCRunner implements Runnable {
 
     public enum Type {CUBE, SLICE, COMPLETE}
 
-    private final int SAVED_SLICES = 2;
     private final int POINTS_CAPACITY = 100000;
 
     private float level;
