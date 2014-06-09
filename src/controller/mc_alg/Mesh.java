@@ -9,10 +9,13 @@ public class Mesh {
     private FloatBuffer normals;
     private IntBuffer indices;
 
-    public Mesh(FloatBuffer vertexes, FloatBuffer normals, IntBuffer indices) {
+    private FloatBuffer normalLines;
+
+    public Mesh(FloatBuffer vertexes, FloatBuffer normals, IntBuffer indices, FloatBuffer normalLines) {
         this.vertexes = vertexes;
         this.normals = normals;
         this.indices = indices;
+        this.normalLines = normalLines;
     }
 
     public FloatBuffer getVertexes() {
@@ -25,5 +28,9 @@ public class Mesh {
 
     public IntBuffer getIndices() {
         return indices;
+    }
+
+    public FloatBuffer getNormalLines() {
+        return normalLines;
     }
 }

@@ -28,7 +28,6 @@ public class Cube {
         vertexes[index].setWeight(vertex.getWeight());
     }
 
-
     public Vertex getEdge(int index) {
         return edges[index];
     }
@@ -36,10 +35,6 @@ public class Cube {
     public void setEdge(int index, Vertex edge) {
         edges[index].setLocation(edge.getLocation());
         edges[index].setNormal(edge.getNormal());
-    }
-
-    public Float getWeight(int index) {
-        return vertexes[index].getWeight();
     }
 
     public int getIndex(float level) {
@@ -52,5 +47,9 @@ public class Cube {
         }
 
         return index;
+    }
+
+    public Float getWeight(int index) {
+        return vertexes[index].getWeight();
     }
 }

@@ -2,6 +2,7 @@ package controller.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -90,21 +91,44 @@ public class MCRunner implements Runnable {
     private void outputMesh() {
         FloatBuffer points = BufferUtils.createFloatBuffer(this.points.size() * 3);
         FloatBuffer normals = BufferUtils.createFloatBuffer(this.normals.size() * 3);
+        FloatBuffer normalLines = BufferUtils.createFloatBuffer(this.normals.size() * 6);
         IntBuffer indices = BufferUtils.createIntBuffer(this.indices.size());
 
-        this.points.forEach((p, i) -> {
-            points.put(p.getLocation().getX());
-            points.put(p.getLocation().getY());
-            points.put(p.getLocation().getZ());
-        });
-        this.normals.forEach(v -> normals.put(v.getX()).put(v.getY()).put(v.getZ()));
+        Iterator<Map.Entry<Vertex, Integer>> pointsIt = this.points.entrySet().iterator();
+        Iterator<Vector3f> normalsIt = this.normals.iterator();
+
+        Vertex point;
+        Vector3f normal;
+        Vector3f normalLinePoint;
+        while (pointsIt.hasNext() && normalsIt.hasNext()) {
+            point = pointsIt.next().getKey();
+            normal = normalsIt.next();
+            normalLinePoint = point.getLocation().add(normal);
+
+            points.put(point.getLocation().getX());
+            points.put(point.getLocation().getY());
+            points.put(point.getLocation().getZ());
+
+            normals.put(normal.getX());
+            normals.put(normal.getY());
+            normals.put(normal.getZ());
+
+            normalLines.put(point.getLocation().getX());
+            normalLines.put(point.getLocation().getY());
+            normalLines.put(point.getLocation().getZ());
+            normalLines.put(normalLinePoint.getX());
+            normalLines.put(normalLinePoint.getY());
+            normalLines.put(normalLinePoint.getZ());
+        }
         this.indices.forEach(indices::put);
+
         points.flip();
         normals.flip();
         indices.flip();
+        normalLines.flip();
 
         System.out.println("Pushing " + indices.limit() / 3 + " triangles.");
-        meshConsumer.accept(new Mesh(points, normals, indices));
+        meshConsumer.accept(new Mesh(points, normals, indices, normalLines));
         stop = true;
 
         if (type == COMPLETE) {
@@ -239,9 +263,9 @@ public class MCRunner implements Runnable {
     }
 
     private void computeGradient(int x, int y, int z, WeightedVertex v) {
-        float gX = weight(x + 1, y, z) - weight(x - 1, y, z);
-        float gY = weight(x, y + 1, z) - weight(x, y - 1, z);
-        float gZ = weight(x, y, z + 1) - weight(x, y, z - 1);
+        float gX = weight(x - 1, y, z) - weight(x + 1, y, z);
+        float gY = weight(x, y - 1, z) - weight(x, y + 1, z);
+        float gZ = weight(x, y, z - 1) - weight(x, y, z + 1);
 
         v.setNormal(gX, gY, gZ);
     }
@@ -360,7 +384,7 @@ public class MCRunner implements Runnable {
     private static void interpolate(WeightedVertex v1, WeightedVertex v2, Vertex edge, float level) {
         float edgeX, edgeY, edgeZ;
         float normalX, normalY, normalZ;
-        double min = Math.pow(10, -4);
+        double min = Math.pow(10, -6);
         float alpha;
 
         if (Math.abs(level - v1.getWeight()) < min) {
@@ -420,7 +444,7 @@ public class MCRunner implements Runnable {
 
                 if (index == null) {
                     points.put(edge, newIndex);
-                    normals.add(edge.getNormal());
+                    normals.add(edge.getNormal().normalized());
                     indices.add(newIndex);
                     newIndex++;
                 } else {

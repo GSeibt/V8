@@ -21,15 +21,17 @@ import static org.lwjgl.util.glu.GLU.gluPerspective;
 public class GL_V8 {
 
     private final int DEFAULT_FOV = 70;
-    FloatBuffer position = (FloatBuffer) BufferUtils.createFloatBuffer(4).put(new float[] {1, 1, 0, 0}).flip();
-    private SynchronousQueue<Mesh> newBuffer = new SynchronousQueue<>();
+    private FloatBuffer lightPosition;
+    private SynchronousQueue<Mesh> newBuffer;
     private MCRunner mcRunner;
     private Camera camera;
-    private boolean wireframe = false;
-    private int vboId;  // Vertex Buffer Object ID (Points)
-    private int vboiId; // Vertex Buffer Object ID (Indices)
-    private int vbonId; // Vertex Buffer Object ID (Normals)
+    private int vboId;   // Vertex Buffer Object ID (Points)
+    private int vboiId;  // Vertex Buffer Object ID (Indices)
+    private int vbonId;  // Vertex Buffer Object ID (Normals)
+    private int vbonlId; // Vertex Buffer Object ID (Normal Lines)
     private int indicesCount;
+    private boolean showNormalLines;
+    private int normalLinesCount;
 
     public GL_V8(float[][][] data, float level) {
         try {
@@ -45,17 +47,20 @@ public class GL_V8 {
 
         this.camera = new Camera();
         this.mcRunner = new MCRunner(data, level, MCRunner.Type.SLICE, this::receiveUpdate);
+        this.lightPosition = (FloatBuffer) BufferUtils.createFloatBuffer(4).put(new float[] {1, 1, 0, 1}).flip();
+        this.newBuffer = new SynchronousQueue<>();
+        this.showNormalLines = false;
     }
 
     private void initGL() {
         glMatrixMode(GL_MODELVIEW);
 
-        glClearColor(0, 0, 0, 1);
+        glClearColor(0.5f, 0.5f, 0.5f, 1);
         glClearDepth(1);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
 
-        glMatrixMode(GL_PROJECTION); // sets the matrix mode to project
+        glMatrixMode(GL_PROJECTION);
 
         float aspectRatio = Display.getWidth() / (float) Display.getHeight();
         float nearClip = 0.1f;
@@ -80,6 +85,8 @@ public class GL_V8 {
 
         glMaterial(GL_FRONT_AND_BACK, GL_EMISSION, matEmission);
 
+        glMaterialf(GL_FRONT, GL_SHININESS, 20f);
+
         FloatBuffer ambient = BufferUtils.createFloatBuffer(4);
         ambient.put(new float[] {0, 0, 0, 1}).flip();
 
@@ -100,8 +107,8 @@ public class GL_V8 {
 
         glLightModel(GL_LIGHT_MODEL_AMBIENT, modelAmbient);
 
-        glEnable(GL_LIGHTING);
         glEnable(GL_LIGHT0);
+        glEnable(GL_LIGHTING);
 
         glEnable(GL_COLOR_MATERIAL);
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
@@ -121,12 +128,16 @@ public class GL_V8 {
         vboiId = glGenBuffersARB();
         glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboId);
 
+        // create a new Vertex Buffer Object for the normal lines
+        vbonlId = glGenBuffersARB();
+        glBindBufferARB(GL_ARRAY_BUFFER, vbonlId);
+
         glBindBufferARB(GL_ARRAY_BUFFER, 0);
         glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     private void initDisplay() throws LWJGLException {
-        Display.setDisplayMode(new DisplayMode(800, 600));
+        Display.setDisplayMode(new DisplayMode(1024, 786));
         Display.setTitle("V8");
         Display.create();
     }
@@ -158,7 +169,7 @@ public class GL_V8 {
         glLoadIdentity();
         camera.useView();
 
-        glLight(GL_LIGHT0, GL_POSITION, position);
+        glLight(GL_LIGHT0, GL_POSITION, lightPosition);
 
         glEnableClientState(GL_VERTEX_ARRAY);
         glBindBufferARB(GL_ARRAY_BUFFER, vboId);
@@ -171,14 +182,27 @@ public class GL_V8 {
         glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboiId);
 
         glColor3f(1f, 0, 0);
-
-        if (wireframe) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        } else {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-
         glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_INT, 0);
+
+        if (showNormalLines) {
+            boolean lighting = glIsEnabled(GL_LIGHTING);
+
+            glDisable(GL_LIGHTING);
+
+            glEnableClientState(GL_VERTEX_ARRAY);
+            glBindBufferARB(GL_ARRAY_BUFFER, vbonlId);
+            glVertexPointer(3, GL_FLOAT, 0, 0);
+
+            glEnableClientState(GL_NORMAL_ARRAY);
+            glBindBufferARB(GL_ARRAY_BUFFER, 0);
+
+            glColor3f(0, 0, 1f);
+            glDrawArrays(GL_LINES, 0, normalLinesCount);
+
+            if (lighting) {
+                glEnable(GL_LIGHTING);
+            }
+        }
 
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
@@ -192,6 +216,7 @@ public class GL_V8 {
 
         if (change != null) {
             indicesCount = change.getIndices().limit();
+            normalLinesCount = change.getNormalLines().limit() / 2;
 
             glBindBufferARB(GL_ARRAY_BUFFER, vboId);
             glBufferDataARB(GL_ARRAY_BUFFER, change.getVertexes(), GL_STATIC_DRAW_ARB);
@@ -201,6 +226,9 @@ public class GL_V8 {
 
             glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboiId);
             glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, change.getIndices(), GL_STATIC_DRAW_ARB);
+
+            glBindBufferARB(GL_ARRAY_BUFFER, vbonlId);
+            glBufferDataARB(GL_ARRAY_BUFFER, change.getNormalLines(), GL_STATIC_DRAW_ARB);
 
             glBindBufferARB(GL_ARRAY_BUFFER, 0);
             glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -213,8 +241,32 @@ public class GL_V8 {
         camera.input();
 
         while (Keyboard.next()) {
-            if (Keyboard.getEventKeyState() && (Keyboard.getEventKey() == Keyboard.KEY_G)) {
-                wireframe = !wireframe;
+            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_G) {
+                if (glGetInteger(GL_POLYGON_MODE) == GL_LINE) {
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                } else {
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                }
+            }
+
+            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_L) {
+                if (glIsEnabled(GL_LIGHTING)) {
+                    glDisable(GL_LIGHTING);
+                } else {
+                    glEnable(GL_LIGHTING);
+                }
+            }
+
+            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_C) {
+                if (glIsEnabled(GL_CULL_FACE)) {
+                    glDisable(GL_CULL_FACE);
+                } else {
+                    glEnable(GL_CULL_FACE);
+                }
+            }
+
+            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_N) {
+                showNormalLines = !showNormalLines;
             }
         }
     }
