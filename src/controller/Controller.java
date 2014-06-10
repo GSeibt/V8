@@ -25,6 +25,9 @@ import javafx.scene.layout.Pane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
+/**
+ * JavaFX controller class for fxml/V8.fxml.
+ */
 public class Controller {
 
     @FXML
@@ -44,6 +47,9 @@ public class Controller {
     private ObservableList<File> directories;
     private Stage stage;
 
+    /**
+     * Called by the FXMLLoader, initializes the <code>Controller</code>.
+     */
     @FXML
     private void initialize() {
         dirCache = new HashMap<>();
@@ -69,15 +75,14 @@ public class Controller {
             imageView.setImage(newValue.getImage());
         });
 
-        setupImageView();
-    }
-
-    private void setupImageView() {
         imageView.setPreserveRatio(false);
         imageView.fitHeightProperty().bind(imagePane.heightProperty());
         imageView.fitWidthProperty().bind(imagePane.widthProperty());
     }
 
+    /**
+     * ActionListener for the 'Add Directory' menu item.
+     */
     @FXML
     private void addDirectoryClicked() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
@@ -101,12 +106,11 @@ public class Controller {
         directories.add(dir);
     }
 
-    public void setStage(Stage stage) {
-        this.stage = stage;
-    }
-
+    /**
+     * ActionListener for the button that starts the marching cubes run.
+     */
     @FXML
-    private void cubesClicked() {
+    private void mcStartClicked() {
         List<DCMImage> images = filesList.getItems();
 
         if (images.isEmpty()) {
@@ -148,6 +152,18 @@ public class Controller {
         new Thread(rasterLoader).start();
     }
 
+    /**
+     * Sets the <code>Stage</code> this <code>Controller</code> will use to display modal dialogs and such.
+     *
+     * @param stage the <code>Stage</code> for the <code>Controller</code>
+     */
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
+    /**
+     * ActionListener for the 'Histogram' button.
+     */
     @FXML
     private void histogramClicked() {
         new Histogram(filesList.getFocusModel().getFocusedItem()).show();
