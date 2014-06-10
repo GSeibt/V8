@@ -3,6 +3,9 @@ package controller.mc_alg;
 /**
  * A <code>Cube</code> used in the marching cubes algorithm. The class maintains its own set of vertices and edge
  * vectors, setter methods copy the given values.
+ *
+ * //TODO add image explaining indexing sheme
+ * //TODO add explanation of cube index generation
  */
 public class Cube {
 
