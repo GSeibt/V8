@@ -115,7 +115,7 @@ public class Cube {
         int index = 0;
 
         for (int i = 0; i < 8; i++) {
-            if (getWeight(i) < level) {
+            if (getWeight(i) <= level) {
                 index |= (int) Math.pow(2, i);
             }
         }
