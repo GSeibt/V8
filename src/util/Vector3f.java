@@ -42,7 +42,7 @@ public class Vector3f implements Cloneable {
      * @return the length
      */
     public float length() {
-        return (float) Math.sqrt(x * x + y * y + z * z);
+        return (float) Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
     }
 
     /**
@@ -107,36 +107,6 @@ public class Vector3f implements Cloneable {
         return new Vector3f(x + r.getX(), y + r.getY(), z + r.getZ());
     }
 
-    public float getX() {
-        return x;
-    }
-
-    public void setX(float x) {
-        this.x = x;
-    }
-
-    public float getY() {
-        return y;
-    }
-
-    public void setY(float y) {
-        this.y = y;
-    }
-
-    public float getZ() {
-        return z;
-    }
-
-    public void setZ(float z) {
-        this.z = z;
-    }
-
-    public void setXYZ(float x, float y, float z) {
-        setX(x);
-        setY(y);
-        setZ(z);
-    }
-
     /**
      * Returns a new <code>Vector</code> representing the product of <code>this</code> <code>Vector</code> and the
      * given scalar.
@@ -164,77 +134,79 @@ public class Vector3f implements Cloneable {
     }
 
     /**
-     * Returns a new <code>Vector</code> representing the difference of <code>this</code> <code>Vector</code> and the
-     * given one.
-     *
-     * @param r
-     *         the other <code>Vector</code>
-     *
-     * @return the difference of the two vectors
-     */
-    public Vector3f sub(Vector3f r) {
-        return new Vector3f(x - r.getX(), y - r.getY(), z - r.getZ());
-    }
-
-    /**
-     * Returns a new <code>Vector</code> representing the difference of <code>this</code> <code>Vector</code> and the
-     * given scalar.
-     *
-     * @param scalar
-     *         the scalar
-     *
-     * @return the difference of the <code>Vector</code> and the scalar
-     */
-    public Vector3f sub(float scalar) {
-        return new Vector3f(x - scalar, y - scalar, z - scalar);
-    }
-
-    /**
-     * Returns a new <code>Vector</code> representing the product of <code>this</code> <code>Vector</code> and the
-     * given one.
-     *
-     * @param r
-     *         the other <code>Vector</code>
-     *
-     * @return the product of the two vectors
-     */
-    public Vector3f mul(Vector3f r) {
-        return new Vector3f(x * r.getX(), y * r.getY(), z * r.getZ());
-    }
-
-    /**
-     * Returns a new <code>Vector</code> representing the quotient of <code>this</code> <code>Vector</code> and the
-     * given one.
-     *
-     * @param r
-     *         the other <code>Vector</code>
-     *
-     * @return the quotient of the two vectors
-     */
-    public Vector3f div(Vector3f r) {
-        return new Vector3f(x / r.getX(), y / r.getY(), z / r.getZ());
-    }
-
-    /**
-     * Returns a new <code>Vector</code> representing the quotient of <code>this</code> <code>Vector</code> and the
-     * given scalar.
-     *
-     * @param scalar
-     *         the scalar
-     *
-     * @return the quotient of the <code>Vector</code> and the scalar
-     */
-    public Vector3f div(float scalar) {
-        return new Vector3f(x / scalar, y / scalar, z / scalar);
-    }
-
-    /**
      * Returns a new <code>Vector</code> representing the absolute value of this <code>Vector</code>.
      *
      * @return the absolute <code>Vector</code>
      */
     public Vector3f abs() {
         return new Vector3f(Math.abs(x), Math.abs(y), Math.abs(z));
+    }
+
+    /**
+     * Gets the x coordinate of the vector.
+     *
+     * @return the x coordinate
+     */
+    public float getX() {
+        return x;
+    }
+
+    /**
+     * Sets the x coordinate of the vector.
+     *
+     * @param x the new x coordinate
+     */
+    public void setX(float x) {
+        this.x = x;
+    }
+
+    /**
+     * Gets the y coordinate of the vector.
+     *
+     * @return the y coordinate
+     */
+    public float getY() {
+        return y;
+    }
+
+    /**
+     * Sets the y coordinate of the vector.
+     *
+     * @param y the new y coordinate
+     */
+    public void setY(float y) {
+        this.y = y;
+    }
+
+    /**
+     * Gets the z coordinate of the vector.
+     *
+     * @return the z coordinate
+     */
+    public float getZ() {
+        return z;
+    }
+
+    /**
+     * Sets the z coordinate of the vector.
+     *
+     * @param z the new z coordinate
+     */
+    public void setZ(float z) {
+        this.z = z;
+    }
+
+    /**
+     * Sets the x, y, and z coordinates of the vector.
+     *
+     * @param x the new x coordinate
+     * @param y the new y coordinate
+     * @param z the new z coordinate
+     */
+    public void setXYZ(float x, float y, float z) {
+        setX(x);
+        setY(y);
+        setZ(z);
     }
 
     @Override
