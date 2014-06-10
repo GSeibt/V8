@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import gui.opengl.Vector3f;
 import org.lwjgl.BufferUtils;
+import util.Vector3f;
 
 import static controller.mc_alg.MCRunner.Type.*;
 

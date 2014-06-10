@@ -1,4 +1,4 @@
-package gui.opengl;
+package util;
 
 /**
  * A vector in 3D space.

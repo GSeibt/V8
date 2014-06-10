@@ -2,6 +2,7 @@ package gui.opengl;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+import util.Vector3f;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.util.glu.GLU.gluLookAt;

@@ -1,6 +1,6 @@
 package controller.mc_alg;
 
-import gui.opengl.Vector3f;
+import util.Vector3f;
 
 public class Vertex implements Cloneable {
 
