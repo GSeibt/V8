@@ -1,7 +1,14 @@
 package gui.opengl;
 
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
+import java.util.Scanner;
 import java.util.concurrent.SynchronousQueue;
+import javax.imageio.ImageIO;
 
 import controller.mc_alg.MCRunner;
 import controller.mc_alg.Mesh;
@@ -47,7 +54,6 @@ public class GL_V8 {
 
         this.camera = new Camera();
         this.mcRunner = new MCRunner(data, level, MCRunner.Type.SLICE, this::receiveUpdate);
-        this.lightPosition = (FloatBuffer) BufferUtils.createFloatBuffer(4).put(new float[] {1, 1, 0, 1}).flip();
         this.newBuffer = new SynchronousQueue<>();
         this.showNormalLines = false;
     }
@@ -74,6 +80,8 @@ public class GL_V8 {
     private void initGLLight() {
         glMatrixMode(GL_MODELVIEW);
         glShadeModel(GL_SMOOTH);
+
+        lightPosition = (FloatBuffer) BufferUtils.createFloatBuffer(4).put(new float[] {1, 1, 0, 1}).flip();
 
         FloatBuffer matSpecular = BufferUtils.createFloatBuffer(4);
         matSpecular.put(new float[] {1, 1, 1, 1}).flip();
@@ -268,7 +276,61 @@ public class GL_V8 {
             if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_N) {
                 showNormalLines = !showNormalLines;
             }
+
+            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_INSERT) {
+                screenshot();
+            }
         }
+    }
+
+    private void screenshot() {
+        int width = Display.getWidth();
+        int height= Display.getHeight();
+        int bpp = 4; // this assumes a 32-bit display with a byte each for red, green, blue, and alpha.
+        ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * bpp);
+
+        glReadBuffer(GL_FRONT);
+        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+
+        File scDir = new File("./screenshots");
+
+        if (scDir.exists() && !scDir.isDirectory()) {
+            System.err.println("Screenshot directory could not be created.");
+            return;
+        } else if (!scDir.exists()) {
+            if (!scDir.mkdir()) {
+                System.err.println("Screenshot directory could not be created.");
+                return;
+            }
+        }
+
+        File[] scFiles = scDir.listFiles((ignored, name) -> name.matches("SC_[0-9]+\\.(bmp|jpg)"));
+        int nextIndex = Arrays.stream(scFiles)
+                              .map(f -> Integer.parseInt(new Scanner(f.getName()).findInLine("[0-9]+")))
+                              .max(Integer::compare)
+                              .orElse(0);
+        String format = "BMP";
+        File screenshot = new File(scDir, "SC_" + (nextIndex + 1) + "." + format.toLowerCase());
+
+        new Thread(() -> {
+            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    int i = (x + (width * y)) * bpp;
+                    int r = buffer.get(i) & 0xFF;
+                    int g = buffer.get(i + 1) & 0xFF;
+                    int b = buffer.get(i + 2) & 0xFF;
+                    image.setRGB(x, height - (y + 1), (0xFF << 24) | (r << 16) | (g << 8) | b);
+                }
+            }
+
+            try {
+                ImageIO.write(image, format, screenshot);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     private void cleanup() {
@@ -282,6 +344,7 @@ public class GL_V8 {
         glDeleteBuffersARB(vboId);
         glDeleteBuffersARB(vboiId);
         glDeleteBuffersARB(vbonId);
+        glDeleteBuffersARB(vbonlId);
     }
 
     private void receiveUpdate(Mesh mesh) {
