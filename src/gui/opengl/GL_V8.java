@@ -23,7 +23,6 @@ import static org.lwjgl.opengl.ARBBufferObject.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
-import static org.lwjgl.util.glu.GLU.gluPerspective;
 
 public class GL_V8 {
 
@@ -52,7 +51,11 @@ public class GL_V8 {
             System.exit(0);
         }
 
-        this.camera = new Camera();
+        float aspectRatio = Display.getWidth() / (float) Display.getHeight();
+        float nearClip = 0.1f;
+        float farClip = 10000;
+
+        this.camera = new Camera(DEFAULT_FOV, aspectRatio, nearClip, farClip);
         this.mcRunner = new MCRunner(data, level, MCRunner.Type.SLICE, this::receiveUpdate);
         this.newBuffer = new SynchronousQueue<>();
         this.showNormalLines = false;
@@ -60,18 +63,10 @@ public class GL_V8 {
 
     private void initGL() {
         glMatrixMode(GL_MODELVIEW);
-
         glClearColor(0.5f, 0.5f, 0.5f, 1);
         glClearDepth(1);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
-
-        glMatrixMode(GL_PROJECTION);
-
-        float aspectRatio = Display.getWidth() / (float) Display.getHeight();
-        float nearClip = 0.1f;
-        float farClip = 10000;
-        gluPerspective(DEFAULT_FOV, aspectRatio, nearClip, farClip);
 
         glMatrixMode(GL_MODELVIEW);
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);

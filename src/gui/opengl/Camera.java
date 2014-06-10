@@ -3,12 +3,19 @@ package gui.opengl;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
+import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.util.glu.GLU.gluLookAt;
+import static org.lwjgl.util.glu.GLU.gluPerspective;
 
 /**
  * A <code>Camera</code> for an OpenGL scene.
  */
 public class Camera {
+
+    private final int fov;
+    private final float aspectRatio;
+    private final float nearClip;
+    private final float farClip;
 
     // position
     private Vector3f position;
@@ -20,11 +27,38 @@ public class Camera {
     /**
      * Constructs a new <code>Camera</code> using the given parameters.
      * The <code>Camera</code> will be placed at (0,0,0) looking along the negative z-axis.
+     * OpenGL calls to initialise the projection matrix will be made.
+     *
+     * @param fov
+     *         the field of view in degrees
+     * @param aspectRatio
+     *         the aspect ratio
+     * @param nearClip
+     *         the near clipping plane
+     * @param farClip
+     *         the far clipping plane
      */
-    public Camera() {
+    public Camera(int fov, float aspectRatio, float nearClip, float farClip) {
+        this.fov = fov;
+        this.aspectRatio = aspectRatio;
+        this.nearClip = nearClip;
+        this.farClip = farClip;
         this.position = new Vector3f(0, 0, 0);
         this.forward = new Vector3f(0, 0, -1);
         this.upward = new Vector3f(0, 1, 0);
+
+        initGL();
+    }
+
+    /**
+     * Initialises the OpenGL projection matrix.
+     */
+    private void initGL() {
+        int prevMode = glGetInteger(GL_MATRIX_MODE);
+
+        glMatrixMode(GL_PROJECTION);
+        gluPerspective(fov, aspectRatio, nearClip, farClip);
+        glMatrixMode(prevMode);
     }
 
     /**
@@ -72,16 +106,16 @@ public class Camera {
         }
 
         if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-            pitch(0.1f);
-        }
-        if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
             pitch(-0.1f);
         }
+        if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
+            pitch(0.1f);
+        }
         if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-            yaw(-0.1f);
+            yaw(0.1f);
         }
         if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-            yaw(0.1f);
+            yaw(-0.1f);
         }
         if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
             roll(-0.1f);
