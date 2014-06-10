@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import org.lwjgl.BufferUtils;
@@ -20,13 +21,15 @@ public class MCRunner implements Runnable {
 
     private final int POINTS_CAPACITY = 100000;
 
-    private float level;
     private float[][][] data;
+    private float level;
+    private int gridSize;
+    private Type type;
+    private Consumer<Mesh> meshConsumer;
+
     private volatile boolean stop;
     private volatile boolean interrupted;
     private int numLastTriangles = 0;
-    private Type type;
-    private Consumer<Mesh> meshConsumer;
 
     private Cube[][] upperSlice;
     private Cube[][] lowerSlice;
@@ -35,13 +38,28 @@ public class MCRunner implements Runnable {
     private List<Integer> indices;
     private List<Vector3f> normals;
 
-    public MCRunner(float[][][] data, float level, Type type, Consumer<Mesh> meshConsumer) {
-        this.level = level;
+    public MCRunner(float[][][] data, float level, int gridSize, Type type, Consumer<Mesh> meshConsumer) {
+        Objects.requireNonNull(data, "data must not be null!");
+
+        if (!(level >= 0)) {
+            throw new IllegalArgumentException("level must be greater or equal to 0!");
+        }
+
+        if (!(gridSize >= 1)) {
+            throw new IllegalArgumentException("gridSize must be greater or equal to 1!");
+        }
+
+        Objects.requireNonNull(type, "type must not be null!");
+        Objects.requireNonNull(meshConsumer, "meshConsumer must not be null!");
+
         this.data = data;
-        this.stop = false;
-        this.interrupted = false;
+        this.level = level;
+        this.gridSize = gridSize;
         this.type = type;
         this.meshConsumer = meshConsumer;
+
+        this.stop = false;
+        this.interrupted = false;
 
         this.points = new LinkedHashMap<>(POINTS_CAPACITY);
         this.indices = new LinkedList<>();
@@ -54,16 +72,16 @@ public class MCRunner implements Runnable {
         Cube[][] currentSlice;
         Cube cube;
 
-        for (int z = 0; z < data.length - 1 && !interrupted; z++) {
+        for (int z = 0; z < data.length - 1 && !interrupted; z += gridSize) {
 
             currentSlice = updateSlices();
 
-            for (int y = 0; y < data[z].length - 1; y++) {
+            for (int y = 0; y < data[z].length - 1; y += gridSize) {
 
-                for (int x = 0; x < data[z][y].length - 1; x++) {
+                for (int x = 0; x < data[z][y].length - 1; x += gridSize) {
 
                     computeVertexes(x, y, z, currentSlice);
-                    cube = currentSlice[y][x];
+                    cube = currentSlice[y / gridSize][x / gridSize];
                     cubeIndex = cube.getIndex(level);
 
                     if ((cubeIndex != 0) && (cubeIndex != 255)) {
@@ -159,7 +177,10 @@ public class MCRunner implements Runnable {
         Cube[][] currentSlice;
 
         if (lowerSlice == null) {
-            lowerSlice = new Cube[data[0].length - 1][data[0][0].length - 1];
+            int yDim = (int) Math.ceil(data[0].length / (float) gridSize);
+            int xDim = (int) Math.ceil(data[0][0].length / (float) gridSize);
+
+            lowerSlice = new Cube[yDim][xDim];
 
             for (Cube[] cubes : lowerSlice) {
                 for (int i = 0; i < cubes.length; i++) {
@@ -169,7 +190,10 @@ public class MCRunner implements Runnable {
 
             currentSlice = lowerSlice;
         } else if (upperSlice == null) {
-            upperSlice = new Cube[data[0].length - 1][data[0][0].length - 1];
+            int yDim = (int) Math.ceil(data[0].length / (float) gridSize);
+            int xDim = (int) Math.ceil(data[0][0].length / (float) gridSize);
+
+            upperSlice = new Cube[yDim][xDim];
 
             for (Cube[] cubes : upperSlice) {
                 for (int i = 0; i < cubes.length; i++) {
@@ -189,14 +213,17 @@ public class MCRunner implements Runnable {
 
     private void computeVertexes(int x, int y, int z, Cube[][] currentSlice) {
         WeightedVertex v;
-        Cube cube = currentSlice[y][x];
+        int cubeX = x / gridSize;
+        int cubeY = y / gridSize;
+
+        Cube cube = currentSlice[cubeY][cubeX];
 
         if (x != 0) {
-            cube.setVertex(0, currentSlice[y][x - 1].getVertex(1));
+            cube.setVertex(0, currentSlice[cubeY][cubeX - 1].getVertex(1));
         } else if (y != 0) {
-            cube.setVertex(0, currentSlice[y - 1][x].getVertex(3));
+            cube.setVertex(0, currentSlice[cubeY - 1][cubeX].getVertex(3));
         } else if (z != 0) {
-            cube.setVertex(0, lowerSlice[y][x].getVertex(4));
+            cube.setVertex(0, lowerSlice[cubeY][cubeX].getVertex(4));
         } else {
             v = cube.getVertex(0);
             v.setLocation(x, y, z);
@@ -205,75 +232,75 @@ public class MCRunner implements Runnable {
         }
 
         if (y != 0) {
-            cube.setVertex(1, currentSlice[y - 1][x].getVertex(2));
+            cube.setVertex(1, currentSlice[cubeY - 1][cubeX].getVertex(2));
         } else if (z != 0) {
-            cube.setVertex(1, lowerSlice[y][x].getVertex(5));
+            cube.setVertex(1, lowerSlice[cubeY][cubeX].getVertex(5));
         } else {
             v = cube.getVertex(1);
-            v.setLocation(x + 1, y, z);
-            v.setWeight(weight(x + 1, y, z));
-            computeGradient(x + 1, y, z, v);
+            v.setLocation(x + gridSize, y, z);
+            v.setWeight(weight(x + gridSize, y, z));
+            computeGradient(x + gridSize, y, z, v);
         }
 
         if (z != 0) {
-            cube.setVertex(2, lowerSlice[y][x].getVertex(6));
+            cube.setVertex(2, lowerSlice[cubeY][cubeX].getVertex(6));
         } else {
             v = cube.getVertex(2);
-            v.setLocation(x + 1, y + 1, z);
-            v.setWeight(weight(x + 1, y + 1, z));
-            computeGradient(x + 1, y + 1, z, v);
+            v.setLocation(x + gridSize, y + gridSize, z);
+            v.setWeight(weight(x + gridSize, y + gridSize, z));
+            computeGradient(x + gridSize, y + gridSize, z, v);
         }
 
         if (x != 0) {
-            cube.setVertex(3, currentSlice[y][x - 1].getVertex(2));
+            cube.setVertex(3, currentSlice[cubeY][cubeX - 1].getVertex(2));
         } else if (z != 0) {
-            cube.setVertex(3, lowerSlice[y][x].getVertex(7));
+            cube.setVertex(3, lowerSlice[cubeY][cubeX].getVertex(7));
         } else {
             v = cube.getVertex(3);
-            v.setLocation(x, y + 1, z);
-            v.setWeight(weight(x, y + 1, z));
-            computeGradient(x, y + 1, z, v);
+            v.setLocation(x, y + gridSize, z);
+            v.setWeight(weight(x, y + gridSize, z));
+            computeGradient(x, y + gridSize, z, v);
         }
 
         if (x != 0) {
-            cube.setVertex(4, currentSlice[y][x - 1].getVertex(5));
+            cube.setVertex(4, currentSlice[cubeY][cubeX - 1].getVertex(5));
         } else if (y != 0) {
-            cube.setVertex(4, currentSlice[y - 1][x].getVertex(7));
+            cube.setVertex(4, currentSlice[cubeY - 1][cubeX].getVertex(7));
         } else {
             v = cube.getVertex(4);
-            v.setLocation(x, y, z + 1);
-            v.setWeight(weight(x, y, z + 1));
-            computeGradient(x, y, z + 1, v);
+            v.setLocation(x, y, z + gridSize);
+            v.setWeight(weight(x, y, z + gridSize));
+            computeGradient(x, y, z + gridSize, v);
         }
 
         if (y != 0) {
-            cube.setVertex(5, currentSlice[y - 1][x].getVertex(6));
+            cube.setVertex(5, currentSlice[cubeY - 1][cubeX].getVertex(6));
         } else {
             v = cube.getVertex(5);
-            v.setLocation(x + 1, y, z + 1);
-            v.setWeight(weight(x + 1, y, z + 1));
-            computeGradient(x + 1, y, z + 1, v);
+            v.setLocation(x + gridSize, y, z + gridSize);
+            v.setWeight(weight(x + gridSize, y, z + gridSize));
+            computeGradient(x + gridSize, y, z + gridSize, v);
         }
 
         v = cube.getVertex(6);
-        v.setLocation(x + 1, y + 1, z + 1);
-        v.setWeight(weight(x + 1, y + 1, z + 1));
-        computeGradient(x + 1, y + 1, z + 1, v);
+        v.setLocation(x + gridSize, y + gridSize, z + gridSize);
+        v.setWeight(weight(x + gridSize, y + gridSize, z + gridSize));
+        computeGradient(x + gridSize, y + gridSize, z + gridSize, v);
 
         if (x != 0) {
-            cube.setVertex(7, currentSlice[y][x - 1].getVertex(6));
+            cube.setVertex(7, currentSlice[cubeY][cubeX - 1].getVertex(6));
         } else {
             v = cube.getVertex(7);
-            v.setLocation(x, y + 1, z + 1);
-            v.setWeight(weight(x, y + 1, z + 1));
-            computeGradient(x, y + 1, z + 1, v);
+            v.setLocation(x, y + gridSize, z + gridSize);
+            v.setWeight(weight(x, y + gridSize, z + gridSize));
+            computeGradient(x, y + gridSize, z + gridSize, v);
         }
     }
 
     private void computeGradient(int x, int y, int z, WeightedVertex v) {
-        float gX = weight(x - 1, y, z) - weight(x + 1, y, z);
-        float gY = weight(x, y - 1, z) - weight(x, y + 1, z);
-        float gZ = weight(x, y, z - 1) - weight(x, y, z + 1);
+        float gX = weight(x - gridSize, y, z) - weight(x + gridSize, y, z);
+        float gY = weight(x, y - gridSize, z) - weight(x, y + gridSize, z);
+        float gZ = weight(x, y, z - gridSize) - weight(x, y, z + gridSize);
 
         v.setNormal(gX, gY, gZ);
     }
@@ -297,12 +324,14 @@ public class MCRunner implements Runnable {
 
     private void computeEdges(int x, int y, int z, Cube cube, int cubeIndex, Cube[][] currentSlice) {
         int edgeIndex = Tables.getEdgeIndex(cubeIndex);
+        int cubeX = x / gridSize;
+        int cubeY = y / gridSize;
 
         if ((edgeIndex & 1) == 1) { // Edge 0
             if (y != 0) {
-                cube.setEdge(0, currentSlice[y - 1][x].getEdge(2));
+                cube.setEdge(0, currentSlice[cubeY - 1][cubeX].getEdge(2));
             } else if (z != 0) {
-                cube.setEdge(0, lowerSlice[y][x].getEdge(4));
+                cube.setEdge(0, lowerSlice[cubeY][cubeX].getEdge(4));
             } else {
                 interpolate(cube.getVertex(0), cube.getVertex(1), cube.getEdge(0), level);
             }
@@ -310,7 +339,7 @@ public class MCRunner implements Runnable {
 
         if ((edgeIndex & 2) == 2) { // Edge 1
             if (z != 0) {
-                cube.setEdge(1, lowerSlice[y][x].getEdge(5));
+                cube.setEdge(1, lowerSlice[cubeY][cubeX].getEdge(5));
             } else {
                 interpolate(cube.getVertex(1), cube.getVertex(2), cube.getEdge(1), level);
             }
@@ -318,7 +347,7 @@ public class MCRunner implements Runnable {
 
         if ((edgeIndex & 4) == 4) { // Edge 2
             if (z != 0) {
-                cube.setEdge(2, lowerSlice[y][x].getEdge(6));
+                cube.setEdge(2, lowerSlice[cubeY][cubeX].getEdge(6));
             } else {
                 interpolate(cube.getVertex(2), cube.getVertex(3), cube.getEdge(2), level);
             }
@@ -326,9 +355,9 @@ public class MCRunner implements Runnable {
 
         if ((edgeIndex & 8) == 8) { // Edge 3
             if (x != 0) {
-                cube.setEdge(3, currentSlice[y][x - 1].getEdge(1));
+                cube.setEdge(3, currentSlice[cubeY][cubeX - 1].getEdge(1));
             } else if (z != 0) {
-                cube.setEdge(3, lowerSlice[y][x].getEdge(7));
+                cube.setEdge(3, lowerSlice[cubeY][cubeX].getEdge(7));
             } else {
                 interpolate(cube.getVertex(3), cube.getVertex(0), cube.getEdge(3), level);
             }
@@ -336,7 +365,7 @@ public class MCRunner implements Runnable {
 
         if ((edgeIndex & 16) == 16) { // Edge 4
             if (y != 0) {
-                cube.setEdge(4, currentSlice[y - 1][x].getEdge(6));
+                cube.setEdge(4, currentSlice[cubeY - 1][cubeX].getEdge(6));
             } else {
                 interpolate(cube.getVertex(4), cube.getVertex(5), cube.getEdge(4), level);
             }
@@ -352,7 +381,7 @@ public class MCRunner implements Runnable {
 
         if ((edgeIndex & 128) == 128) { // Edge 7
             if (x != 0) {
-                cube.setEdge(7, currentSlice[y][x - 1].getEdge(5));
+                cube.setEdge(7, currentSlice[cubeY][cubeX - 1].getEdge(5));
             } else {
                 interpolate(cube.getVertex(7), cube.getVertex(4), cube.getEdge(7), level);
             }
@@ -360,9 +389,9 @@ public class MCRunner implements Runnable {
 
         if ((edgeIndex & 256) == 256) { // Edge 8
             if (x != 0) {
-                cube.setEdge(8, currentSlice[y][x - 1].getEdge(9));
+                cube.setEdge(8, currentSlice[cubeY][cubeX - 1].getEdge(9));
             } else if (y != 0) {
-                cube.setEdge(8, currentSlice[y - 1][x].getEdge(11));
+                cube.setEdge(8, currentSlice[cubeY - 1][cubeX].getEdge(11));
             } else {
                 interpolate(cube.getVertex(4), cube.getVertex(0), cube.getEdge(8), level);
             }
@@ -370,7 +399,7 @@ public class MCRunner implements Runnable {
 
         if ((edgeIndex & 512) == 512) { // Edge 9
             if (y != 0) {
-                cube.setEdge(9, currentSlice[y - 1][x].getEdge(10));
+                cube.setEdge(9, currentSlice[cubeY - 1][cubeX].getEdge(10));
             } else {
                 interpolate(cube.getVertex(5), cube.getVertex(1), cube.getEdge(9), level);
             }
@@ -382,7 +411,7 @@ public class MCRunner implements Runnable {
 
         if ((edgeIndex & 2048) == 2048) { // Edge 11
             if (x != 0) {
-                cube.setEdge(11, currentSlice[y][x - 1].getEdge(10));
+                cube.setEdge(11, currentSlice[cubeY][cubeX - 1].getEdge(10));
             } else {
                 interpolate(cube.getVertex(7), cube.getVertex(3), cube.getEdge(11), level);
             }

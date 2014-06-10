@@ -143,7 +143,7 @@ public class Controller {
         rasterLoader.setOnSucceeded(event -> {
             float[][][] data = rasterLoader.getValue();
 
-            Thread thread = new Thread(() -> new GL_V8(data, level).show());
+            Thread thread = new Thread(() -> new GL_V8(data, level, 1).show());
             thread.setName("OpenGL View");
             thread.start();
         });
