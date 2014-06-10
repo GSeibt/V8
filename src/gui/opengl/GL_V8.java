@@ -214,6 +214,10 @@ public class GL_V8 {
         glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
+    private void receiveUpdate(Mesh mesh) {
+        try { newBuffer.put(mesh); } catch (InterruptedException ignored) {}
+    }
+
     private void useUpdate() {
         Mesh change = newBuffer.poll();
 
@@ -340,9 +344,5 @@ public class GL_V8 {
         glDeleteBuffersARB(vboiId);
         glDeleteBuffersARB(vbonId);
         glDeleteBuffersARB(vbonlId);
-    }
-
-    private void receiveUpdate(Mesh mesh) {
-        try { newBuffer.put(mesh); } catch (InterruptedException ignored) {}
     }
 }
