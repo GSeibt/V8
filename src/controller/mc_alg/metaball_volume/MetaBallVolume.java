@@ -53,7 +53,7 @@ public class MetaBallVolume {
         int x = rInt(0, x_dim - 1);
         int y = rInt(0, y_dim - 1);
         int z = rInt(0, z_dim - 1);
-        int intensity = rInt(1, 30);
+        int intensity = rInt(1, 100);
         int posNeg = (Math.random() < 0.5) ? -1 : 1;
 
         addBall(x, y, z, intensity * posNeg);
