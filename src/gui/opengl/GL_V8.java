@@ -226,7 +226,7 @@ public class GL_V8 {
             normalLinesCount = change.getNormalLines().limit() / 2;
 
             glBindBufferARB(GL_ARRAY_BUFFER, vboId);
-            glBufferDataARB(GL_ARRAY_BUFFER, change.getVertexes(), GL_STATIC_DRAW_ARB);
+            glBufferDataARB(GL_ARRAY_BUFFER, change.getVertices(), GL_STATIC_DRAW_ARB);
 
             glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
             glBufferDataARB(GL_ARRAY_BUFFER, change.getNormals(), GL_STATIC_DRAW_ARB);
