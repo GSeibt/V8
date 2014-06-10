@@ -31,6 +31,8 @@ import javafx.stage.Stage;
 public class Controller {
 
     @FXML
+    private TextField gridSizeTextField;
+    @FXML
     private TextField levelTextField;
     @FXML
     private ProgressBar meshProgress;
@@ -125,6 +127,14 @@ public class Controller {
             return;
         }
 
+        final int gridSize;
+        try {
+            gridSize = Integer.parseInt(gridSizeTextField.getText().trim());
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid gridSize: " + gridSizeTextField.getText());
+            return;
+        }
+
         Task<float[][][]> rasterLoader = new Task<float[][][]>() {
 
             @Override
@@ -143,7 +153,7 @@ public class Controller {
         rasterLoader.setOnSucceeded(event -> {
             float[][][] data = rasterLoader.getValue();
 
-            Thread thread = new Thread(() -> new GL_V8(data, level, 1).show());
+            Thread thread = new Thread(() -> new GL_V8(data, level, gridSize).show());
             thread.setName("OpenGL View");
             thread.start();
         });
