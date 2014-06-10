@@ -1,16 +1,24 @@
 package controller.mc_alg;
 
+/**
+ * A <code>Cube</code> used in the marching cubes algorithm. The class maintains its own set of vertices and edge
+ * vectors, setter methods copy the given values.
+ */
 public class Cube {
 
-    private WeightedVertex[] vertexes;
-    private Vertex[] edges;
+    private WeightedVertex[] vertices; // the 8 vertices of the cube and the density at the vertex
+    private Vertex[] edges; // the 12 triangle vertices that may lie on the edges of the cube, one vertex per edge
 
+    /**
+     * Constructs a new <code>Cube</code>. All its vertices will be (0, 0, 0) with weight 0 and all its edges will be
+     * (0, 0, 0).
+     */
     public Cube() {
-        this.vertexes = new WeightedVertex[8];
+        this.vertices = new WeightedVertex[8];
         this.edges = new Vertex[12];
 
-        for (int i = 0; i < vertexes.length; i++) {
-            vertexes[i] = new WeightedVertex(0f, 0f, 0f, 0f);
+        for (int i = 0; i < vertices.length; i++) {
+            vertices[i] = new WeightedVertex(0f, 0f, 0f, 0f);
         }
 
         for (int i = 0; i < edges.length; i++) {
@@ -18,25 +26,88 @@ public class Cube {
         }
     }
 
+    /**
+     * Constructs a new <code>Cube</code> whose vertices have the given values. All its edges will be (0, 0, 0).
+     *
+     * @param vertices
+     *         the values for the vertices
+     */
+    public Cube(WeightedVertex... vertices) {
+        this();
+
+        if ((vertices == null) || (vertices.length != 8)) {
+            System.err.println("Invalid vertices array. Cube will remain uninitialized.");
+            return;
+        }
+
+        for (int i = 0; i < vertices.length; i++) {
+            setVertex(i, vertices[i]);
+        }
+    }
+
+    /**
+     * Returns the vertex at the given position. See the class documentation for a description of the indexing
+     * convention used.
+     *
+     * @param index
+     *         the index of the vertex
+     *
+     * @return the vertex
+     */
     public WeightedVertex getVertex(int index) {
-        return vertexes[index];
+        return vertices[index];
     }
 
+    /**
+     * Copies the values from the given <code>WeightedVertex</code> into the internal vertex at <code>index</code>.
+     * See the class documentation for a description of the indexing convention used.
+     *
+     * @param index
+     *         the index of the vertex
+     * @param vertex
+     *         the <code>WeightedVertex</code> containing the data to be copied into the cube
+     */
     public void setVertex(int index, WeightedVertex vertex) {
-        vertexes[index].setLocation(vertex.getLocation());
-        vertexes[index].setNormal(vertex.getNormal());
-        vertexes[index].setWeight(vertex.getWeight());
+        vertices[index].setLocation(vertex.getLocation());
+        vertices[index].setNormal(vertex.getNormal());
+        vertices[index].setWeight(vertex.getWeight());
     }
 
+    /**
+     * Returns the vertex of a triangle on the edge indexed by <code>index</code>.
+     * See the class documentation for a description of the indexing convention used.
+     *
+     * @param index
+     *         the index of the edge
+     *
+     * @return the <code>Vertex</code> of a triangle
+     */
     public Vertex getEdge(int index) {
         return edges[index];
     }
 
+    /**
+     * Copies the values from the given <code>Vertex</code> into the internal vertex at <code>index</code>.
+     * See the class documentation for a description of the indexing convention used.
+     *
+     * @param index
+     *         the index of the edge
+     * @param edge
+     *         the <code>Vertex</code> containing the data to be copied into the cube
+     */
     public void setEdge(int index, Vertex edge) {
         edges[index].setLocation(edge.getLocation());
         edges[index].setNormal(edge.getNormal());
     }
 
+    /**
+     * Gets the index of the cube (as described in the class documentation) resulting from the given level.
+     *
+     * @param level
+     *         the level to be used
+     *
+     * @return the cube index
+     */
     public int getIndex(float level) {
         int index = 0;
 
@@ -49,7 +120,16 @@ public class Cube {
         return index;
     }
 
+    /**
+     * Returns the weight of the vertex at the given <code>index/code>.
+     * See the class documentation for a description of the indexing convention used.
+     *
+     * @param index
+     *         the index of the vertex
+     *
+     * @return the weight at the vertex
+     */
     public Float getWeight(int index) {
-        return vertexes[index].getWeight();
+        return vertices[index].getWeight();
     }
 }
