@@ -13,10 +13,20 @@ import javafx.stage.Stage;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 
+/**
+ * A JavaFX <code>Stage</code> showing a XY plot of the pixel values in the given image and their frequency.
+ * As the pixel values are floats these will be collected in the nearest integer bin.
+ * 0 will be excluded from the histogram.
+ */
 public class Histogram extends Stage {
 
     private DCMImage image;
 
+    /**
+     * Constructs a new <code>Histogram</code> for the given <code>DCMImage</code>.
+     *
+     * @param image the image for which a <code>Histogram</code> is to be shown
+     */
     public Histogram(DCMImage image) {
         this.image = image;
 
@@ -30,6 +40,11 @@ public class Histogram extends Stage {
         initModality(Modality.APPLICATION_MODAL);
     }
 
+    /**
+     * Constructs the chart. Reading from the image is performed in a <code>Task</code>.
+     *
+     * @return the chart
+     */
     private BarChart<String, Number> createChart() {
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
