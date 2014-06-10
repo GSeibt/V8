@@ -139,7 +139,9 @@ public class Controller {
         rasterLoader.setOnSucceeded(event -> {
             float[][][] data = rasterLoader.getValue();
 
-            new Thread(() -> new GL_V8(data, level).show()).start();
+            Thread thread = new Thread(() -> new GL_V8(data, level).show());
+            thread.setName("OpenGL View");
+            thread.start();
         });
 
         meshProgress.progressProperty().bind(rasterLoader.progressProperty());

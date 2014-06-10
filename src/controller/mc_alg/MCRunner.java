@@ -24,6 +24,7 @@ public class MCRunner implements Runnable {
     private float[][][] data;
     private volatile boolean stop;
     private volatile boolean interrupted;
+    private int numLastTriangles = 0;
     private Type type;
     private Consumer<Mesh> meshConsumer;
 
@@ -89,6 +90,13 @@ public class MCRunner implements Runnable {
     }
 
     private void outputMesh() {
+
+        if (this.indices.size() <= numLastTriangles) {
+            return;
+        } else {
+            numLastTriangles = this.indices.size();
+        }
+
         FloatBuffer points = BufferUtils.createFloatBuffer(this.points.size() * 3);
         FloatBuffer normals = BufferUtils.createFloatBuffer(this.normals.size() * 3);
         FloatBuffer normalLines = BufferUtils.createFloatBuffer(this.normals.size() * 6);
@@ -385,23 +393,24 @@ public class MCRunner implements Runnable {
         float edgeX, edgeY, edgeZ;
         float normalX, normalY, normalZ;
         double min = Math.pow(10, -6);
+        double length;
         float alpha;
 
         if (Math.abs(level - v1.getWeight()) < min) {
             edge.setLocation(v1.getLocation());
-            edge.setNormal(v1.getNormal());
+            edge.setNormal(v1.getNormal().normalized());
             return;
         }
 
         if (Math.abs(level - v2.getWeight()) < min) {
             edge.setLocation(v2.getLocation());
-            edge.setNormal(v2.getNormal());
+            edge.setNormal(v2.getNormal().normalized());
             return;
         }
 
         if (Math.abs(v1.getWeight() - v2.getWeight()) < min) {
             edge.setLocation(v1.getLocation());
-            edge.setNormal(v1.getNormal());
+            edge.setNormal(v1.getNormal().normalized());
             return;
         }
 
@@ -410,6 +419,11 @@ public class MCRunner implements Runnable {
         normalX = alpha * v1.getNormal().getX() + (1 - alpha) * v2.getNormal().getX();
         normalY = alpha * v1.getNormal().getY() + (1 - alpha) * v2.getNormal().getY();
         normalZ = alpha * v1.getNormal().getZ() + (1 - alpha) * v2.getNormal().getZ();
+
+        length = Math.sqrt(Math.pow(normalX, 2) + Math.pow(normalY, 2) + Math.pow(normalZ, 2));
+        normalX /= length;
+        normalY /= length;
+        normalZ /= length;
 
         edgeX = alpha * v1.getLocation().getX() + (1 - alpha) * v2.getLocation().getX();
         edgeY = alpha * v1.getLocation().getY() + (1 - alpha) * v2.getLocation().getY();
@@ -444,7 +458,7 @@ public class MCRunner implements Runnable {
 
                 if (index == null) {
                     points.put(edge, newIndex);
-                    normals.add(edge.getNormal().normalized());
+                    normals.add(edge.getNormal());
                     indices.add(newIndex);
                     newIndex++;
                 } else {
