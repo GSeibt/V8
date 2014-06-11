@@ -56,7 +56,8 @@ public class GL_V8 {
         float farClip = 10000;
 
         this.camera = new Camera(DEFAULT_FOV, aspectRatio, nearClip, farClip);
-        this.mcRunner = new MCRunner(data, level, gridSize, MCRunner.Type.SLICE, this::receiveUpdate);
+        this.mcRunner = new MCRunner(data, level, gridSize, MCRunner.Type.SLICE);
+        this.mcRunner.setOnMeshFinished(this::receiveUpdate);
         this.newBuffer = new SynchronousQueue<>();
         this.showNormalLines = false;
     }
@@ -152,15 +153,15 @@ public class GL_V8 {
 
     public void show() {
         Thread runner = new Thread(mcRunner);
-        runner.setName("MCRunner");
+        runner.setName(mcRunner.getClass().getSimpleName());
 
         runner.start();
         while (!Display.isCloseRequested()) {
-            useUpdate();
+            update();
             input();
             draw();
             Display.update();
-            Display.sync(30);
+            Display.sync(50);
         }
 
         runner.interrupt();
@@ -218,7 +219,7 @@ public class GL_V8 {
         try { newBuffer.put(mesh); } catch (InterruptedException ignored) {}
     }
 
-    private void useUpdate() {
+    private void update() {
         Mesh change = newBuffer.poll();
 
         if (change != null) {
@@ -240,8 +241,6 @@ public class GL_V8 {
             glBindBufferARB(GL_ARRAY_BUFFER, 0);
             glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
-
-        mcRunner.continueRun();
     }
 
     private void input() {

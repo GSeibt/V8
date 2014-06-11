@@ -15,30 +15,98 @@ import util.Vector3f;
 
 import static controller.mc_alg.MCRunner.Type.*;
 
+/**
+ * Runnable that performs the Marching Cubes algorithm over a 3D array of floats that are interpreted as density data.
+ * Can be configured to update the resulting triangle mesh after every cube, slice, or after the whole computation is
+ * finished. Optionally the computation can pause after every update.
+ */
 public class MCRunner implements Runnable {
 
-    public enum Type {CUBE, SLICE, COMPLETE}
+    /**
+     * The type for the <code>MCRunner</code>. Determines when mesh updates take place.
+     */
+    public enum Type {
 
+        /**
+         * Mesh updates will take place after every single cube.
+         */
+        CUBE,
+
+        /**
+         * Mesh updates will take place after every slice.
+         */
+        SLICE,
+
+        /**
+         * There will be a single mesh update after the computation is finished.
+         */
+        COMPLETE
+    }
+
+    // the initial capacity for the points HashMap, fairly high to reduce rehashing
     private final int POINTS_CAPACITY = 100000;
 
     private float[][][] data;
     private float level;
     private int gridSize;
     private Type type;
-    private Consumer<Mesh> meshConsumer;
+    private Consumer<Mesh> meshConsumer; // will be called with the current mesh after every mesh update
 
-    private volatile boolean stop;
-    private volatile boolean interrupted;
-    private int numLastTriangles = 0;
+    private volatile boolean stopping; // whether this MCRunner stops after every mesh update
+    private volatile boolean stopped; // whether this MCRunner has stopped
+    private boolean interrupted; // whether the executing Thread was interrupted
 
+    /*
+     * During the execution of the algorithm two slices of the geometry (calculated vertices of cubes, normals,
+     * gradients and triangle vertices) will remain in memory. After every slice of data the two references (upperSlice,
+     * lowerSlice) will be swapped. The upperSlice will be worked on by the algorithm (overwriting the values that
+     * are stored in the cubes from the previous iteration), the lowerSlice (and parts of upperSlice that have already
+     * been updated) will be used for lookup of previously calculated information.
+     */
     private Cube[][] upperSlice;
     private Cube[][] lowerSlice;
 
-    private Map<Vertex, Integer> points;
-    private List<Integer> indices;
-    private List<Vector3f> normals;
+    private int numLastTriangles; // how many triangles were pushed in the last mesh update
+    private Map<Vertex, Integer> points; // the mesh vertices, a Map with iteration order = insertion order is used
+    private List<Integer> indices; // indices into the points and normals, defines triangles that make up the mesh
+    private List<Vector3f> normals; // the normals at the mesh vertices
 
-    public MCRunner(float[][][] data, float level, int gridSize, Type type, Consumer<Mesh> meshConsumer) {
+    /**
+     * Constructs a new <code>MCRunner</code> that performs the Marching Cubes algorithm over the given data.
+     * GridSize will be 1 and the type will be COMPLETE.
+     *
+     * @param data
+     *         the data for the Marching Cubes algorithm
+     * @param level
+     *         the density level for the Marching Cubes algorithm
+     *
+     * @throws NullPointerException
+     *         if <code>data</code> or <code>type</code> is <code>null</code>
+     * @throws IllegalArgumentException
+     *         if <code>level</code> is smaller than 0 or <code>gridSize</code> is smaller than 1
+     */
+    public MCRunner(float[][][] data, float level) {
+        this(data, level, 1, COMPLETE);
+    }
+
+    /**
+     * Constructs a new <code>MCRunner</code> that performs the Marching Cubes algorithm over the given data.
+     *
+     * @param data
+     *         the data for the Marching Cubes algorithm
+     * @param level
+     *         the density level for the Marching Cubes algorithm
+     * @param gridSize
+     *         the grid size (that is the x/y/z dimensions of the cubes)
+     * @param type
+     *         the type for the <code>MCRunner</code>
+     *
+     * @throws NullPointerException
+     *         if <code>data</code> or <code>type</code> is <code>null</code>
+     * @throws IllegalArgumentException
+     *         if <code>level</code> is smaller than 0 or <code>gridSize</code> is smaller than 1
+     */
+    public MCRunner(float[][][] data, float level, int gridSize, Type type) {
         Objects.requireNonNull(data, "data must not be null!");
 
         if (!(level >= 0)) {
@@ -50,20 +118,51 @@ public class MCRunner implements Runnable {
         }
 
         Objects.requireNonNull(type, "type must not be null!");
-        Objects.requireNonNull(meshConsumer, "meshConsumer must not be null!");
 
         this.data = data;
         this.level = level;
         this.gridSize = gridSize;
         this.type = type;
-        this.meshConsumer = meshConsumer;
 
-        this.stop = false;
+        this.stopping = false;
+        this.stopped = false;
         this.interrupted = false;
 
+        this.numLastTriangles = 0;
         this.points = new LinkedHashMap<>(POINTS_CAPACITY);
         this.indices = new LinkedList<>();
         this.normals = new LinkedList<>();
+    }
+
+    /**
+     * Returns whether this <code>MCRunner</code> is stopping after every mesh update.
+     * The default is <code>false</code>.
+     *
+     * @return true iff the <code>MCRunner</code> is stopping after every mesh update
+     */
+    public boolean isStopping() {
+        return stopping;
+    }
+
+    /**
+     * Sets whether this <code>MCRunner</code> is stopping after every mesh update.
+     * The default is <code>false</code>.
+     *
+     * @param stopping
+     *         whether this <code>MCRunner</code> is stopping after every mesh update
+     */
+    public void setStopping(boolean stopping) {
+        this.stopping = stopping;
+    }
+
+    /**
+     * Sets the method that will be called with the resulting <code>Mesh</code> after every mesh update.
+     *
+     * @param meshConsumer
+     *         the <code>Consumer</code> that should accept the <code>Mesh</code>
+     */
+    public void setOnMeshFinished(Consumer<Mesh> meshConsumer) {
+        this.meshConsumer = meshConsumer;
     }
 
     @Override
@@ -72,16 +171,15 @@ public class MCRunner implements Runnable {
         Cube[][] currentSlice;
         Cube cube;
 
-        for (int z = 0; z < data.length - 1 && !interrupted; z += gridSize) {
+        for (int z = 0; z < data.length; z += gridSize) {
 
             currentSlice = updateSlices();
 
-            for (int y = 0; y < data[z].length - 1; y += gridSize) {
+            for (int y = 0; y < data[z].length; y += gridSize) {
 
-                for (int x = 0; x < data[z][y].length - 1; x += gridSize) {
+                for (int x = 0; x < data[z][y].length; x += gridSize) {
 
-                    computeVertexes(x, y, z, currentSlice);
-                    cube = currentSlice[y / gridSize][x / gridSize];
+                    cube = computeVertices(x, y, z, currentSlice);
                     cubeIndex = cube.getIndex(level);
 
                     if ((cubeIndex != 0) && (cubeIndex != 255)) {
@@ -92,21 +190,31 @@ public class MCRunner implements Runnable {
                     if (type == CUBE) {
                         outputMesh();
                     }
+
+                    interrupted = Thread.interrupted();
+
+                    if (interrupted) {
+                        return;
+                    }
                 }
             }
 
             if (type == SLICE) {
                 outputMesh();
             }
-
-            interrupted = Thread.interrupted();
         }
 
-        if ((type == COMPLETE) && !interrupted) {
+        if (type == COMPLETE) {
             outputMesh();
         }
     }
 
+    /**
+     * Converts the <code>points</code>, <code>normals</code> and <code>indices</code> into a <code>Mesh</code> and
+     * feeds the <code>meshConsumer</code> with it. If no new triangles were created or the consumer is
+     * <code>null</code> no update will be performed. If the type is not <code>COMPLETE</code> (in which case this
+     * method is called only once) and this <code>MCRunner</code> is stopping this method stops the run.
+     */
     private void outputMesh() {
 
         if (this.indices.size() <= numLastTriangles) {
@@ -115,64 +223,64 @@ public class MCRunner implements Runnable {
             numLastTriangles = this.indices.size();
         }
 
-        FloatBuffer points = BufferUtils.createFloatBuffer(this.points.size() * 3);
-        FloatBuffer normals = BufferUtils.createFloatBuffer(this.normals.size() * 3);
-        FloatBuffer normalLines = BufferUtils.createFloatBuffer(this.normals.size() * 6);
-        IntBuffer indices = BufferUtils.createIntBuffer(this.indices.size());
+        if (meshConsumer != null) {
+            FloatBuffer points = BufferUtils.createFloatBuffer(this.points.size() * 3);
+            FloatBuffer normals = BufferUtils.createFloatBuffer(this.normals.size() * 3);
+            FloatBuffer normalLines = BufferUtils.createFloatBuffer(this.normals.size() * 6);
+            IntBuffer indices = BufferUtils.createIntBuffer(this.indices.size());
 
-        Iterator<Map.Entry<Vertex, Integer>> pointsIt = this.points.entrySet().iterator();
-        Iterator<Vector3f> normalsIt = this.normals.iterator();
+            Iterator<Map.Entry<Vertex, Integer>> pointsIt = this.points.entrySet().iterator();
+            Iterator<Vector3f> normalsIt = this.normals.iterator();
 
-        Vertex point;
-        Vector3f normal;
-        Vector3f normalLinePoint;
-        while (pointsIt.hasNext() && normalsIt.hasNext()) {
-            point = pointsIt.next().getKey();
-            normal = normalsIt.next();
-            normalLinePoint = point.getLocation().add(normal);
+            Vertex point;
+            Vector3f normal;
+            Vector3f normalLinePoint;
+            while (pointsIt.hasNext() && normalsIt.hasNext()) {
+                point = pointsIt.next().getKey();
+                normal = normalsIt.next();
+                normalLinePoint = point.getLocation().add(normal);
 
-            points.put(point.getLocation().getX());
-            points.put(point.getLocation().getY());
-            points.put(point.getLocation().getZ());
+                points.put(point.getLocation().getX());
+                points.put(point.getLocation().getY());
+                points.put(point.getLocation().getZ());
 
-            normals.put(normal.getX());
-            normals.put(normal.getY());
-            normals.put(normal.getZ());
+                normals.put(normal.getX());
+                normals.put(normal.getY());
+                normals.put(normal.getZ());
 
-            normalLines.put(point.getLocation().getX());
-            normalLines.put(point.getLocation().getY());
-            normalLines.put(point.getLocation().getZ());
-            normalLines.put(normalLinePoint.getX());
-            normalLines.put(normalLinePoint.getY());
-            normalLines.put(normalLinePoint.getZ());
+                normalLines.put(point.getLocation().getX());
+                normalLines.put(point.getLocation().getY());
+                normalLines.put(point.getLocation().getZ());
+                normalLines.put(normalLinePoint.getX());
+                normalLines.put(normalLinePoint.getY());
+                normalLines.put(normalLinePoint.getZ());
+            }
+            this.indices.forEach(indices::put);
+
+            points.flip();
+            normals.flip();
+            indices.flip();
+            normalLines.flip();
+
+            System.out.println("Pushing " + indices.limit() / 3 + " triangles."); //TODO remove
+            meshConsumer.accept(new Mesh(points, normals, indices, normalLines));
         }
-        this.indices.forEach(indices::put);
-
-        points.flip();
-        normals.flip();
-        indices.flip();
-        normalLines.flip();
-
-        System.out.println("Pushing " + indices.limit() / 3 + " triangles.");
-        meshConsumer.accept(new Mesh(points, normals, indices, normalLines));
-        stop = true;
 
         if (type == COMPLETE) {
             return;
         }
 
-        synchronized (this) {
-            while (stop) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    interrupted = true;
-                    break;
-                }
-            }
+        if (stopping) {
+            stopRun();
         }
     }
 
+    /**
+     * Updates upper- and lowerSlice references as described at their declaration.
+     * If this is the first or second time the method is called, upper- or lowerSlice will be initialized.
+     *
+     * @return the slice that the algorithm should currently work on
+     */
     private Cube[][] updateSlices() {
         Cube[][] currentSlice;
 
@@ -211,7 +319,17 @@ public class MCRunner implements Runnable {
         return currentSlice;
     }
 
-    private void computeVertexes(int x, int y, int z, Cube[][] currentSlice) {
+    /**
+     * Computes the locations, weights and gradients of the vertices of the cube whose vertex 0 is at the given
+     * position in the <code>data</code>
+     *
+     * @param x the x coordinate of the cubes vertex 0
+     * @param y the y coordinate of the cubes vertex 0
+     * @param z the z coordinate of the cubes vertex 0
+     * @param currentSlice the slice the algorithm is currently working on
+     * @return the <code>Cube</code> whose vertices were computed
+     */
+    private Cube computeVertices(int x, int y, int z, Cube[][] currentSlice) {
         WeightedVertex v;
         int cubeX = x / gridSize;
         int cubeY = y / gridSize;
@@ -295,8 +413,19 @@ public class MCRunner implements Runnable {
             v.setWeight(weight(x, y + gridSize, z + gridSize));
             computeGradient(x, y + gridSize, z + gridSize, v);
         }
+
+        return cube;
     }
 
+    /**
+     * Computes the gradient (using central differences) of the <code>WeightedVertex</code> <code>v</code> located
+     * at the given position.
+     *
+     * @param x the x coordinate of the vertex
+     * @param y the y coordinate of the vertex
+     * @param z the z coordinate of the vertex
+     * @param v the vertex
+     */
     private void computeGradient(int x, int y, int z, WeightedVertex v) {
         float gX = weight(x - gridSize, y, z) - weight(x + gridSize, y, z);
         float gY = weight(x, y - gridSize, z) - weight(x, y + gridSize, z);
@@ -305,6 +434,15 @@ public class MCRunner implements Runnable {
         v.setNormal(gX, gY, gZ);
     }
 
+    /**
+     * Returns the weight (density) at the given position. If the position is out of bounds of the <code>data</code>
+     * array this method will return 0.
+     *
+     * @param x the x coordinate
+     * @param y the y coordinate
+     * @param z the z coordinate
+     * @return the weight
+     */
     private float weight(int x, int y, int z) {
 
         if (z < 0 || z >= data.length) {
@@ -322,6 +460,16 @@ public class MCRunner implements Runnable {
         return data[z][y][x];
     }
 
+    /**
+     * Computes the position and normal of all appropriate triangle vertices (that lie on the edges of the cube).
+     *
+     * @param x the x coordinate of the cubes vertex 0
+     * @param y the y coordinate of the cubes vertex 0
+     * @param z the z coordinate of the cubes vertex 0
+     * @param cube the cube whose edges are to be computed
+     * @param cubeIndex the index of the cube (see {@link controller.mc_alg.Cube#getIndex(float)})
+     * @param currentSlice the slice the algorithm is currently working on
+     */
     private void computeEdges(int x, int y, int z, Cube cube, int cubeIndex, Cube[][] currentSlice) {
         int edgeIndex = Tables.getEdgeIndex(cubeIndex);
         int cubeX = x / gridSize;
@@ -333,7 +481,7 @@ public class MCRunner implements Runnable {
             } else if (z != 0) {
                 cube.setEdge(0, lowerSlice[cubeY][cubeX].getEdge(4));
             } else {
-                interpolate(cube.getVertex(0), cube.getVertex(1), cube.getEdge(0), level);
+                interpolate(cube.getVertex(0), cube.getVertex(1), cube.getEdge(0));
             }
         }
 
@@ -341,7 +489,7 @@ public class MCRunner implements Runnable {
             if (z != 0) {
                 cube.setEdge(1, lowerSlice[cubeY][cubeX].getEdge(5));
             } else {
-                interpolate(cube.getVertex(1), cube.getVertex(2), cube.getEdge(1), level);
+                interpolate(cube.getVertex(1), cube.getVertex(2), cube.getEdge(1));
             }
         }
 
@@ -349,7 +497,7 @@ public class MCRunner implements Runnable {
             if (z != 0) {
                 cube.setEdge(2, lowerSlice[cubeY][cubeX].getEdge(6));
             } else {
-                interpolate(cube.getVertex(2), cube.getVertex(3), cube.getEdge(2), level);
+                interpolate(cube.getVertex(2), cube.getVertex(3), cube.getEdge(2));
             }
         }
 
@@ -359,7 +507,7 @@ public class MCRunner implements Runnable {
             } else if (z != 0) {
                 cube.setEdge(3, lowerSlice[cubeY][cubeX].getEdge(7));
             } else {
-                interpolate(cube.getVertex(3), cube.getVertex(0), cube.getEdge(3), level);
+                interpolate(cube.getVertex(3), cube.getVertex(0), cube.getEdge(3));
             }
         }
 
@@ -367,23 +515,23 @@ public class MCRunner implements Runnable {
             if (y != 0) {
                 cube.setEdge(4, currentSlice[cubeY - 1][cubeX].getEdge(6));
             } else {
-                interpolate(cube.getVertex(4), cube.getVertex(5), cube.getEdge(4), level);
+                interpolate(cube.getVertex(4), cube.getVertex(5), cube.getEdge(4));
             }
         }
 
         if ((edgeIndex & 32) == 32) { // Edge 5
-            interpolate(cube.getVertex(5), cube.getVertex(6), cube.getEdge(5), level);
+            interpolate(cube.getVertex(5), cube.getVertex(6), cube.getEdge(5));
         }
 
         if ((edgeIndex & 64) == 64) { // Edge 6
-            interpolate(cube.getVertex(6), cube.getVertex(7), cube.getEdge(6), level);
+            interpolate(cube.getVertex(6), cube.getVertex(7), cube.getEdge(6));
         }
 
         if ((edgeIndex & 128) == 128) { // Edge 7
             if (x != 0) {
                 cube.setEdge(7, currentSlice[cubeY][cubeX - 1].getEdge(5));
             } else {
-                interpolate(cube.getVertex(7), cube.getVertex(4), cube.getEdge(7), level);
+                interpolate(cube.getVertex(7), cube.getVertex(4), cube.getEdge(7));
             }
         }
 
@@ -393,7 +541,7 @@ public class MCRunner implements Runnable {
             } else if (y != 0) {
                 cube.setEdge(8, currentSlice[cubeY - 1][cubeX].getEdge(11));
             } else {
-                interpolate(cube.getVertex(4), cube.getVertex(0), cube.getEdge(8), level);
+                interpolate(cube.getVertex(4), cube.getVertex(0), cube.getEdge(8));
             }
         }
 
@@ -401,27 +549,35 @@ public class MCRunner implements Runnable {
             if (y != 0) {
                 cube.setEdge(9, currentSlice[cubeY - 1][cubeX].getEdge(10));
             } else {
-                interpolate(cube.getVertex(5), cube.getVertex(1), cube.getEdge(9), level);
+                interpolate(cube.getVertex(5), cube.getVertex(1), cube.getEdge(9));
             }
         }
 
         if ((edgeIndex & 1024) == 1024) { // Edge 10
-            interpolate(cube.getVertex(6), cube.getVertex(2), cube.getEdge(10), level);
+            interpolate(cube.getVertex(6), cube.getVertex(2), cube.getEdge(10));
         }
 
         if ((edgeIndex & 2048) == 2048) { // Edge 11
             if (x != 0) {
                 cube.setEdge(11, currentSlice[cubeY][cubeX - 1].getEdge(10));
             } else {
-                interpolate(cube.getVertex(7), cube.getVertex(3), cube.getEdge(11), level);
+                interpolate(cube.getVertex(7), cube.getVertex(3), cube.getEdge(11));
             }
         }
     }
 
-    private static void interpolate(WeightedVertex v1, WeightedVertex v2, Vertex edge, float level) {
+    /**
+     * Linearly interpolates the position and normal of <code>edge</code> (that is assumed to lie on the edge between
+     * <code>v1</code> and <code>v2</code>).
+     *
+     * @param v1 the first vertex of a cube
+     * @param v2 the second vertex of a cube
+     * @param edge the vertex of a triangle whose position and normal is to be interpolated
+     */
+    private void interpolate(WeightedVertex v1, WeightedVertex v2, Vertex edge) {
         float edgeX, edgeY, edgeZ;
         float normalX, normalY, normalZ;
-        double min = Math.pow(10, -6);
+        double min = Math.pow(10, -4);
         double length;
         float alpha;
 
@@ -462,6 +618,14 @@ public class MCRunner implements Runnable {
         edge.setNormal(normalX, normalY, normalZ);
     }
 
+    /**
+     * Updates the <code>points</code>, <code>normals</code>, and <code>indices</code> with triangles constructed
+     * from the edges of the given <code>Cube</code> according to
+     * {@link controller.mc_alg.Tables#getTriangleIndex(int)}.
+     *
+     * @param cube the cube with whose edges the mesh is to be updated
+     * @param cubeIndex the index of the cube (see {@link controller.mc_alg.Cube#getIndex(float)})
+     */
     private void updateMesh(Cube cube, int cubeIndex) {
         Vertex edge;
         Integer index;
@@ -497,10 +661,33 @@ public class MCRunner implements Runnable {
         }
     }
 
+    /**
+     * Stops the execution of the Marching Cubes algorithm. No mesh update will be produced until after
+     * {@link #continueRun()} is called.
+     */
+    public void stopRun() {
+
+        synchronized (this) {
+            stopped = true;
+
+            while (stopped) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Restarts the execution of the Marching Cubes algorithm.
+     */
     public void continueRun() {
 
         synchronized (this) {
-            stop = false;
+            stopped = false;
             this.notify();
         }
     }
