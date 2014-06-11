@@ -39,7 +39,8 @@ public class GL_V8 {
     private boolean showNormalLines;
     private int normalLinesCount;
 
-    public GL_V8(float[][][] data, float level, int gridSize) {
+    public GL_V8(MCRunner mcRunner) {
+
         try {
             initDisplay();
             initGL();
@@ -56,7 +57,7 @@ public class GL_V8 {
         float farClip = 10000;
 
         this.camera = new Camera(DEFAULT_FOV, aspectRatio, nearClip, farClip);
-        this.mcRunner = new MCRunner(data, level, gridSize, MCRunner.Type.SLICE);
+        this.mcRunner = mcRunner;
         this.mcRunner.setOnMeshFinished(this::receiveUpdate);
         this.newBuffer = new SynchronousQueue<>();
         this.showNormalLines = false;

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import controller.mc_alg.MCRunner;
 import gui.Histogram;
 import gui.opengl.GL_V8;
 import javafx.collections.FXCollections;
@@ -35,7 +36,9 @@ public class Controller {
     @FXML
     private TextField levelTextField;
     @FXML
-    private ProgressBar meshProgress;
+    private ProgressBar mcProgress;
+    @FXML
+    private ProgressBar imageProgress;
     @FXML
     private ListView<File> directoriesList;
     @FXML
@@ -151,15 +154,20 @@ public class Controller {
         };
 
         rasterLoader.setOnSucceeded(event -> {
-            float[][][] data = rasterLoader.getValue();
+            MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, MCRunner.Type.SLICE);
 
-            Thread thread = new Thread(() -> new GL_V8(data, level, gridSize).show());
-            thread.setName("OpenGL View");
-            thread.start();
+            mcProgress.progressProperty().bind(mcRunner.progressProperty());
+
+            Thread glThread = new Thread(() -> new GL_V8(mcRunner).show());
+            glThread.setName("OpenGL View");
+            glThread.start();
         });
 
-        meshProgress.progressProperty().bind(rasterLoader.progressProperty());
-        new Thread(rasterLoader).start();
+        imageProgress.progressProperty().bind(rasterLoader.progressProperty());
+
+        Thread rasterLoaderThread = new Thread(rasterLoader);
+        rasterLoaderThread.setName("Raster loader Thread");
+        rasterLoaderThread.start();
     }
 
     /**

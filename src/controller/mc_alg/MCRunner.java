@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import org.lwjgl.BufferUtils;
 import util.Vector3f;
 
@@ -42,6 +44,8 @@ public class MCRunner implements Runnable {
          */
         COMPLETE
     }
+
+    private DoubleProperty progressProperty; // 0 or negative => 0%, 1 or greater => 100%
 
     // the initial capacity for the points HashMap, fairly high to reduce rehashing
     private final int POINTS_CAPACITY = 100000;
@@ -119,6 +123,8 @@ public class MCRunner implements Runnable {
 
         Objects.requireNonNull(type, "type must not be null!");
 
+        progressProperty = new SimpleDoubleProperty();
+
         this.data = data;
         this.level = level;
         this.gridSize = gridSize;
@@ -132,6 +138,16 @@ public class MCRunner implements Runnable {
         this.points = new LinkedHashMap<>(POINTS_CAPACITY);
         this.indices = new LinkedList<>();
         this.normals = new LinkedList<>();
+    }
+
+    /**
+     * Returns the progress property of this <code>MCRunner</code>. Will have a value between 0 - 1 indicating
+     * 0% to 100% done.
+     *
+     * @return the progress property
+     */
+    public DoubleProperty progressProperty() {
+        return progressProperty;
     }
 
     /**
@@ -167,6 +183,9 @@ public class MCRunner implements Runnable {
 
     @Override
     public void run() {
+        int cubesInSlice = data[0].length * data[0][0].length;
+        double numCubes = (data.length * cubesInSlice) / Math.pow(gridSize, 3);
+        int doneCubes = 0;
         int cubeIndex;
         Cube[][] currentSlice;
         Cube cube;
@@ -191,8 +210,8 @@ public class MCRunner implements Runnable {
                         outputMesh();
                     }
 
-                    interrupted = Thread.interrupted();
 
+                    interrupted = Thread.interrupted();
                     if (interrupted) {
                         return;
                     }
@@ -202,6 +221,8 @@ public class MCRunner implements Runnable {
             if (type == SLICE) {
                 outputMesh();
             }
+
+            progressProperty.set((doneCubes += cubesInSlice) / numCubes);
         }
 
         if (type == COMPLETE) {
