@@ -5,7 +5,7 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
-<GridPane hgap="5.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.Controller">
+<GridPane hgap="5.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" style="-fx-background-image: url(&quot;V8/pw_pattern.png&quot;);" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.Controller">
     <columnConstraints>
         <ColumnConstraints hgrow="NEVER" percentWidth="20.0" />
         <ColumnConstraints halignment="CENTER" hgrow="NEVER" percentWidth="80.0" />
@@ -48,21 +48,20 @@
                 <Insets left="5.0" />
             </GridPane.margin>
         </VBox>
-        <GridPane GridPane.columnIndex="1" GridPane.rowSpan="2">
+        <GridPane vgap="5.0" GridPane.columnIndex="1" GridPane.rowSpan="2">
             <columnConstraints>
                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
-                <ColumnConstraints />
             </columnConstraints>
             <rowConstraints>
                 <RowConstraints vgrow="SOMETIMES" />
                 <RowConstraints percentHeight="30.0" vgrow="SOMETIMES" />
             </rowConstraints>
             <children>
-                <Pane fx:id="imagePane" GridPane.columnSpan="2">
+                <Pane fx:id="imagePane">
                     <children>
                         <ImageView fx:id="imageView" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                     </children>
-                </Pane><VBox alignment="TOP_CENTER" prefHeight="200.0" prefWidth="100.0" spacing="5.0" style="-fx-background-color: lightgrey; -fx-background-radius: 10; -fx-border-style: solid; -fx-border-radius: 10;" GridPane.rowIndex="1">
+                </Pane><VBox alignment="TOP_CENTER" spacing="5.0" style="-fx-background-color: lightgrey; -fx-border-style: solid; -fx-background-image: url(&quot;V8/squared_metal.png&quot;);" GridPane.rowIndex="1">
 <children><Label text="Marching Cubes">
 <font>
 <Font name="System Bold" size="18.0" />
@@ -100,13 +99,13 @@
                                 <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnSpan="3" GridPane.rowIndex="3">
                                     <children>
                                         <Label prefWidth="149.0" text="Loading Images from disk" />
-                                        <ProgressBar fx:id="meshProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2" HBox.hgrow="ALWAYS" />
+                                        <ProgressBar fx:id="imageProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2" HBox.hgrow="ALWAYS" />
                                     </children>
                                 </HBox>
                                 <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnSpan="3" GridPane.rowIndex="4">
                                     <children>
                                         <Label text="Performing Marching Cubes" />
-                                        <ProgressBar maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" HBox.hgrow="ALWAYS" />
+                                        <ProgressBar fx:id="mcProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" HBox.hgrow="ALWAYS" />
                                     </children>
                                 </HBox>
                             </children>
