@@ -227,21 +227,20 @@ public class GL_V8 {
             glColor3f(0, 1f, 0);
             glBegin(GL_LINES);
 
-            // OpenGL coordinates differ from 'array coordinates' so the vertices are a little unintuitive
-            for (int glY = 0; glY <= zSize; glY++) {
+            for (int glY = 0; glY <= ySize; glY++) {
 
                 for (int x = 0; x <= xSize; x++) {
                     glVertex3i(x, glY, 0);
-                    glVertex3i(x, glY, ySize);
+                    glVertex3i(x, glY, zSize);
                 }
 
-                for (int glZ = 0; glZ <= ySize; glZ++) {
+                for (int glZ = 0; glZ <= zSize; glZ++) {
                     glVertex3i(0, glY, glZ);
                     glVertex3i(xSize, glY, glZ);
                 }
             }
 
-            for (int glZ = 0; glZ <= ySize; glZ++) {
+            for (int glZ = 0; glZ <= zSize; glZ++) {
 
                 for (int x = 0; x <= xSize; x++) {
                     glVertex3i(x, 0, glZ);
