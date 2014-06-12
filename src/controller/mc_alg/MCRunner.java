@@ -141,6 +141,33 @@ public class MCRunner implements Runnable {
     }
 
     /**
+     * Returns the x size of the underlying data array.
+     *
+     * @return the size in x
+     */
+    public int getXSize() {
+        return data[0][0].length;
+    }
+
+    /**
+     * Returns the y size of the underlying data array.
+     *
+     * @return the size in y
+     */
+    public int getYSize() {
+        return data[0].length;
+    }
+
+    /**
+     * Returns the z size of the underlying data array.
+     *
+     * @return the size in z
+     */
+    public int getZSize() {
+        return data.length;
+    }
+
+    /**
      * Returns the progress property of this <code>MCRunner</code>. Will have a value between 0 - 1 indicating
      * 0% to 100% done.
      *

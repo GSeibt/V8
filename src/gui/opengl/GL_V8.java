@@ -36,8 +36,13 @@ public class GL_V8 {
     private int vbonId;  // Vertex Buffer Object ID (Normals)
     private int vbonlId; // Vertex Buffer Object ID (Normal Lines)
     private int indicesCount;
-    private boolean showNormalLines;
     private int normalLinesCount;
+    private boolean showNormalLines;
+    private boolean showCubes;
+    private boolean showCoordinateSystem;
+    private int xSize;
+    private int ySize;
+    private int zSize;
 
     public GL_V8(MCRunner mcRunner) {
 
@@ -61,6 +66,11 @@ public class GL_V8 {
         this.mcRunner.setOnMeshFinished(this::receiveUpdate);
         this.newBuffer = new SynchronousQueue<>();
         this.showNormalLines = false;
+        this.showCubes = false;
+        this.showCoordinateSystem = false;
+        this.xSize = mcRunner.getXSize();
+        this.ySize = mcRunner.getYSize();
+        this.zSize = mcRunner.getZSize();
     }
 
     private void initGL() {
@@ -209,6 +219,89 @@ public class GL_V8 {
             }
         }
 
+        if (showCubes) {
+            boolean lighting = glIsEnabled(GL_LIGHTING);
+
+            glDisable(GL_LIGHTING);
+
+            glColor3f(0, 1f, 0);
+            glBegin(GL_LINES);
+
+            // OpenGL coordinates differ from 'array coordinates' so the vertices are a little unintuitive
+            for (int glY = 0; glY <= zSize; glY++) {
+
+                for (int x = 0; x <= xSize; x++) {
+                    glVertex3i(x, glY, 0);
+                    glVertex3i(x, glY, ySize);
+                }
+
+                for (int glZ = 0; glZ <= ySize; glZ++) {
+                    glVertex3i(0, glY, glZ);
+                    glVertex3i(xSize, glY, glZ);
+                }
+            }
+
+            for (int glZ = 0; glZ <= ySize; glZ++) {
+
+                for (int x = 0; x <= xSize; x++) {
+                    glVertex3i(x, 0, glZ);
+                    glVertex3i(x, zSize, glZ);
+                }
+            }
+
+            glEnd();
+
+            if (lighting) {
+                glEnable(GL_LIGHTING);
+            }
+        }
+
+        if (showCoordinateSystem) {
+            boolean lighting = glIsEnabled(GL_LIGHTING);
+            int oldLineWidth = glGetInteger(GL_LINE_WIDTH);
+
+            glDisable(GL_LIGHTING);
+
+            glLineWidth(3);
+            glBegin(GL_LINES);
+
+            glColor3f(1f,  0, 0 );
+            glVertex3i(0, 0, 0);
+
+            int length = 800;
+            int arrowLength = 200;
+            int arrowHeight = 30;
+
+            glVertex3i(length, 0, 0);
+            glVertex3i(length, 0, 0);
+            glVertex3i(length - arrowLength, arrowHeight, 0);
+            glVertex3i(length, 0, 0);
+            glVertex3i(length - arrowLength, -arrowHeight, 0);
+
+            glColor3f(0,  1f, 0 );
+            glVertex3i(0, 0, 0);
+            glVertex3i(0, length, 0);
+            glVertex3i(0, length, 0);
+            glVertex3i(arrowHeight, length - arrowLength, 0);
+            glVertex3i(0, length, 0);
+            glVertex3i(-arrowHeight, length - arrowLength, 0);
+
+            glColor3f(0,  0, 1f );
+            glVertex3i(0, 0, 0);
+            glVertex3i(0, 0, length);
+            glVertex3i(0, 0, length);
+            glVertex3i(arrowHeight, 0, length - arrowLength);
+            glVertex3i(0, 0, length);
+            glVertex3i(-arrowHeight, 0, length - arrowLength);
+
+            glEnd();
+
+            if (lighting) {
+                glEnable(GL_LIGHTING);
+            }
+            glLineWidth(oldLineWidth);
+        }
+
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
 
@@ -270,6 +363,14 @@ public class GL_V8 {
                 } else {
                     glEnable(GL_CULL_FACE);
                 }
+            }
+
+            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_K) {
+                showCoordinateSystem = !showCoordinateSystem;
+            }
+
+            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_B) {
+                showCubes = !showCubes;
             }
 
             if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_N) {
