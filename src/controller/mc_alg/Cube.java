@@ -114,6 +114,9 @@ public class Cube {
      *         the level to be used
      *
      * @return the cube index
+     *
+     * @see {@link controller.mc_alg.Tables#getEdgeIndex(int)}
+     * @see {@link controller.mc_alg.Tables#getTriangleIndex(int)}
      */
     public int getIndex(float level) {
         int index = 0;

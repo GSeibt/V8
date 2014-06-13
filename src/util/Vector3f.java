@@ -60,9 +60,11 @@ public class Vector3f implements Cloneable {
         float sinAngle = (float) Math.sin(-angle);
         float cosAngle = (float) Math.cos(-angle);
 
-        return this.cross(axis.mul(sinAngle)).add( //Rotation on local X
-                (this.mul(cosAngle)).add( //Rotation on local Z
-                        axis.mul(this.dot(axis.mul(1 - cosAngle))))); //Rotation on local Y
+        Vector3f rotX = this.cross(axis.mul(sinAngle)); //Rotation on local X
+        Vector3f rotY = axis.mul(this.dot(axis.mul(1 - cosAngle))); //Rotation on local Y
+        Vector3f rotZ = this.mul(cosAngle); //Rotation on local Z
+
+        return rotX.add(rotY.add(rotZ));
     }
 
     /**
@@ -118,28 +120,6 @@ public class Vector3f implements Cloneable {
      */
     public Vector3f mul(float scalar) {
         return new Vector3f(x * scalar, y * scalar, z * scalar);
-    }
-
-    /**
-     * Returns a new <code>Vector</code> representing the sum of <code>this</code> <code>Vector</code> and the given
-     * scalar.
-     *
-     * @param scalar
-     *         the scalar
-     *
-     * @return the sum of the <code>Vector</code> and the scalar
-     */
-    public Vector3f add(float scalar) {
-        return new Vector3f(x + scalar, y + scalar, z + scalar);
-    }
-
-    /**
-     * Returns a new <code>Vector</code> representing the absolute value of this <code>Vector</code>.
-     *
-     * @return the absolute <code>Vector</code>
-     */
-    public Vector3f abs() {
-        return new Vector3f(Math.abs(x), Math.abs(y), Math.abs(z));
     }
 
     /**

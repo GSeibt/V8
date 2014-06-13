@@ -5,6 +5,8 @@ import java.util.List;
 
 /**
  * A volume containing <code>MetaBall</code> instances.
+ *
+ * @see <a href="http://en.wikipedia.org/wiki/Metaballs">Metaballs</a>
  */
 public class MetaBallVolume {
 
