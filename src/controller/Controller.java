@@ -21,7 +21,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import util.OBJExporter;
 
 /**
  * JavaFX controller class for fxml/V8.fxml.
@@ -195,5 +197,68 @@ public class Controller {
         if (focusedItem != null) {
             new Histogram(focusedItem).show();
         }
+    }
+
+    @FXML
+    private void objExportClicked() {
+        List<DCMImage> images = filesList.getItems();
+
+        if (images.isEmpty()) {
+            return;
+        }
+
+        final int level;
+        try {
+            level = Integer.parseInt(levelTextField.getText().trim());
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid level. " + levelTextField.getText());
+            return;
+        }
+
+        final int gridSize;
+        try {
+            gridSize = Integer.parseInt(gridSizeTextField.getText().trim());
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid gridSize: " + gridSizeTextField.getText());
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        File saveFile = fileChooser.showSaveDialog(stage);
+
+        if (saveFile == null) {
+            return;
+        }
+
+        Task<float[][][]> rasterLoader = new Task<float[][][]>() {
+
+            @Override
+            protected float[][][] call() throws Exception {
+                float[][][] data = new float[images.size()][][];
+
+                for (int i = 0; i < images.size(); i++) {
+                    data[i] = images.get(i).getImageRaster();
+                    updateProgress(i, images.size());
+                }
+
+                return data;
+            }
+        };
+
+        rasterLoader.setOnSucceeded(event -> {
+            MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, MCRunner.Type.COMPLETE);
+            Thread runnerThread = new Thread(mcRunner);
+
+            mcRunner.setOnMeshFinished(m -> new Thread(() -> OBJExporter.export(m, saveFile)).start());
+
+            mcProgress.progressProperty().bind(mcRunner.progressProperty());
+            runnerThread.start();
+        });
+
+        imageProgress.progressProperty().bind(rasterLoader.progressProperty());
+
+        Thread rasterLoaderThread = new Thread(rasterLoader);
+        rasterLoaderThread.setName("RasterLoader");
+        rasterLoaderThread.start();
     }
 }

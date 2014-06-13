@@ -107,7 +107,7 @@
                                         <Label text="Performing Marching Cubes" />
                                         <ProgressBar fx:id="mcProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" HBox.hgrow="ALWAYS" />
                                     </children>
-                                </HBox>
+                                </HBox><Button mnemonicParsing="false" onAction="#objExportClicked" text="OBJ Export" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
                             </children>
 <VBox.margin>
 <Insets />
