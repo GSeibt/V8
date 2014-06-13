@@ -1,14 +1,11 @@
 package controller;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import controller.mc_alg.MCRunner;
 import gui.Histogram;
@@ -50,6 +47,7 @@ public class Controller {
 
     private Map<File, ObservableList<DCMImage>> dirCache;
     private ObservableList<File> directories;
+    private File lastDir; // the parent of the last directory that was added
     private Stage stage;
 
     /**
@@ -60,14 +58,18 @@ public class Controller {
         dirCache = new HashMap<>();
         directories = directoriesList.getItems();
 
-        directoriesList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            filesList.setItems(dirCache.get(newValue));
+        directoriesList.getFocusModel().focusedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                filesList.setItems(dirCache.get(newValue));
+            }
         });
 
         directoriesList.setCellFactory(param -> new ListCell<File>() {
 
             @Override
             protected void updateItem(File item, boolean empty) {
+                super.updateItem(item, empty);
+
                 if (empty) {
                     setText(null);
                 } else {
@@ -76,8 +78,10 @@ public class Controller {
             }
         });
 
-        filesList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            imageView.setImage(newValue.getImage());
+        filesList.getFocusModel().focusedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                imageView.setImage(newValue.getImage());
+            }
         });
 
         imageView.setPreserveRatio(false);
@@ -91,19 +95,21 @@ public class Controller {
     @FXML
     private void addDirectoryClicked() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setInitialDirectory(new File("D:\\Dropbox\\Studium\\3D Bildverarbeitung und -druck\\Flöte"));
+        directoryChooser.setInitialDirectory(lastDir);
         File dir = directoryChooser.showDialog(stage.getScene().getWindow());
-        List<DCMImage> images;
 
         if (dir == null || directories.contains(dir)) {
             return;
         }
 
-        try (Stream<Path> fileStream = Files.list(dir.toPath()).filter(name -> name.toString().endsWith(".dcm"))) {
-            Stream<List<DCMImage>> imageStream = fileStream.map(path -> DCMImage.getDCMImages(path.toFile()));
-            images = imageStream.reduce(new LinkedList<DCMImage>(), (l1, l2) -> {l1.addAll(l2); return l1; });
-        } catch (IOException e) {
-            System.err.println("Could not list the files in directory " + dir.getName());
+        lastDir = dir.getParentFile();
+
+        File[] dcmFiles = dir.listFiles((ignored, name) -> name.endsWith(".dcm"));
+        List<DCMImage> images = Arrays.stream(dcmFiles)
+                        .map(DCMImage::getDCMImages)
+                        .reduce(new LinkedList<>(), (l1, l2) -> {l1.addAll(l2); return l1; });
+
+        if (images.isEmpty()) {
             return;
         }
 
@@ -159,14 +165,14 @@ public class Controller {
             mcProgress.progressProperty().bind(mcRunner.progressProperty());
 
             Thread glThread = new Thread(() -> new GL_V8(mcRunner).show());
-            glThread.setName("OpenGL View");
+            glThread.setName(GL_V8.class.getSimpleName());
             glThread.start();
         });
 
         imageProgress.progressProperty().bind(rasterLoader.progressProperty());
 
         Thread rasterLoaderThread = new Thread(rasterLoader);
-        rasterLoaderThread.setName("Raster loader Thread");
+        rasterLoaderThread.setName("RasterLoader");
         rasterLoaderThread.start();
     }
 
@@ -184,6 +190,10 @@ public class Controller {
      */
     @FXML
     private void histogramClicked() {
-        new Histogram(filesList.getFocusModel().getFocusedItem()).show();
+        DCMImage focusedItem = filesList.getFocusModel().getFocusedItem();
+
+        if (focusedItem != null) {
+            new Histogram(focusedItem).show();
+        }
     }
 }
