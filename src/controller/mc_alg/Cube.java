@@ -3,9 +3,13 @@ package controller.mc_alg;
 /**
  * A <code>Cube</code> used in the marching cubes algorithm. The class maintains its own set of vertices and edge
  * vectors, setter methods copy the given values.
- *
- * //TODO add image explaining indexing sheme
- * //TODO add explanation of cube index generation
+ * <br>The indexing of the vertices and edges is illustrated in the image below: <br>
+ * <center>
+ * <img src="doc-files/cube.png" width="40%" height="40%" alt="Image not found!">
+ * </center>
+ * The cube index is formed by setting bit <code>i</code> in an int to 1 if vertex <code>i</code>
+ * in the cube is less than or equal to the level. All other bits are 0. This results in a cube index between 0 and 255
+ * that can be used for lookup in the {@link controller.mc_alg.Tables} class.
  */
 public class Cube {
 
@@ -124,7 +128,7 @@ public class Cube {
     }
 
     /**
-     * Returns the weight of the vertex at the given <code>index/code>.
+     * Returns the weight of the vertex at the given <code>index</code>.
      * See the class documentation for a description of the indexing convention used.
      *
      * @param index

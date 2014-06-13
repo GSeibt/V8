@@ -1,14 +1,29 @@
 package controller.mc_alg;
 
 /**
- *
+ * Lookup tables based on <a href="http://paulbourke.net/geometry/polygonise/">paulbourke.net/geometry/polygonise/</a>.
  */
 public class Tables {
 
+    /**
+     * Returns an int where every 1-bit indicates that the edge with the same index as the bit contains a vertex of a
+     * triangle that intersects the cube.
+     *
+     * @param cubeIndex the index of the cube (see {@link Cube#getIndex(float)}
+     * @return an int of the described format
+     */
     public static int getEdgeIndex(int cubeIndex) {
         return EDGES[cubeIndex];
     }
 
+    /**
+     * Returns an array where every group of 3 integers (starting with the first) represent edge indices of a
+     * cube whose triangle vertices form a triangle. Encountering -1 while iterating over the array indicates that
+     * there are no more triangles in the cube.
+     *
+     * @param cubeIndex the index of the cube (see {@link Cube#getIndex(float)}
+     * @return an int[] of the described format
+     */
     public static int[] getTriangleIndex(int cubeIndex) {
         return TRIANGLES[cubeIndex];
     }

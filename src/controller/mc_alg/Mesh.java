@@ -19,7 +19,7 @@ public class Mesh {
      *
      * @param vertices the vertices of the triangles
      * @param normals the normals at the vertices
-     * @param indices the indices into <code>vertices/code> and <code>normals</code>
+     * @param indices the indices into <code>vertices</code> and <code>normals</code>
      * @param normalLines pairs of two vertices describing lines symbolising the normals
      */
     public Mesh(FloatBuffer vertices, FloatBuffer normals, IntBuffer indices, FloatBuffer normalLines) {
