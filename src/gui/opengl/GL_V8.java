@@ -24,26 +24,42 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 
+/**
+ * A window showing the mesh resulting from an <code>MCRunner</code> instance.
+ * Capabilities include displaying a coordinate system, the unit cubes of the Marching Cubes algorithm, displaying
+ * the mesh as lines or filled polygons and enabling/disabling lighting.
+ * //TODO keybindings
+ */
 public class GL_V8 {
 
-    private final int DEFAULT_FOV = 70;
-    private FloatBuffer lightPosition;
     private SynchronousQueue<Mesh> newBuffer;
+    private FloatBuffer lightPosition;
     private MCRunner mcRunner;
     private Camera camera;
+    private final File scDir; // the screenshot directory
+
     private int vboId;   // Vertex Buffer Object ID (Points)
     private int vboiId;  // Vertex Buffer Object ID (Indices)
     private int vbonId;  // Vertex Buffer Object ID (Normals)
     private int vbonlId; // Vertex Buffer Object ID (Normal Lines)
-    private int indicesCount;
-    private int normalLinesCount;
+    private int indicesCount; // how many indices should be drawn (the triangles of the mesh)
+    private int normalLinesCount; // how many normal lines should be drawn
+
     private boolean showNormalLines;
     private boolean showCubes;
     private boolean showCoordinateSystem;
+
+    // the dimensions of the data array the MCRunner is using
     private int xSize;
     private int ySize;
     private int zSize;
 
+    /**
+     * Constructs a new <code>GL_V8</code> window that will show the results of the given <code>mcRunner</code>.
+     * Note that this constructor must be called in the same thread as the {@link #show()} method.
+     *
+     * @param mcRunner the <code>MCRunner</code> for this <code>GL_V8</code>
+     */
     public GL_V8(MCRunner mcRunner) {
 
         try {
@@ -57,22 +73,27 @@ public class GL_V8 {
             System.exit(0);
         }
 
+        int fov = 70;
         float aspectRatio = Display.getWidth() / (float) Display.getHeight();
         float nearClip = 0.1f;
         float farClip = 10000;
 
-        this.camera = new Camera(DEFAULT_FOV, aspectRatio, nearClip, farClip);
+        this.newBuffer = new SynchronousQueue<>();
+        this.camera = new Camera(fov, aspectRatio, nearClip, farClip);
         this.mcRunner = mcRunner;
         this.mcRunner.setOnMeshFinished(this::receiveUpdate);
-        this.newBuffer = new SynchronousQueue<>();
         this.showNormalLines = false;
         this.showCubes = false;
         this.showCoordinateSystem = false;
         this.xSize = mcRunner.getXSize();
         this.ySize = mcRunner.getYSize();
         this.zSize = mcRunner.getZSize();
+        this.scDir = new File("./screenshots");
     }
 
+    /**
+     * Initializes general OpenGL settings.
+     */
     private void initGL() {
         glMatrixMode(GL_MODELVIEW);
         glClearColor(0.5f, 0.5f, 0.5f, 1);
@@ -84,6 +105,9 @@ public class GL_V8 {
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     }
 
+    /**
+     * Initializes OpenGL settings pertaining to lighting.
+     */
     private void initGLLight() {
         glMatrixMode(GL_MODELVIEW);
         glShadeModel(GL_SMOOTH);
@@ -129,6 +153,9 @@ public class GL_V8 {
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     }
 
+    /**
+     * Initializes vertex buffer objects for storing the data the <code>MCRunner</code> produces.
+     */
     private void initGLObjects() {
 
         // create a new Vertex Buffer Object for the vertexes
@@ -151,17 +178,32 @@ public class GL_V8 {
         glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
+    /**
+     * Initializes the LWJGL <code>Display</code> class.
+     *
+     * @throws LWJGLException if there is any exception initializing the <code>Display</code>
+     */
     private void initDisplay() throws LWJGLException {
         Display.setDisplayMode(new DisplayMode(1024, 786));
         Display.setTitle("V8");
         Display.create();
     }
 
+    /**
+     * Initializes the LWJGL input classes for <code>Mouse</code> and <code>Keyboard</code>.
+     *
+     * @throws LWJGLException if there is any exception initializing the <code>Display</code>
+     */
     private void initInput() throws LWJGLException {
         Keyboard.create();
         Mouse.create();
     }
 
+    /**
+     * Shows the window and starts the <code>MCRunner</code> in a new thread. This method blocks until the window is
+     * closed. Note that this method must be called in the same thread as the constructor of this instance of
+     * <code>GL_V8</code>.
+     */
     public void show() {
         Thread runner = new Thread(mcRunner);
         runner.setName(mcRunner.getClass().getSimpleName());
@@ -172,13 +214,16 @@ public class GL_V8 {
             input();
             draw();
             Display.update();
-            Display.sync(50);
+            Display.sync(30);
         }
 
         runner.interrupt();
         cleanup();
     }
 
+    /**
+     * Draws the scene.
+     */
     private void draw() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glLoadIdentity();
@@ -200,105 +245,15 @@ public class GL_V8 {
         glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_INT, 0);
 
         if (showNormalLines) {
-            boolean lighting = glIsEnabled(GL_LIGHTING);
-
-            glDisable(GL_LIGHTING);
-
-            glEnableClientState(GL_VERTEX_ARRAY);
-            glBindBufferARB(GL_ARRAY_BUFFER, vbonlId);
-            glVertexPointer(3, GL_FLOAT, 0, 0);
-
-            glEnableClientState(GL_NORMAL_ARRAY);
-            glBindBufferARB(GL_ARRAY_BUFFER, 0);
-
-            glColor3f(0, 0, 1f);
-            glDrawArrays(GL_LINES, 0, normalLinesCount);
-
-            if (lighting) {
-                glEnable(GL_LIGHTING);
-            }
+            drawNormalLines();
         }
 
         if (showCubes) {
-            boolean lighting = glIsEnabled(GL_LIGHTING);
-
-            glDisable(GL_LIGHTING);
-
-            glColor3f(0, 1f, 0);
-            glBegin(GL_LINES);
-
-            for (int glY = 0; glY <= ySize; glY++) {
-
-                for (int x = 0; x <= xSize; x++) {
-                    glVertex3i(x, glY, 0);
-                    glVertex3i(x, glY, zSize);
-                }
-
-                for (int glZ = 0; glZ <= zSize; glZ++) {
-                    glVertex3i(0, glY, glZ);
-                    glVertex3i(xSize, glY, glZ);
-                }
-            }
-
-            for (int glZ = 0; glZ <= zSize; glZ++) {
-
-                for (int x = 0; x <= xSize; x++) {
-                    glVertex3i(x, 0, glZ);
-                    glVertex3i(x, zSize, glZ);
-                }
-            }
-
-            glEnd();
-
-            if (lighting) {
-                glEnable(GL_LIGHTING);
-            }
+            drawCubes();
         }
 
         if (showCoordinateSystem) {
-            boolean lighting = glIsEnabled(GL_LIGHTING);
-            int oldLineWidth = glGetInteger(GL_LINE_WIDTH);
-
-            glDisable(GL_LIGHTING);
-
-            glLineWidth(3);
-            glBegin(GL_LINES);
-
-            glColor3f(1f,  0, 0 );
-            glVertex3i(0, 0, 0);
-
-            int length = 800;
-            int arrowLength = 200;
-            int arrowHeight = 30;
-
-            glVertex3i(length, 0, 0);
-            glVertex3i(length, 0, 0);
-            glVertex3i(length - arrowLength, arrowHeight, 0);
-            glVertex3i(length, 0, 0);
-            glVertex3i(length - arrowLength, -arrowHeight, 0);
-
-            glColor3f(0,  1f, 0 );
-            glVertex3i(0, 0, 0);
-            glVertex3i(0, length, 0);
-            glVertex3i(0, length, 0);
-            glVertex3i(arrowHeight, length - arrowLength, 0);
-            glVertex3i(0, length, 0);
-            glVertex3i(-arrowHeight, length - arrowLength, 0);
-
-            glColor3f(0,  0, 1f );
-            glVertex3i(0, 0, 0);
-            glVertex3i(0, 0, length);
-            glVertex3i(0, 0, length);
-            glVertex3i(arrowHeight, 0, length - arrowLength);
-            glVertex3i(0, 0, length);
-            glVertex3i(-arrowHeight, 0, length - arrowLength);
-
-            glEnd();
-
-            if (lighting) {
-                glEnable(GL_LIGHTING);
-            }
-            glLineWidth(oldLineWidth);
+            drawCoordinateSystem();
         }
 
         glDisableClientState(GL_VERTEX_ARRAY);
@@ -308,10 +263,130 @@ public class GL_V8 {
         glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
+    /**
+     * Draws a coordinate system. X, Y, and Z axis are red, green, and blue respectively.
+     */
+    private void drawCoordinateSystem() {
+        boolean lighting = glIsEnabled(GL_LIGHTING);
+        int oldLineWidth = glGetInteger(GL_LINE_WIDTH);
+
+        glDisable(GL_LIGHTING);
+
+        glLineWidth(3);
+        glBegin(GL_LINES);
+
+        glColor3f(1f,  0, 0 );
+        glVertex3i(0, 0, 0);
+
+        int length = 800;
+        int arrowLength = 200;
+        int arrowHeight = 30;
+
+        glVertex3i(length, 0, 0);
+        glVertex3i(length, 0, 0);
+        glVertex3i(length - arrowLength, arrowHeight, 0);
+        glVertex3i(length, 0, 0);
+        glVertex3i(length - arrowLength, -arrowHeight, 0);
+
+        glColor3f(0,  1f, 0 );
+        glVertex3i(0, 0, 0);
+        glVertex3i(0, length, 0);
+        glVertex3i(0, length, 0);
+        glVertex3i(arrowHeight, length - arrowLength, 0);
+        glVertex3i(0, length, 0);
+        glVertex3i(-arrowHeight, length - arrowLength, 0);
+
+        glColor3f(0,  0, 1f );
+        glVertex3i(0, 0, 0);
+        glVertex3i(0, 0, length);
+        glVertex3i(0, 0, length);
+        glVertex3i(arrowHeight, 0, length - arrowLength);
+        glVertex3i(0, 0, length);
+        glVertex3i(-arrowHeight, 0, length - arrowLength);
+
+        glEnd();
+
+        if (lighting) {
+            glEnable(GL_LIGHTING);
+        }
+        glLineWidth(oldLineWidth);
+    }
+
+    /**
+     * Draws 1x1x1 cubes over the volume of the <code>MCRunner</code>s data array.
+     */
+    private void drawCubes() {
+        boolean lighting = glIsEnabled(GL_LIGHTING);
+
+        glDisable(GL_LIGHTING);
+
+        glColor3f(0, 1f, 0);
+        glBegin(GL_LINES);
+
+        for (int glY = 0; glY <= ySize; glY++) {
+
+            for (int x = 0; x <= xSize; x++) {
+                glVertex3i(x, glY, 0);
+                glVertex3i(x, glY, zSize);
+            }
+
+            for (int glZ = 0; glZ <= zSize; glZ++) {
+                glVertex3i(0, glY, glZ);
+                glVertex3i(xSize, glY, glZ);
+            }
+        }
+
+        for (int glZ = 0; glZ <= zSize; glZ++) {
+
+            for (int x = 0; x <= xSize; x++) {
+                glVertex3i(x, 0, glZ);
+                glVertex3i(x, zSize, glZ);
+            }
+        }
+
+        glEnd();
+
+        if (lighting) {
+            glEnable(GL_LIGHTING);
+        }
+    }
+
+    /**
+     * Draws the normal lines that were given in the last received <code>Mesh</code>.
+     */
+    private void drawNormalLines() {
+        boolean lighting = glIsEnabled(GL_LIGHTING);
+
+        glDisable(GL_LIGHTING);
+
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glBindBufferARB(GL_ARRAY_BUFFER, vbonlId);
+        glVertexPointer(3, GL_FLOAT, 0, 0);
+
+        glEnableClientState(GL_NORMAL_ARRAY);
+        glBindBufferARB(GL_ARRAY_BUFFER, 0);
+
+        glColor3f(0, 0, 1f);
+        glDrawArrays(GL_LINES, 0, normalLinesCount);
+
+        if (lighting) {
+            glEnable(GL_LIGHTING);
+        }
+    }
+
+    /**
+     * This method will be called by the <code>MCRunner</code> thread when a new mesh was produced.
+     *
+     * @param mesh the new mesh
+     */
     private void receiveUpdate(Mesh mesh) {
         try { newBuffer.put(mesh); } catch (InterruptedException ignored) {}
     }
 
+    /**
+     * Checks whether a new <code>Mesh</code> was produced by the <code>MCRunner</code> and if so buffers the
+     * received data.
+     */
     private void update() {
         Mesh change = newBuffer.poll();
 
@@ -336,8 +411,11 @@ public class GL_V8 {
         }
     }
 
+    /**
+     * Polls for input and makes the resulting changes to the state of the window.
+     */
     private void input() {
-        camera.input();
+        camera.input(); // move the camera
 
         while (Keyboard.next()) {
             if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_G) {
@@ -382,6 +460,10 @@ public class GL_V8 {
         }
     }
 
+    /**
+     * Takes a screenshot of the window and stores it in the directory 'screenshots' in the current working directory.
+     * The filename will be 'SC_X.bmp' where X is a continually increasing index.
+     */
     private void screenshot() {
         int width = Display.getWidth();
         int height= Display.getHeight();
@@ -391,27 +473,38 @@ public class GL_V8 {
         glReadBuffer(GL_FRONT);
         glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 
-        File scDir = new File("./screenshots");
-
-        if (scDir.exists() && !scDir.isDirectory()) {
-            System.err.println("Screenshot directory could not be created.");
-            return;
-        } else if (!scDir.exists()) {
-            if (!scDir.mkdir()) {
-                System.err.println("Screenshot directory could not be created.");
-                return;
-            }
-        }
-
-        File[] scFiles = scDir.listFiles((ignored, name) -> name.matches("SC_[0-9]+\\.(bmp|jpg)"));
-        int nextIndex = Arrays.stream(scFiles)
-                              .map(f -> Integer.parseInt(new Scanner(f.getName()).findInLine("[0-9]+")))
-                              .max(Integer::compare)
-                              .orElse(0);
-        String format = "BMP";
-        File screenshot = new File(scDir, "SC_" + (nextIndex + 1) + "." + format.toLowerCase());
-
         new Thread(() -> {
+            String format = "BMP"; // JPG works too
+            File screenshot;
+
+            synchronized (scDir) {
+                if (scDir.exists() && !scDir.isDirectory()) {
+                    System.err.println("Screenshot directory could not be created.");
+                    return;
+                } else if (!scDir.exists()) {
+                    if (!scDir.mkdir()) {
+                        System.err.println("Screenshot directory could not be created.");
+                        return;
+                    }
+                }
+
+                File[] scFiles = scDir.listFiles((ignored, name) -> name.matches("SC_[0-9]+\\.(bmp|jpg)"));
+                int nextIndex = Arrays.stream(scFiles)
+                        .map(f -> Integer.parseInt(new Scanner(f.getName()).findInLine("[0-9]+")))
+                        .max(Integer::compare)
+                        .orElse(0);
+                screenshot = new File(scDir, "SC_" + (nextIndex + 1) + "." + format.toLowerCase());
+
+                try {
+                    if (!screenshot.createNewFile()) {
+                        throw new IOException("Could not create the screenshot file.");
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return;
+                }
+            }
+
             BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
             for (int x = 0; x < width; x++) {
@@ -432,6 +525,9 @@ public class GL_V8 {
         }).start();
     }
 
+    /**
+     * Handles all cleanup required after {@link #show()} has returned.
+     */
     private void cleanup() {
         cleanupBuffers();
         Display.destroy();
@@ -439,6 +535,9 @@ public class GL_V8 {
         Mouse.destroy();
     }
 
+    /**
+     * Deletes the buffers created in {@link #initGLObjects()}.
+     */
     private void cleanupBuffers() {
         glDeleteBuffersARB(vboId);
         glDeleteBuffersARB(vboiId);
