@@ -28,8 +28,10 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
  * A window showing the mesh resulting from an <code>MCRunner</code> instance.
  * Capabilities include displaying a coordinate system, the unit cubes of the Marching Cubes algorithm, displaying
  * the mesh as lines or filled polygons and enabling/disabling lighting. Keybindings are as follows:<br><br>
- * Camera:<br>
+ *
+ * <center>
  * <table border="1" summary="Keybindings for the camera.">
+ * <caption>Keybindings for the camera.</caption>
  * <tr><td>Key</td><td>Effect</td></tr>
  * <tr><td>W</td><td>Move forward</td></tr>
  * <tr><td>A</td><td>Strafe left</td></tr>
@@ -43,8 +45,9 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
  * <tr><td>RIGHT</td><td>Yaw right</td></tr>
  * </table><br>
  *
- * <code>General:</code><br>
+ *
  * <table border="1" summary="Keybindings for the rendering.">
+ * <caption>Keybindings for the rendering.</caption>
  * <tr><td>Key</td><td>Effect</td></tr>
  * <tr><td>G</td><td>Switch between wireframe/fill mode for primitives</td></tr>
  * <tr><td>L</td><td>Switch lighting on/off</td></tr>
@@ -54,6 +57,7 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
  * <tr><td>N</td><td>Show/hide normal vectors</td></tr>
  * <tr><td>INSERT</td><td>Take a screenshot</td></tr>
  * </table>
+ * </center>
  */
 public class GL_V8 {
 
