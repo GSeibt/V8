@@ -17,7 +17,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.stage.DirectoryChooser;
@@ -30,6 +32,8 @@ import util.OBJExporter;
  */
 public class Controller {
 
+    @FXML
+    private ToggleGroup mcType;
     @FXML
     private TextField gridSizeTextField;
     @FXML
@@ -162,7 +166,8 @@ public class Controller {
         };
 
         rasterLoader.setOnSucceeded(event -> {
-            MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, MCRunner.Type.SLICE);
+            MCRunner.Type type = MCRunner.Type.valueOf(((RadioButton) mcType.getSelectedToggle()).getText());
+            MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, type);
 
             mcProgress.progressProperty().bind(mcRunner.progressProperty());
 
