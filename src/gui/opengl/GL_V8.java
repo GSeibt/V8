@@ -27,8 +27,33 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 /**
  * A window showing the mesh resulting from an <code>MCRunner</code> instance.
  * Capabilities include displaying a coordinate system, the unit cubes of the Marching Cubes algorithm, displaying
- * the mesh as lines or filled polygons and enabling/disabling lighting.
- * //TODO keybindings
+ * the mesh as lines or filled polygons and enabling/disabling lighting. Keybindings are as follows:<br><br>
+ * Camera:<br>
+ * <table border="1" summary="Keybindings for the camera.">
+ * <tr><td>Key</td><td>Effect</td></tr>
+ * <tr><td>W</td><td>Move forward</td></tr>
+ * <tr><td>A</td><td>Strafe left</td></tr>
+ * <tr><td>S</td><td>Move backward</td></tr>
+ * <tr><td>D</td><td>Strafe right</td></tr>
+ * <tr><td>Q</td><td>Roll counterclockwise</td></tr>
+ * <tr><td>E</td><td>Roll clockwise</td></tr>
+ * <tr><td>UP</td><td>Pitch up</td></tr>
+ * <tr><td>DOWN</td><td>Pitch down</td></tr>
+ * <tr><td>LEFT</td><td>Yaw left</td></tr>
+ * <tr><td>RIGHT</td><td>Yaw right</td></tr>
+ * </table><br>
+ *
+ * <code>General:</code><br>
+ * <table border="1" summary="Keybindings for the rendering.">
+ * <tr><td>Key</td><td>Effect</td></tr>
+ * <tr><td>G</td><td>Switch between wireframe/fill mode for primitives</td></tr>
+ * <tr><td>L</td><td>Switch lighting on/off</td></tr>
+ * <tr><td>C</td><td>Switch cull face on/off</td></tr>
+ * <tr><td>K</td><td>Show/hide coordinate system</td></tr>
+ * <tr><td>B</td><td>Show/hide unit cubes</td></tr>
+ * <tr><td>N</td><td>Show/hide normal vectors</td></tr>
+ * <tr><td>INSERT</td><td>Take a screenshot</td></tr>
+ * </table>
  */
 public class GL_V8 {
 
