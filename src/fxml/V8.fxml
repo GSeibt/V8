@@ -90,9 +90,12 @@
                                 <Label text="Level:" GridPane.rowIndex="1" />
                                 <TextField fx:id="gridSizeTextField" text="1" GridPane.columnIndex="1" />
                                 <TextField fx:id="levelTextField" text="0" GridPane.columnIndex="1" GridPane.rowIndex="1" HBox.hgrow="NEVER" />
-                                <HBox alignment="CENTER_LEFT" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
                                     <children>
-                                        <Label maxWidth="1.7976931348623157E308" text="Start execution of the Marching Cubes algorithm:" HBox.hgrow="ALWAYS" />
+                                        <Label maxWidth="1.7976931348623157E308" text="Start Marching Cubes:" HBox.hgrow="ALWAYS" /><RadioButton mnemonicParsing="false" text="CUBE">
+<toggleGroup>
+<ToggleGroup fx:id="mcType" />
+</toggleGroup></RadioButton><RadioButton mnemonicParsing="false" selected="true" text="SLICE" toggleGroup="$mcType" /><RadioButton mnemonicParsing="false" text="COMPLETE" toggleGroup="$mcType" />
                                         <Button minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#mcStartClicked" text="Go!" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" HBox.hgrow="SOMETIMES" />
                                     </children>
                                 </HBox>
