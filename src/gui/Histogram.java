@@ -95,9 +95,7 @@ public class Histogram extends Stage {
             }
         };
 
-        dataWorker.setOnSucceeded(value -> {
-            chart.getData().add(dataWorker.getValue());
-        });
+        dataWorker.setOnSucceeded(value -> chart.getData().add(dataWorker.getValue()));
 
         new Thread(dataWorker).start();
 
