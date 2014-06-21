@@ -18,6 +18,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
+import util.Vector3f;
 
 import static org.lwjgl.opengl.ARBBufferObject.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -27,7 +28,8 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 /**
  * A window showing the mesh resulting from an <code>MCRunner</code> instance.
  * Capabilities include displaying a coordinate system, the unit cubes of the Marching Cubes algorithm, displaying
- * the mesh as lines or filled polygons and enabling/disabling lighting. Keybindings are as follows:<br><br>
+ * the mesh as lines or filled polygons and enabling/disabling lighting. Screenshots will be placed in a directory
+ * called 'screenshots' in the current working directory. Keybindings are as follows:<br><br>
  *
  * <center>
  * <table border="1" summary="Keybindings for the camera.">
@@ -45,7 +47,6 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
  * <tr><td>RIGHT</td><td>Yaw right</td></tr>
  * </table><br>
  *
- *
  * <table border="1" summary="Keybindings for the rendering.">
  * <caption>Keybindings for the rendering.</caption>
  * <tr><td>Key</td><td>Effect</td></tr>
@@ -56,6 +57,13 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
  * <tr><td>B</td><td>Show/hide unit cubes</td></tr>
  * <tr><td>N</td><td>Show/hide normal vectors</td></tr>
  * <tr><td>INSERT</td><td>Take a screenshot</td></tr>
+ * </table><br>
+ *
+ * <table border="1" summary="Keybindings for the Marching Cubes algorithm.">
+ * <caption>Keybindings for the Marching Cubes algorithm.</caption>
+ * <tr><td>Key</td><td>Effect</td></tr>
+ * <tr><td>P</td><td>Pause/unpause computation</td></tr>
+ * <tr><td>PERIOD</td><td>Continue computation for one cube/slice</td></tr>
  * </table>
  * </center>
  */
@@ -65,7 +73,7 @@ public class GL_V8 {
     private FloatBuffer lightPosition;
     private MCRunner mcRunner;
     private Camera camera;
-    private final File scDir; // the screenshot directory
+    private File scDir; // the screenshot directory
 
     private int vboId;   // Vertex Buffer Object ID (Points)
     private int vboiId;  // Vertex Buffer Object ID (Indices)
@@ -77,11 +85,6 @@ public class GL_V8 {
     private boolean showNormalLines;
     private boolean showCubes;
     private boolean showCoordinateSystem;
-
-    // the dimensions of the data array the MCRunner is using
-    private int xSize;
-    private int ySize;
-    private int zSize;
 
     /**
      * Constructs a new <code>GL_V8</code> window that will show the results of the given <code>mcRunner</code>.
@@ -114,9 +117,6 @@ public class GL_V8 {
         this.showNormalLines = false;
         this.showCubes = false;
         this.showCoordinateSystem = false;
-        this.xSize = mcRunner.getXSize();
-        this.ySize = mcRunner.getYSize();
-        this.zSize = mcRunner.getZSize();
         this.scDir = new File("./screenshots");
     }
 
@@ -342,34 +342,39 @@ public class GL_V8 {
     }
 
     /**
-     * Draws 1x1x1 cubes over the volume of the <code>MCRunner</code>s data array.
+     * Draws 1x1x1 cubes around the camera corresponding to cubes used by the Marching Cubes algorithm.
      */
     private void drawCubes() {
         boolean lighting = glIsEnabled(GL_LIGHTING);
+        Vector3f camPosition = camera.getPosition();
+        int camX = (int) camPosition.getX();
+        int camY = (int) camPosition.getY();
+        int camZ = (int) camPosition.getZ();
+        int numCubes = 3;
 
         glDisable(GL_LIGHTING);
 
         glColor3f(0, 1f, 0);
         glBegin(GL_LINES);
 
-        for (int glY = 0; glY <= ySize; glY++) {
+        for (int z = camZ - numCubes; z <= camZ + numCubes; z++) {
 
-            for (int x = 0; x <= xSize; x++) {
-                glVertex3i(x, glY, 0);
-                glVertex3i(x, glY, zSize);
+            for (int y = camY - numCubes; y <= camY + numCubes; y++) {
+                glVertex3i(camX - numCubes, y, z);
+                glVertex3i(camX + numCubes, y, z);
             }
 
-            for (int glZ = 0; glZ <= zSize; glZ++) {
-                glVertex3i(0, glY, glZ);
-                glVertex3i(xSize, glY, glZ);
+            for (int x = camX - numCubes; x <= camX + numCubes; x++) {
+                glVertex3i(x, camY - numCubes, z);
+                glVertex3i(x, camY + numCubes, z);
             }
         }
 
-        for (int glZ = 0; glZ <= zSize; glZ++) {
+        for (int x = camX - numCubes; x <= camX + numCubes; x++) {
 
-            for (int x = 0; x <= xSize; x++) {
-                glVertex3i(x, 0, glZ);
-                glVertex3i(x, zSize, glZ);
+            for (int y = camY - numCubes; y <= camY + numCubes; y++) {
+                glVertex3i(x, y, camZ - numCubes);
+                glVertex3i(x, y, camZ + numCubes);
             }
         }
 
@@ -481,6 +486,21 @@ public class GL_V8 {
 
             if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_N) {
                 showNormalLines = !showNormalLines;
+            }
+
+            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_PERIOD) {
+                mcRunner.continueRun();
+            }
+
+            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_P) {
+                boolean stopping = mcRunner.isStopping();
+
+                if (stopping) {
+                    mcRunner.setStopping(false);
+                    mcRunner.continueRun();
+                } else {
+                    mcRunner.setStopping(true);
+                }
             }
 
             if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_INSERT) {

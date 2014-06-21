@@ -45,8 +45,8 @@ public class Camera {
         this.nearClip = nearClip;
         this.farClip = farClip;
         this.position = new Vector3f(0, 0, 0);
-        this.forward = new Vector3f(1, 1, 1);
-        this.upward = new Vector3f(-1, 1, -1);
+        this.forward = new Vector3f(1, 0, 1);
+        this.upward = new Vector3f(0, 1, 0);
 
         initGL();
     }
@@ -180,6 +180,15 @@ public class Camera {
      */
     public void yaw(float angle) {
         forward = forward.rotate(upward, angle);
+    }
+
+    /**
+     * Gets the position of the camera.
+     *
+     * @return the position as a <code>Vector3f</code>
+     */
+    public Vector3f getPosition() {
+        return position;
     }
 
     /**
