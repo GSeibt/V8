@@ -51,7 +51,7 @@ public class OBJExporter {
                 writer.write(String.format(faceFormatString, face, ind.get() + 1, ind.get() + 1, ind.get() + 1));
             }
         } catch (IOException e) {
-            System.err.println("Could not write the an .obj file. "+ e.getMessage());
+            System.err.println("Could not write the " + saveFile.getName() + " .obj file. "+ e.getMessage());
         }
     }
 }
