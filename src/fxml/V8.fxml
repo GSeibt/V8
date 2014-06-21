@@ -80,17 +80,21 @@
                                 <RowConstraints vgrow="SOMETIMES" />
                             </rowConstraints>
                             <children>
+                                <Label text="Grid Size:" />
+                                <Label text="Level:" GridPane.rowIndex="1" />
+                                <TextField fx:id="gridSizeTextField" text="1" GridPane.columnIndex="1" />
+                                <TextField fx:id="levelTextField" text="0" GridPane.columnIndex="1" GridPane.rowIndex="1" HBox.hgrow="NEVER" />
                                 <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2">
                                     <children>
                                         <Label maxWidth="1.7976931348623157E308" text="Show a Histogram for the currently selected image:" HBox.hgrow="ALWAYS" />
                                         <Button mnemonicParsing="false" onAction="#histogramClicked" text="Histogram" GridPane.columnIndex="2" />
                                     </children>
                                 </HBox>
-                                <Label text="Grid Size:" />
-                                <Label text="Level:" GridPane.rowIndex="1" />
-                                <TextField fx:id="gridSizeTextField" text="1" GridPane.columnIndex="1" />
-                                <TextField fx:id="levelTextField" text="0" GridPane.columnIndex="1" GridPane.rowIndex="1" HBox.hgrow="NEVER" />
-                                <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+<HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+<children><Label maxWidth="1.7976931348623157E308" text="Export the result of the Marching Cubes algorithm:" HBox.hgrow="ALWAYS" /><Button mnemonicParsing="false" onAction="#objExportClicked" text="OBJ Export" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+</children>
+</HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
                                     <children>
                                         <Label maxWidth="1.7976931348623157E308" text="Start Marching Cubes:" HBox.hgrow="ALWAYS" /><RadioButton mnemonicParsing="false" text="CUBE">
 <toggleGroup>
@@ -110,7 +114,7 @@
                                         <Label text="Performing Marching Cubes" />
                                         <ProgressBar fx:id="mcProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" HBox.hgrow="ALWAYS" />
                                     </children>
-                                </HBox><Button mnemonicParsing="false" onAction="#objExportClicked" text="OBJ Export" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+                                </HBox>
                             </children>
 <VBox.margin>
 <Insets />
