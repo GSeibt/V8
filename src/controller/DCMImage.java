@@ -18,6 +18,7 @@ import org.dcm4che3.imageio.plugins.dcm.DicomMetaData;
 
 /**
  * A lazy loading DICOM image constructed from a file.
+ * Instances should be constructed using the {@link #getDCMImages(java.io.File)} method.
  */
 public class DCMImage {
 
@@ -50,6 +51,14 @@ public class DCMImage {
         this.frameIndex = frameIndex;
     }
 
+    /**
+     * Reads all <code>DCMImage</code> instances from the given .dcm <code>File</code>.
+     *
+     * @param file
+     *         the .dcm <code>File</code>
+     *
+     * @return a list of <code>DCMImage</code> instances contained in the file
+     */
     public static List<DCMImage> getDCMImages(File file) {
         List<DCMImage> images = new LinkedList<>();
         int numImages;
