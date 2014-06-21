@@ -32,6 +32,22 @@ import util.OBJExporter;
  */
 public class Controller {
 
+    /**
+     * Container class for Marching Cubes parameters and the Task that loads the data for the MC algorithm.
+     */
+    private static class MCParameters {
+
+        public float level;
+        public int gridSize;
+        public Task<float[][][]> rasterLoader;
+
+        private MCParameters(float level, int gridSize, Task<float[][][]> rasterLoader) {
+            this.level = level;
+            this.gridSize = gridSize;
+            this.rasterLoader = rasterLoader;
+        }
+    }
+
     @FXML
     private ToggleGroup mcType;
     @FXML
@@ -124,46 +140,19 @@ public class Controller {
     }
 
     /**
-     * ActionListener for the button that starts the marching cubes run.
+     * ActionListener for the button that starts the Marching Cubes run.
      */
     @FXML
     private void mcStartClicked() {
-        List<DCMImage> images = filesList.getItems();
+        MCParameters mcParameters = getMCParameters();
 
-        if (images.isEmpty()) {
+        if (mcParameters == null) {
             return;
         }
 
-        final int level;
-        try {
-            level = Integer.parseInt(levelTextField.getText().trim());
-        } catch (NumberFormatException e) {
-            System.err.println("Invalid level. " + levelTextField.getText());
-            return;
-        }
-
-        final int gridSize;
-        try {
-            gridSize = Integer.parseInt(gridSizeTextField.getText().trim());
-        } catch (NumberFormatException e) {
-            System.err.println("Invalid gridSize: " + gridSizeTextField.getText());
-            return;
-        }
-
-        Task<float[][][]> rasterLoader = new Task<float[][][]>() {
-
-            @Override
-            protected float[][][] call() throws Exception {
-                float[][][] data = new float[images.size()][][];
-
-                for (int i = 0; i < images.size(); i++) {
-                    data[i] = images.get(i).getImageRaster();
-                    updateProgress(i, images.size());
-                }
-
-                return data;
-            }
-        };
+        Task<float[][][]> rasterLoader = mcParameters.rasterLoader;
+        float level = mcParameters.level;
+        int gridSize = mcParameters.gridSize;
 
         rasterLoader.setOnSucceeded(event -> {
             MCRunner.Type type = MCRunner.Type.valueOf(((RadioButton) mcType.getSelectedToggle()).getText());
@@ -176,11 +165,7 @@ public class Controller {
             glThread.start();
         });
 
-        imageProgress.progressProperty().bind(rasterLoader.progressProperty());
-
-        Thread rasterLoaderThread = new Thread(rasterLoader);
-        rasterLoaderThread.setName("RasterLoader");
-        rasterLoaderThread.start();
+        startRasterLoader(rasterLoader);
     }
 
     /**
@@ -204,20 +189,67 @@ public class Controller {
         }
     }
 
+    /**
+     * ActionListener for the button that starts the Marching Cubes algorithm and exports the result as a .obj file.
+     */
     @FXML
     private void objExportClicked() {
-        List<DCMImage> images = filesList.getItems();
+        MCParameters mcParameters = getMCParameters();
 
-        if (images.isEmpty()) {
+        if (mcParameters == null) {
             return;
         }
 
-        final int level;
+        Task<float[][][]> rasterLoader = mcParameters.rasterLoader;
+        float level = mcParameters.level;
+        int gridSize = mcParameters.gridSize;
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Wavefront OBJ", "*.obj"));
+
+        File saveFile = fileChooser.showSaveDialog(stage);
+
+        if (saveFile == null) {
+            return;
+        }
+
+        rasterLoader.setOnSucceeded(event -> {
+            MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, MCRunner.Type.COMPLETE);
+            Thread runnerThread = new Thread(mcRunner);
+
+            mcRunner.setOnMeshFinished(m -> new Thread(() -> OBJExporter.export(m, saveFile)).start());
+
+            mcProgress.progressProperty().bind(mcRunner.progressProperty());
+            runnerThread.start();
+        });
+
+        startRasterLoader(rasterLoader);
+    }
+
+    /**
+     * Returns a <code>MCParameters</code> object containing the parameters for the Marching Cubes algorithm or
+     * <code>null</code> if any user input was invalid.
+     *
+     * @return the parameters or <code>null</code>
+     */
+    private MCParameters getMCParameters() {
+        List<DCMImage> images = filesList.getItems();
+
+        if (images.isEmpty()) {
+            return null;
+        }
+
+        final float level;
         try {
-            level = Integer.parseInt(levelTextField.getText().trim());
+            level = Float.parseFloat(levelTextField.getText().trim());
         } catch (NumberFormatException e) {
             System.err.println("Invalid level. " + levelTextField.getText());
-            return;
+            return null;
+        }
+
+        if (level < 0) {
+            System.err.println("Invalid level. " + levelTextField.getText());
+            return null;
         }
 
         final int gridSize;
@@ -225,14 +257,12 @@ public class Controller {
             gridSize = Integer.parseInt(gridSizeTextField.getText().trim());
         } catch (NumberFormatException e) {
             System.err.println("Invalid gridSize: " + gridSizeTextField.getText());
-            return;
+            return null;
         }
 
-        FileChooser fileChooser = new FileChooser();
-        File saveFile = fileChooser.showSaveDialog(stage);
-
-        if (saveFile == null) {
-            return;
+        if (gridSize < 0) {
+            System.err.println("Invalid gridSize: " + gridSizeTextField.getText());
+            return null;
         }
 
         Task<float[][][]> rasterLoader = new Task<float[][][]>() {
@@ -250,18 +280,17 @@ public class Controller {
             }
         };
 
-        rasterLoader.setOnSucceeded(event -> {
-            MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, MCRunner.Type.COMPLETE);
-            Thread runnerThread = new Thread(mcRunner);
-
-            mcRunner.setOnMeshFinished(m -> new Thread(() -> OBJExporter.export(m, saveFile)).start());
-
-            mcProgress.progressProperty().bind(mcRunner.progressProperty());
-            runnerThread.start();
-        });
-
         imageProgress.progressProperty().bind(rasterLoader.progressProperty());
 
+        return new MCParameters(level, gridSize, rasterLoader);
+    }
+
+    /**
+     * Starts the given <code>Task</code> in a new <code>Thread</code> named 'RasterLoader'.
+     *
+     * @param rasterLoader the <code>Task</code> to be run
+     */
+    private void startRasterLoader(Task<float[][][]> rasterLoader) {
         Thread rasterLoaderThread = new Thread(rasterLoader);
         rasterLoaderThread.setName("RasterLoader");
         rasterLoaderThread.start();
