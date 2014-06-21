@@ -2,12 +2,7 @@ package controller.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 import javafx.beans.property.DoubleProperty;
@@ -46,9 +41,6 @@ public class MCRunner implements Runnable {
     }
 
     private DoubleProperty progressProperty; // 0 or negative => 0%, 1 or greater => 100%
-
-    // the initial capacity for the points HashMap, fairly high to reduce rehashing
-    private final int POINTS_CAPACITY = 100000;
 
     private float[][][] data;
     private float level;
@@ -135,6 +127,7 @@ public class MCRunner implements Runnable {
         this.interrupted = false;
 
         this.numLastTriangles = 0;
+        int POINTS_CAPACITY = 100000;
         this.points = new LinkedHashMap<>(POINTS_CAPACITY);
         this.indices = new LinkedList<>();
         this.normals = new LinkedList<>();

@@ -1,10 +1,6 @@
 package util;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
@@ -12,11 +8,11 @@ import controller.mc_alg.Mesh;
 
 public class OBJExporter {
 
-    private static String vertex = "v";
-    private static String vertexNormal = "vn";
-    private static String face = "f";
-
     public static void export(Mesh mesh, File saveFile) {
+        String vertex = "v";
+        String vertexNormal = "vn";
+        String face = "f";
+
         try (Writer writer = new BufferedWriter(new FileWriter(saveFile))) {
 
             FloatBuffer vert = mesh.getVertices();
