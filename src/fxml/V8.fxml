@@ -8,45 +8,70 @@
 <GridPane hgap="5.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" style="-fx-background-image: url(&quot;V8/pw_pattern.png&quot;);" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.Controller">
     <columnConstraints>
         <ColumnConstraints hgrow="NEVER" percentWidth="20.0" />
-        <ColumnConstraints halignment="CENTER" hgrow="NEVER" percentWidth="80.0" />
+        <ColumnConstraints halignment="CENTER" hgrow="NEVER" percentWidth="70.0" />
+        <ColumnConstraints halignment="CENTER" hgrow="NEVER" minWidth="-Infinity" percentWidth="10.0" prefWidth="10.0" />
     </columnConstraints>
     <rowConstraints>
-        <RowConstraints maxHeight="112.0" minHeight="97.0" percentHeight="25.0" prefHeight="97.0" vgrow="NEVER" />
+        <RowConstraints vgrow="NEVER" />
         <RowConstraints vgrow="ALWAYS" />
     </rowConstraints>
     <children>
         <VBox spacing="5.0">
             <children>
-<HBox alignment="CENTER_LEFT" spacing="5.0">
-<children>
-                <Label maxWidth="1.7976931348623157E308" text="Directories" HBox.hgrow="ALWAYS" /><Button mnemonicParsing="false" onAction="#addDirectoryClicked" text="Add" />
-</children>
-</HBox>
-                <ListView fx:id="directoriesList" GridPane.rowIndex="1" GridPane.rowSpan="2147483647" VBox.vgrow="ALWAYS">
+                <Label text="Data source">
+                    <font>
+                        <Font size="15.0" />
+                    </font>
+                </Label>
+                <RadioButton fx:id="randRButton" mnemonicParsing="false" text="Random">
+                    <toggleGroup>
+                        <ToggleGroup fx:id="dataSource" />
+                    </toggleGroup>
+                </RadioButton>
+                <RadioButton fx:id="imageRButton" mnemonicParsing="false" selected="true" text="Images" toggleGroup="$dataSource" />
+            </children>
+            <GridPane.margin>
+                <Insets />
+            </GridPane.margin>
+        </VBox>
+        <VBox spacing="5.0" GridPane.rowIndex="1">
+            <children>
+                <HBox alignment="CENTER_LEFT" spacing="5.0">
+                    <children>
+                        <Label maxWidth="1.7976931348623157E308" text="Directories" HBox.hgrow="ALWAYS">
+                            <font>
+                                <Font size="10.0" />
+                            </font>
+                        </Label>
+                        <Button fx:id="addBtn" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#addDirectoryClicked" style="-fx-padding: 1 2 1 2;" text="Add">
+                            <font>
+                                <Font size="10.0" />
+                            </font>
+                        </Button>
+                    </children>
+                </HBox>
+                <ListView fx:id="directoriesList" GridPane.rowIndex="1" GridPane.rowSpan="2147483647" VBox.vgrow="NEVER">
                     <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" />
                     </GridPane.margin>
                 </ListView>
-            </children>
-            <GridPane.margin>
-                <Insets left="5.0" />
-            </GridPane.margin>
-            <opaqueInsets>
-                <Insets />
-            </opaqueInsets>
-        </VBox>
-        <VBox spacing="5.0" GridPane.rowIndex="1">
-            <children>
-                <Label text="Images" />
-                <ListView fx:id="filesList" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2147483647" VBox.vgrow="ALWAYS">
+                <Label text="Images">
+                    <font>
+                        <Font size="10.0" />
+                    </font>
+                </Label>
+                <ListView fx:id="filesList" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2147483647" VBox.vgrow="ALWAYS">
                     <GridPane.margin>
                         <Insets bottom="5.0" />
                     </GridPane.margin>
                 </ListView>
             </children>
             <GridPane.margin>
-                <Insets left="5.0" />
+                <Insets />
             </GridPane.margin>
+            <padding>
+                <Insets top="10.0" />
+            </padding>
         </VBox>
         <GridPane vgap="5.0" GridPane.columnIndex="1" GridPane.rowSpan="2">
             <columnConstraints>
@@ -54,18 +79,45 @@
             </columnConstraints>
             <rowConstraints>
                 <RowConstraints vgrow="SOMETIMES" />
-                <RowConstraints percentHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints vgrow="SOMETIMES" />
             </rowConstraints>
             <children>
-                <Pane fx:id="imagePane">
+                <AnchorPane fx:id="imagePane">
                     <children>
                         <ImageView fx:id="imageView" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                        <HBox alignment="BOTTOM_RIGHT" layoutX="473.0" layoutY="379.0" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="379.0">
+                            <children>
+                                <VBox fx:id="loadingBarBox" alignment="CENTER_LEFT" style="-fx-background-color: rgba(255,255,255,0.8);" visible="false" HBox.hgrow="ALWAYS">
+                                    <children>
+                                        <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnSpan="3" GridPane.rowIndex="4">
+                                            <children>
+                                                <Label text="Performing Marching Cubes" />
+                                                <ProgressBar fx:id="mcProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" HBox.hgrow="ALWAYS" />
+                                            </children>
+                                        </HBox>
+                                        <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnSpan="3" GridPane.rowIndex="3">
+                                            <children>
+                                                <Label prefWidth="149.0" text="Loading data" />
+                                                <ProgressBar fx:id="dataLoadingProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2" HBox.hgrow="ALWAYS" />
+                                            </children>
+                                        </HBox>
+                                    </children>
+                                </VBox>
+                                <Button alignment="CENTER" mnemonicParsing="false" onAction="#histogramClicked" text="Histogram" AnchorPane.bottomAnchor="5.0" AnchorPane.rightAnchor="5.0" GridPane.columnIndex="2" />
+                            </children>
+                        </HBox>
                     </children>
-                </Pane><VBox alignment="TOP_CENTER" spacing="5.0" style="-fx-background-color: lightgrey; -fx-border-style: solid; -fx-background-image: url(&quot;V8/squared_metal.png&quot;);" GridPane.rowIndex="1">
-<children><Label text="Marching Cubes">
-<font>
-<Font name="System Bold" size="18.0" />
-</font></Label>
+                    <GridPane.margin>
+                        <Insets />
+                    </GridPane.margin>
+                </AnchorPane>
+                <VBox alignment="TOP_CENTER" spacing="5.0" style="-fx-background-color: lightgrey; -fx-border-style: solid; -fx-background-image: url(&quot;V8/squared_metal.png&quot;);" GridPane.rowIndex="1">
+                    <children>
+                        <Label text="Marching Cubes">
+                            <font>
+                                <Font name="System Bold" size="18.0" />
+                            </font>
+                        </Label>
                         <GridPane hgap="5.0" vgap="5.0" VBox.vgrow="ALWAYS">
                             <columnConstraints>
                                 <ColumnConstraints hgrow="NEVER" />
@@ -75,7 +127,7 @@
                             <rowConstraints>
                                 <RowConstraints vgrow="NEVER" />
                                 <RowConstraints vgrow="NEVER" />
-<RowConstraints vgrow="ALWAYS" />
+                                <RowConstraints vgrow="ALWAYS" />
                                 <RowConstraints vgrow="SOMETIMES" />
                                 <RowConstraints vgrow="SOMETIMES" />
                             </rowConstraints>
@@ -85,55 +137,52 @@
                                 <TextField fx:id="gridSizeTextField" text="1" GridPane.columnIndex="1" />
                                 <TextField fx:id="levelTextField" text="0" GridPane.columnIndex="1" GridPane.rowIndex="1" HBox.hgrow="NEVER" />
                                 <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2">
-                                    <children>
-                                        <Label maxWidth="1.7976931348623157E308" text="Show a Histogram for the currently selected image:" HBox.hgrow="ALWAYS" />
-                                        <Button mnemonicParsing="false" onAction="#histogramClicked" text="Histogram" GridPane.columnIndex="2" />
-                                    </children>
-                                </HBox>
-<HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
-<children><Label maxWidth="1.7976931348623157E308" text="Export the result of the Marching Cubes algorithm:" HBox.hgrow="ALWAYS" /><Button mnemonicParsing="false" onAction="#objExportClicked" text="OBJ Export" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
-</children>
-</HBox>
-                                <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
-                                    <children>
-                                        <Label maxWidth="1.7976931348623157E308" text="Start Marching Cubes:" HBox.hgrow="ALWAYS" /><RadioButton mnemonicParsing="false" text="CUBE">
-<toggleGroup>
-<ToggleGroup fx:id="mcType" />
-</toggleGroup></RadioButton><RadioButton mnemonicParsing="false" selected="true" text="SLICE" toggleGroup="$mcType" /><RadioButton mnemonicParsing="false" text="COMPLETE" toggleGroup="$mcType" />
-                                        <Button minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#mcStartClicked" text="Go!" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" HBox.hgrow="SOMETIMES" />
-                                    </children>
-                                </HBox>
-                                <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnSpan="3" GridPane.rowIndex="3">
-                                    <children>
-                                        <Label prefWidth="149.0" text="Loading Images from disk" />
-                                        <ProgressBar fx:id="imageProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2" HBox.hgrow="ALWAYS" />
-                                    </children>
-                                </HBox>
-                                <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnSpan="3" GridPane.rowIndex="4">
-                                    <children>
-                                        <Label text="Performing Marching Cubes" />
-                                        <ProgressBar fx:id="mcProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" HBox.hgrow="ALWAYS" />
-                                    </children>
-                                </HBox>
+                           <children>
+
+                           </children></HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                                <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                                <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnSpan="2" GridPane.rowIndex="2" />
                             </children>
-<VBox.margin>
-<Insets />
-</VBox.margin>
-<opaqueInsets>
-<Insets />
-</opaqueInsets>
-<padding>
-<Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-</padding>
+                            <VBox.margin>
+                                <Insets />
+                            </VBox.margin>
+                            <opaqueInsets>
+                                <Insets />
+                            </opaqueInsets>
+                            <padding>
+                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                            </padding>
                         </GridPane>
-</children>
-<GridPane.margin>
-<Insets />
-</GridPane.margin></VBox>
+                    </children>
+                    <GridPane.margin>
+                        <Insets />
+                    </GridPane.margin>
+                </VBox>
             </children>
         </GridPane>
+        <VBox prefHeight="200.0" prefWidth="100.0" spacing="10.0" GridPane.columnIndex="2" GridPane.rowSpan="2">
+            <children>
+                <VBox spacing="5.0">
+                    <children>
+                        <RadioButton fx:id="cubeRBtn" mnemonicParsing="false" text="CUBE">
+                            <toggleGroup>
+                                <ToggleGroup fx:id="mcType" />
+                            </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="sliceRBtn" mnemonicParsing="false" selected="true" text="SLICE" toggleGroup="$mcType" />
+                        <RadioButton fx:id="completeRBtn" mnemonicParsing="false" text="COMPLETE" toggleGroup="$mcType" />
+                        <RadioButton fx:id="exportRBtn" mnemonicParsing="false" text="EXPORT" toggleGroup="$mcType" />
+                    </children>
+                </VBox>
+            <Button mnemonicParsing="false" onAction="#goClicked" text="Go!" />
+            </children>
+            <GridPane.margin>
+                <Insets />
+            </GridPane.margin>
+        </VBox>
     </children>
     <padding>
-        <Insets bottom="5.0" right="5.0" top="5.0" />
+        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
     </padding>
 </GridPane>

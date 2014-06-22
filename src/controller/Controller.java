@@ -8,12 +8,15 @@ import java.util.List;
 import java.util.Map;
 
 import controller.mc_alg.MCRunner;
+import controller.mc_alg.metaball_volume.MetaBallVolume;
 import gui.Histogram;
 import gui.opengl.GL_V8;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
@@ -22,6 +25,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -32,22 +36,24 @@ import util.OBJExporter;
  */
 public class Controller {
 
-    /**
-     * Container class for Marching Cubes parameters and the Task that loads the data for the MC algorithm.
-     */
-    private static class MCParameters {
-
-        public float level;
-        public int gridSize;
-        public Task<float[][][]> rasterLoader;
-
-        private MCParameters(float level, int gridSize, Task<float[][][]> rasterLoader) {
-            this.level = level;
-            this.gridSize = gridSize;
-            this.rasterLoader = rasterLoader;
-        }
-    }
-
+    @FXML
+    private RadioButton cubeRBtn;
+    @FXML
+    private RadioButton sliceRBtn;
+    @FXML
+    private RadioButton completeRBtn;
+    @FXML
+    private RadioButton exportRBtn;
+    @FXML
+    private VBox loadingBarBox;
+    @FXML
+    private Button addBtn;
+    @FXML
+    private RadioButton randRButton;
+    @FXML
+    private RadioButton imageRButton;
+    @FXML
+    private ToggleGroup dataSource;
     @FXML
     private ToggleGroup mcType;
     @FXML
@@ -57,7 +63,7 @@ public class Controller {
     @FXML
     private ProgressBar mcProgress;
     @FXML
-    private ProgressBar imageProgress;
+    private ProgressBar dataLoadingProgress;
     @FXML
     private ListView<File> directoriesList;
     @FXML
@@ -79,6 +85,21 @@ public class Controller {
     private void initialize() {
         dirCache = new HashMap<>();
         directories = directoriesList.getItems();
+
+        dataSource.selectedToggleProperty().addListener((o, oldV, newV) -> {
+
+            if (randRButton.equals(newV)) {
+                directoriesList.setDisable(true);
+                filesList.setDisable(true);
+                imageView.setDisable(true);
+                addBtn.setDisable(true);
+            } else if (imageRButton.equals(newV)) {
+                directoriesList.setDisable(false);
+                filesList.setDisable(false);
+                imageView.setDisable(false);
+                addBtn.setDisable(false);
+            }
+        });
 
         directoriesList.getFocusModel().focusedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
@@ -140,35 +161,6 @@ public class Controller {
     }
 
     /**
-     * ActionListener for the button that starts the Marching Cubes run.
-     */
-    @FXML
-    private void mcStartClicked() {
-        MCParameters mcParameters = getMCParameters();
-
-        if (mcParameters == null) {
-            return;
-        }
-
-        Task<float[][][]> rasterLoader = mcParameters.rasterLoader;
-        float level = mcParameters.level;
-        int gridSize = mcParameters.gridSize;
-
-        rasterLoader.setOnSucceeded(event -> {
-            MCRunner.Type type = MCRunner.Type.valueOf(((RadioButton) mcType.getSelectedToggle()).getText());
-            MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, type);
-
-            mcProgress.progressProperty().bind(mcRunner.progressProperty());
-
-            Thread glThread = new Thread(() -> new GL_V8(mcRunner).show());
-            glThread.setName(GL_V8.class.getSimpleName());
-            glThread.start();
-        });
-
-        startRasterLoader(rasterLoader);
-    }
-
-    /**
      * Sets the <code>Stage</code> this <code>Controller</code> will use to display modal dialogs and such.
      *
      * @param stage the <code>Stage</code> for the <code>Controller</code>
@@ -190,53 +182,14 @@ public class Controller {
     }
 
     /**
-     * ActionListener for the button that starts the Marching Cubes algorithm and exports the result as a .obj file.
+     * ActionListener for the 'Go!' button.
      */
     @FXML
-    private void objExportClicked() {
-        MCParameters mcParameters = getMCParameters();
-
-        if (mcParameters == null) {
-            return;
-        }
-
-        Task<float[][][]> rasterLoader = mcParameters.rasterLoader;
-        float level = mcParameters.level;
-        int gridSize = mcParameters.gridSize;
-
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Wavefront OBJ", "*.obj"));
-
-        File saveFile = fileChooser.showSaveDialog(stage);
-
-        if (saveFile == null) {
-            return;
-        }
-
-        rasterLoader.setOnSucceeded(event -> {
-            MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, MCRunner.Type.COMPLETE);
-            Thread runnerThread = new Thread(mcRunner);
-
-            mcRunner.setOnMeshFinished(m -> new Thread(() -> OBJExporter.export(m, saveFile)).start());
-
-            mcProgress.progressProperty().bind(mcRunner.progressProperty());
-            runnerThread.start();
-        });
-
-        startRasterLoader(rasterLoader);
-    }
-
-    /**
-     * Returns a <code>MCParameters</code> object containing the parameters for the Marching Cubes algorithm or
-     * <code>null</code> if any user input was invalid.
-     *
-     * @return the parameters or <code>null</code>
-     */
-    private MCParameters getMCParameters() {
+    private void goClicked() {
         List<DCMImage> images = filesList.getItems();
 
-        if (images.isEmpty()) {
-            return null;
+        if (images.isEmpty() && !dataSource.getSelectedToggle().equals(randRButton)) {
+            return;
         }
 
         final float level;
@@ -244,12 +197,12 @@ public class Controller {
             level = Float.parseFloat(levelTextField.getText().trim());
         } catch (NumberFormatException e) {
             System.err.println("Invalid level. " + levelTextField.getText());
-            return null;
+            return;
         }
 
         if (level < 0) {
             System.err.println("Invalid level. " + levelTextField.getText());
-            return null;
+            return;
         }
 
         final int gridSize;
@@ -257,42 +210,91 @@ public class Controller {
             gridSize = Integer.parseInt(gridSizeTextField.getText().trim());
         } catch (NumberFormatException e) {
             System.err.println("Invalid gridSize: " + gridSizeTextField.getText());
-            return null;
+            return;
         }
 
         if (gridSize < 0) {
             System.err.println("Invalid gridSize: " + gridSizeTextField.getText());
-            return null;
+            return;
         }
 
-        Task<float[][][]> rasterLoader = new Task<float[][][]>() {
+        final Task<float[][][]> rasterLoader;
+        if (dataSource.getSelectedToggle().equals(imageRButton)) {
 
-            @Override
-            protected float[][][] call() throws Exception {
-                float[][][] data = new float[images.size()][][];
+            rasterLoader = new Task<float[][][]>() {
 
-                for (int i = 0; i < images.size(); i++) {
-                    data[i] = images.get(i).getImageRaster();
-                    updateProgress(i, images.size());
+                @Override
+                protected float[][][] call() throws Exception {
+                    float[][][] data = new float[images.size()][][];
+
+                    dataLoadingProgress.progressProperty().bind(progressProperty());
+
+                    for (int i = 0; i < images.size(); i++) {
+                        data[i] = images.get(i).getImageRaster();
+                        updateProgress(i, images.size());
+                    }
+
+                    return data;
                 }
+            };
+        } else if (dataSource.getSelectedToggle().equals(randRButton)) {
 
-                return data;
+            rasterLoader = new Task<float[][][]>() {
+
+                @Override
+                protected float[][][] call() throws Exception {
+                    MetaBallVolume volume = new MetaBallVolume(200, 200, 200);
+
+                    volume.setBalls(10);
+                    dataLoadingProgress.progressProperty().bind(volume.progressProperty());
+
+                    return volume.getVolume();
+                }
+            };
+        } else {
+            return;
+        }
+
+        if (mcType.getSelectedToggle().equals(exportRBtn)) {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Wavefront OBJ", "*.obj"));
+
+            File saveFile = fileChooser.showSaveDialog(stage);
+
+            if (saveFile == null) {
+                return;
             }
-        };
 
-        imageProgress.progressProperty().bind(rasterLoader.progressProperty());
+            rasterLoader.setOnSucceeded(event -> {
+                MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, MCRunner.Type.COMPLETE);
 
-        return new MCParameters(level, gridSize, rasterLoader);
-    }
+                mcProgress.progressProperty().bind(mcRunner.progressProperty());
+                mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));
+                mcRunner.setOnMeshFinished(m -> new Thread(() -> OBJExporter.export(m, saveFile)).start());
 
-    /**
-     * Starts the given <code>Task</code> in a new <code>Thread</code> named 'RasterLoader'.
-     *
-     * @param rasterLoader the <code>Task</code> to be run
-     */
-    private void startRasterLoader(Task<float[][][]> rasterLoader) {
+                Thread runnerThread = new Thread(mcRunner);
+                runnerThread.setName(MCRunner.class.getSimpleName());
+                runnerThread.start();
+            });
+        } else {
+            MCRunner.Type type = MCRunner.Type.valueOf(((RadioButton) mcType.getSelectedToggle()).getText());
+
+            rasterLoader.setOnSucceeded(event -> {
+                MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, type);
+
+                mcProgress.progressProperty().bind(mcRunner.progressProperty());
+                mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));
+
+                Thread glThread = new Thread(() -> new GL_V8(mcRunner).show());
+                glThread.setName(GL_V8.class.getSimpleName());
+                glThread.start();
+            });
+        }
+
         Thread rasterLoaderThread = new Thread(rasterLoader);
         rasterLoaderThread.setName("RasterLoader");
         rasterLoaderThread.start();
+
+        loadingBarBox.setVisible(true);
     }
 }
