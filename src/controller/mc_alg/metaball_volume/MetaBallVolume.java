@@ -3,6 +3,9 @@ package controller.mc_alg.metaball_volume;
 import java.util.LinkedList;
 import java.util.List;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+
 /**
  * A volume containing <code>MetaBall</code> instances.
  *
@@ -17,6 +20,8 @@ public class MetaBallVolume {
 
     // the MetaBall instances in the volume
     private List<MetaBall> metaBalls;
+
+    private DoubleProperty progress;
 
     /**
      * Constructs a new <code>MetaBallVolume</code> with the given dimensions.
@@ -33,6 +38,7 @@ public class MetaBallVolume {
         this.y_dim = y_dim;
         this.z_dim = z_dim;
         this.metaBalls = new LinkedList<>();
+        this.progress = new SimpleDoubleProperty(0);
     }
 
     /**
@@ -43,14 +49,19 @@ public class MetaBallVolume {
      */
     public float[][][] getVolume() {
         float[][][] volume = new float[z_dim][y_dim][x_dim];
+        float numValues = z_dim * y_dim * x_dim * metaBalls.size();
+        int doneValues = 0;
 
+        progress.set(0);
         for (MetaBall ball : metaBalls) {
             for (int z = 0; z < volume.length; z++) {
                 for (int y = 0; y < volume[z].length; y++) {
                     for (int x = 0; x < volume[z][y].length; x++) {
                         volume[z][y][x] += ball.density(x, y, z);
+                        doneValues++;
                     }
                 }
+                progress.set(doneValues / numValues);
             }
         }
 
@@ -79,7 +90,7 @@ public class MetaBallVolume {
         int y = rInt(0, y_dim - 1);
         int z = rInt(0, z_dim - 1);
         int intensity = rInt(1, 100);
-        int posNeg = (Math.random() < 0.5) ? -1 : 1;
+        int posNeg = (Math.random() < 0.3) ? -1 : 1;
 
         addBall(x, y, z, intensity * posNeg);
     }
@@ -127,5 +138,15 @@ public class MetaBallVolume {
      */
     private static int rInt(int minimum, int maximum) {
         return minimum + (int) (Math.random() * ((maximum - minimum) + 1));
+    }
+
+    /**
+     * Returns the progress property of this <code>MetaBallVolume</code>. Will have a value between 0 - 1 indicating
+     * 0% to 100% done.
+     *
+     * @return the progress property
+     */
+    public DoubleProperty progressProperty() {
+        return progress;
     }
 }
