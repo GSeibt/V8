@@ -2,7 +2,12 @@ package controller.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import javafx.beans.property.DoubleProperty;
@@ -40,13 +45,14 @@ public class MCRunner implements Runnable {
         COMPLETE
     }
 
-    private DoubleProperty progressProperty; // 0 or negative => 0%, 1 or greater => 100%
+    private DoubleProperty progress; // 0 or negative => 0%, 1 or greater => 100%
 
     private float[][][] data;
     private float level;
     private int gridSize;
     private Type type;
     private Consumer<Mesh> meshConsumer; // will be called with the current mesh after every mesh update
+    private Consumer<Long> onFinish;
 
     private volatile boolean stopping; // whether this MCRunner stops after every mesh update
     private volatile boolean stopped; // whether this MCRunner has stopped
@@ -115,7 +121,7 @@ public class MCRunner implements Runnable {
 
         Objects.requireNonNull(type, "type must not be null!");
 
-        progressProperty = new SimpleDoubleProperty();
+        progress = new SimpleDoubleProperty(0);
 
         this.data = data;
         this.level = level;
@@ -167,7 +173,7 @@ public class MCRunner implements Runnable {
      * @return the progress property
      */
     public DoubleProperty progressProperty() {
-        return progressProperty;
+        return progress;
     }
 
     /**
@@ -201,8 +207,21 @@ public class MCRunner implements Runnable {
         this.meshConsumer = meshConsumer;
     }
 
+    /**
+     * Sets the method that will be called after the Marching Cubes algorithm is finished.
+     * The <code>Consumer</code> will be supplied with a <code>Long</code> representing the time in nanoseconds
+     * the execution took.
+     *
+     * @param onFinish the method to be called after the MC algorithm is finished
+     */
+    public void setOnRunFinished(Consumer<Long> onFinish) {
+        this.onFinish = onFinish;
+    }
+
     @Override
     public void run() {
+        long startTime = System.nanoTime();
+
         int cubesInSlice = data[0].length * data[0][0].length;
         double numCubes = (data.length * cubesInSlice) / Math.pow(gridSize, 3);
         int doneCubes = 0;
@@ -210,6 +229,7 @@ public class MCRunner implements Runnable {
         Cube[][] currentSlice;
         Cube cube;
 
+        progress.set(0);
         for (int z = 0; z < data.length; z += gridSize) {
 
             currentSlice = updateSlices();
@@ -242,11 +262,15 @@ public class MCRunner implements Runnable {
                 outputMesh();
             }
 
-            progressProperty.set((doneCubes += cubesInSlice) / numCubes);
+            progress.set((doneCubes += cubesInSlice) / numCubes);
         }
 
         if (type == COMPLETE) {
             outputMesh();
+        }
+
+        if (onFinish != null) {
+            onFinish.accept(System.nanoTime() - startTime);
         }
     }
 
