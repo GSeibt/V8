@@ -10,6 +10,7 @@ import java.util.Map;
 import controller.mc_alg.MCRunner;
 import controller.mc_alg.metaball_volume.MetaBallVolume;
 import gui.Histogram;
+import gui.IntSpinner;
 import gui.opengl.GL_V8;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -21,7 +22,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.RadioButton;
-import javafx.scene.control.TextField;
+import javafx.scene.control.Slider;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
@@ -36,6 +37,10 @@ import util.OBJExporter;
  */
 public class Controller {
 
+    @FXML
+    private Slider levelSlider;
+    @FXML
+    private IntSpinner gridSizeSpinner;
     @FXML
     private RadioButton cubeRBtn;
     @FXML
@@ -56,10 +61,6 @@ public class Controller {
     private ToggleGroup dataSource;
     @FXML
     private ToggleGroup mcType;
-    @FXML
-    private TextField gridSizeTextField;
-    @FXML
-    private TextField levelTextField;
     @FXML
     private ProgressBar mcProgress;
     @FXML
@@ -192,31 +193,8 @@ public class Controller {
             return;
         }
 
-        final float level;
-        try {
-            level = Float.parseFloat(levelTextField.getText().trim());
-        } catch (NumberFormatException e) {
-            System.err.println("Invalid level. " + levelTextField.getText());
-            return;
-        }
-
-        if (level < 0) {
-            System.err.println("Invalid level. " + levelTextField.getText());
-            return;
-        }
-
-        final int gridSize;
-        try {
-            gridSize = Integer.parseInt(gridSizeTextField.getText().trim());
-        } catch (NumberFormatException e) {
-            System.err.println("Invalid gridSize: " + gridSizeTextField.getText());
-            return;
-        }
-
-        if (gridSize < 0) {
-            System.err.println("Invalid gridSize: " + gridSizeTextField.getText());
-            return;
-        }
+        float level = (float) levelSlider.getValue();
+        int gridSize = gridSizeSpinner.getValue();
 
         final Task<float[][][]> rasterLoader;
         if (dataSource.getSelectedToggle().equals(imageRButton)) {
