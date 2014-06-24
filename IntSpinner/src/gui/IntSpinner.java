@@ -99,6 +99,11 @@ public class IntSpinner extends GridPane {
     }
 
     public void setStart(int start) {
+
+        if (start > value.get()) {
+            setValue(start);
+        }
+
         this.start.set(start);
     }
 
