@@ -10,8 +10,6 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
 
 /**
  * A JavaFX <code>Stage</code> showing a XY plot of the pixel values in the given image and their frequency.
@@ -59,10 +57,7 @@ public class Histogram extends Stage {
             @Override
             protected XYChart.Series<String, Number> call() throws Exception {
                 XYChart.Series<String, Number> series = new XYChart.Series<>();
-                Attributes attributes = image.getAttributes();
-                int smallest = attributes.getInt(Tag.SmallestImagePixelValue, 0);
-                int largest = attributes.getInt(Tag.LargestImagePixelValue, 1000);
-                int[] values = new int[largest + 1];
+                int[] values = new int[256];
                 float[][] pixels = image.getImageRaster();
 
                 double floor;
@@ -87,7 +82,7 @@ public class Histogram extends Stage {
 
                 for (int i = 0; i < values.length; i++) {
                     if (values[i] != 0) {
-                        series.getData().add(new XYChart.Data<>(String.valueOf(i + smallest), values[i]));
+                        series.getData().add(new XYChart.Data<>(String.valueOf(i), values[i]));
                     }
                 }
 
