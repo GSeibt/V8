@@ -11,6 +11,7 @@ import controller.mc_alg.MCRunner;
 import controller.mc_alg.metaball_volume.MetaBallVolume;
 import gui.Histogram;
 import gui.IntSpinner;
+import gui.PreviewImageService;
 import gui.opengl.GL_V8;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -23,13 +24,18 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
+import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 import util.OBJExporter;
 
 /**
@@ -75,6 +81,7 @@ public class Controller {
     private Pane imagePane;
 
     private Map<File, ObservableList<DCMImage>> dirCache;
+    private PreviewImageService previewImageService;
     private ObservableList<File> directories;
     private File lastDir; // the parent of the last directory that was added
     private Stage stage;
@@ -86,6 +93,11 @@ public class Controller {
     private void initialize() {
         dirCache = new HashMap<>();
         directories = directoriesList.getItems();
+        previewImageService = new PreviewImageService();
+
+        previewImageService.setOnSucceeded(event -> {
+            imageView.setImage((Image) event.getSource().getValue());
+        });
 
         dataSource.selectedToggleProperty().addListener((o, oldV, newV) -> {
 
@@ -124,8 +136,20 @@ public class Controller {
 
         filesList.getFocusModel().focusedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                imageView.setImage(newValue.getImage());
+                Attributes attributes = newValue.getAttributes();
+                WritableImage image = newValue.getImage();
+
+                imageView.setImage(image);
+                previewImageService.setOriginalImage(image);
+                levelSlider.setMin(attributes.getInt(Tag.SmallestImagePixelValue, 0));
+                levelSlider.setMax(attributes.getInt(Tag.LargestImagePixelValue, 1000));
+                levelSlider.setMajorTickUnit(levelSlider.getMax() / 15);
             }
+        });
+
+        levelSlider.valueProperty().addListener((slider, oldV, newV) -> {
+            previewImageService.setLevel(newV.doubleValue());
+            previewImageService.restart();
         });
 
         imageView.setPreserveRatio(false);
@@ -233,7 +257,8 @@ public class Controller {
             return;
         }
 
-        if (mcType.getSelectedToggle().equals(exportRBtn)) {
+        Toggle selToggle = mcType.getSelectedToggle();
+        if (selToggle.equals(exportRBtn)) {
             FileChooser fileChooser = new FileChooser();
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Wavefront OBJ", "*.obj"));
 
@@ -254,8 +279,8 @@ public class Controller {
                 runnerThread.setName(MCRunner.class.getSimpleName());
                 runnerThread.start();
             });
-        } else {
-            MCRunner.Type type = MCRunner.Type.valueOf(((RadioButton) mcType.getSelectedToggle()).getText());
+        } else if (selToggle.equals(cubeRBtn) || selToggle.equals(sliceRBtn) || selToggle.equals(completeRBtn)) {
+            MCRunner.Type type = MCRunner.Type.valueOf(((RadioButton) selToggle).getText());
 
             rasterLoader.setOnSucceeded(event -> {
                 MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, type);
@@ -267,6 +292,8 @@ public class Controller {
                 glThread.setName(GL_V8.class.getSimpleName());
                 glThread.start();
             });
+        } else {
+            return;
         }
 
         Thread rasterLoaderThread = new Thread(rasterLoader);
@@ -274,5 +301,13 @@ public class Controller {
         rasterLoaderThread.start();
 
         loadingBarBox.setVisible(true);
+    }
+
+    /**
+     * ActionListener for the 'Reset' button.
+     */
+    @FXML
+    private void resetClicked() {
+        imageView.setImage(previewImageService.getOriginalImage());
     }
 }
