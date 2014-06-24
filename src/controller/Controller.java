@@ -81,10 +81,12 @@ public class Controller {
     private Pane imagePane;
 
     private Map<File, ObservableList<DCMImage>> dirCache;
-    private PreviewImageService previewImageService;
     private ObservableList<File> directories;
     private File lastDir; // the parent of the last directory that was added
     private Stage stage;
+
+    boolean previewMode = false;
+    private PreviewImageService previewImageService;
 
     /**
      * Called by the FXMLLoader, initializes the <code>Controller</code>.
@@ -139,8 +141,14 @@ public class Controller {
                 Attributes attributes = newValue.getAttributes();
                 WritableImage image = newValue.getImage();
 
-                imageView.setImage(image);
                 previewImageService.setOriginalImage(image);
+
+                if (previewMode) {
+                    previewImageService.restart();
+                } else {
+                    imageView.setImage(image);
+                }
+
                 levelSlider.setMin(attributes.getInt(Tag.SmallestImagePixelValue, 0));
                 levelSlider.setMax(attributes.getInt(Tag.LargestImagePixelValue, 1000));
                 levelSlider.setMajorTickUnit(levelSlider.getMax() / 15);
@@ -148,6 +156,7 @@ public class Controller {
         });
 
         levelSlider.valueProperty().addListener((slider, oldV, newV) -> {
+            previewMode = true;
             previewImageService.setLevel(newV.doubleValue());
             previewImageService.restart();
         });
@@ -308,6 +317,7 @@ public class Controller {
      */
     @FXML
     private void resetClicked() {
+        previewMode = false;
         imageView.setImage(previewImageService.getOriginalImage());
     }
 }
