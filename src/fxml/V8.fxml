@@ -73,7 +73,7 @@
                 <RowConstraints vgrow="NEVER" />
             </rowConstraints>
             <children>
-            <GridPane GridPane.columnSpan="2147483647" GridPane.rowIndex="1" GridPane.rowSpan="2147483647">
+            <GridPane hgap="20.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="1" GridPane.rowSpan="2147483647">
               <columnConstraints>
                 <ColumnConstraints hgrow="SOMETIMES" />
                 <ColumnConstraints hgrow="ALWAYS" />
@@ -83,7 +83,7 @@
                 <RowConstraints vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  <HBox alignment="CENTER_LEFT" spacing="5.0">
+                  <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="1">
                      <children>
                               <RadioButton fx:id="cubeRBtn" mnemonicParsing="false" text="CUBE">
                                   <toggleGroup>
@@ -104,8 +104,11 @@
                   </HBox>
                   <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                      <children>
-                        <Label alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" text="Level" HBox.hgrow="ALWAYS" />
-                        <Slider fx:id="levelSlider" max="200.0" maxWidth="1.7976931348623157E308" showTickLabels="true" showTickMarks="true" HBox.hgrow="ALWAYS" />
+                        <Label alignment="CENTER_RIGHT" maxWidth="-Infinity" text="Level" HBox.hgrow="ALWAYS">
+                           <HBox.margin>
+                              <Insets />
+                           </HBox.margin></Label>
+                        <Slider fx:id="levelSlider" majorTickUnit="50.0" max="255.0" maxWidth="1.7976931348623157E308" minorTickCount="2" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
                </children>

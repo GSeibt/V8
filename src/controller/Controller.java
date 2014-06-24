@@ -35,7 +35,6 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
 import util.OBJExporter;
 
 /**
@@ -148,10 +147,6 @@ public class Controller {
                 } else {
                     imageView.setImage(image);
                 }
-
-                levelSlider.setMin(attributes.getInt(Tag.SmallestImagePixelValue, 0));
-                levelSlider.setMax(attributes.getInt(Tag.LargestImagePixelValue, 1000));
-                levelSlider.setMajorTickUnit(levelSlider.getMax() / 15);
             }
         });
 
