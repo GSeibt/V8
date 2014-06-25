@@ -52,6 +52,10 @@ public class MetaBall {
         int numerator = intensity;
         float denominator = (float) (Math.pow(x - x_pos, 2) + Math.pow(y - y_pos, 2) + Math.pow(z - z_pos, 2));
 
-        return numerator / denominator;
+        if (Float.compare(denominator, 0f) == 0) {
+            return intensity;
+        } else {
+            return numerator / denominator;
+        }
     }
 }
