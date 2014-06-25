@@ -250,7 +250,6 @@ public class MCRunner implements Runnable {
                         outputMesh();
                     }
 
-
                     interrupted = Thread.interrupted();
                     if (interrupted) {
                         return;

@@ -12,7 +12,7 @@ import controller.mc_alg.metaball_volume.MetaBallVolume;
 import gui.Histogram;
 import gui.IntSpinner;
 import gui.PreviewImageService;
-import gui.opengl.GL_V8;
+import gui.opengl.OpenGL_V8;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -233,8 +233,6 @@ public class Controller {
                 protected float[][][] call() throws Exception {
                     float[][][] data = new float[images.size()][][];
 
-                    dataLoadingProgress.progressProperty().bind(progressProperty());
-
                     for (int i = 0; i < images.size(); i++) {
                         data[i] = images.get(i).getImageRaster();
                         updateProgress(i, images.size());
@@ -243,6 +241,8 @@ public class Controller {
                     return data;
                 }
             };
+
+            dataLoadingProgress.progressProperty().bind(rasterLoader.progressProperty());
         } else if (dataSource.getSelectedToggle().equals(randRButton)) {
 
             rasterLoader = new Task<float[][][]>() {
@@ -292,8 +292,8 @@ public class Controller {
                 mcProgress.progressProperty().bind(mcRunner.progressProperty());
                 mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));
 
-                Thread glThread = new Thread(() -> new GL_V8(mcRunner).show());
-                glThread.setName(GL_V8.class.getSimpleName());
+                Thread glThread = new Thread(() -> new OpenGL_V8(mcRunner).show());
+                glThread.setName(OpenGL_V8.class.getSimpleName());
                 glThread.start();
             });
         } else {

@@ -5,7 +5,7 @@ import java.nio.IntBuffer;
 
 /**
  * Container class for <code>Buffer</code> objects containing information that will be used by OpenGL in
- * <code>GL_V8</code> to render the triangle mesh resulting from the marching cubes algorithm.
+ * <code>OpenGL_V8</code> to render the triangle mesh resulting from the marching cubes algorithm.
  */
 public class Mesh {
 

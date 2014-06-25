@@ -67,7 +67,7 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
  * </table>
  * </center>
  */
-public class GL_V8 {
+public class OpenGL_V8 {
 
     private SynchronousQueue<Mesh> newBuffer;
     private FloatBuffer lightPosition;
@@ -87,12 +87,12 @@ public class GL_V8 {
     private boolean showCoordinateSystem;
 
     /**
-     * Constructs a new <code>GL_V8</code> window that will show the results of the given <code>mcRunner</code>.
+     * Constructs a new <code>OpenGL_V8</code> window that will show the results of the given <code>mcRunner</code>.
      * Note that this constructor must be called in the same thread as the {@link #show()} method.
      *
-     * @param mcRunner the <code>MCRunner</code> for this <code>GL_V8</code>
+     * @param mcRunner the <code>MCRunner</code> for this <code>OpenGL_V8</code>
      */
-    public GL_V8(MCRunner mcRunner) {
+    public OpenGL_V8(MCRunner mcRunner) {
 
         try {
             initDisplay();
