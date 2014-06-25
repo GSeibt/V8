@@ -76,10 +76,12 @@ public class PreviewImageService extends Service<Image> {
 
                     for (int y = 0; y < height; y++) {
                         for (int x = 0; x < width; x++) {
-                            if ((pixelReader.getArgb(x, y) & 255) <= level) { // & 255 extracts grey value from ARGB int
-                                pixelWriter.setColor(x, y, Color.BLACK);
+                            int argb = pixelReader.getArgb(x, y);
+
+                            if ((argb & 255) <= level) { // & 255 extracts grey value from ARGB int
+                                pixelWriter.setArgb(x, y, argb);
                             } else {
-                                pixelWriter.setColor(x, y, Color.WHITE);
+                                pixelWriter.setColor(x, y, Color.RED);
                             }
                         }
                     }
