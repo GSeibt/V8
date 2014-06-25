@@ -122,7 +122,7 @@
                       </Pane>
                         <HBox alignment="BOTTOM_CENTER" fillHeight="false" spacing="5.0" StackPane.alignment="BOTTOM_CENTER">
                             <children>
-                                <VBox fx:id="loadingBarBox" alignment="BOTTOM_LEFT" opacity="0.75" style="-fx-background-color: white;" visible="false" HBox.hgrow="ALWAYS">
+                                <VBox fx:id="loadingBarBox" alignment="BOTTOM_LEFT" opacity="0.75" style="-fx-background-color: white; -fx-background-radius: 2;" visible="false" HBox.hgrow="ALWAYS">
                                     <children>
                                         <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnSpan="3" GridPane.rowIndex="3">
                                             <children>
