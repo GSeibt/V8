@@ -2,12 +2,7 @@ package controller.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 import javafx.beans.property.DoubleProperty;
@@ -47,7 +42,7 @@ public class MCRunner implements Runnable {
 
     private DoubleProperty progress; // 0 or negative => 0%, 1 or greater => 100%
 
-    private float[][][] data;
+    private MCVolume data;
     private float level;
     private int gridSize;
     private Type type;
@@ -87,7 +82,7 @@ public class MCRunner implements Runnable {
      * @throws IllegalArgumentException
      *         if <code>level</code> is smaller than 0 or <code>gridSize</code> is smaller than 1
      */
-    public MCRunner(float[][][] data, float level) {
+    public MCRunner(MCVolume data, float level) {
         this(data, level, 1, COMPLETE);
     }
 
@@ -108,7 +103,7 @@ public class MCRunner implements Runnable {
      * @throws IllegalArgumentException
      *         if <code>level</code> is smaller than 0 or <code>gridSize</code> is smaller than 1
      */
-    public MCRunner(float[][][] data, float level, int gridSize, Type type) {
+    public MCRunner(MCVolume data, float level, int gridSize, Type type) {
         Objects.requireNonNull(data, "data must not be null!");
 
         if (!(level >= 0)) {
@@ -140,30 +135,30 @@ public class MCRunner implements Runnable {
     }
 
     /**
-     * Returns the x size of the underlying data array.
+     * Returns the x size of the underlying volume.
      *
      * @return the size in x
      */
     public int getXSize() {
-        return data[0][0].length;
+        return data.xSize();
     }
 
     /**
-     * Returns the y size of the underlying data array.
+     * Returns the y size of the underlying volume.
      *
      * @return the size in y
      */
     public int getYSize() {
-        return data[0].length;
+        return data.ySize();
     }
 
     /**
-     * Returns the z size of the underlying data array.
+     * Returns the z size of the underlying volume.
      *
      * @return the size in z
      */
     public int getZSize() {
-        return data.length;
+        return data.zSize();
     }
 
     /**
@@ -222,21 +217,21 @@ public class MCRunner implements Runnable {
     public void run() {
         long startTime = System.nanoTime();
 
-        int cubesInSlice = data[0].length * data[0][0].length;
-        double numCubes = (data.length * cubesInSlice) / Math.pow(gridSize, 3);
+        int cubesInSlice = data.xSize() * data.ySize();
+        double numCubes = (data.zSize() * cubesInSlice) / Math.pow(gridSize, 3);
         int doneCubes = 0;
         int cubeIndex;
         Cube[][] currentSlice;
         Cube cube;
 
         progress.set(0);
-        for (int z = 0; z < data.length; z += gridSize) {
+        for (int z = 0; z < data.zSize(); z += gridSize) {
 
             currentSlice = updateSlices();
 
-            for (int y = 0; y < data[z].length; y += gridSize) {
+            for (int y = 0; y < data.ySize(); y += gridSize) {
 
-                for (int x = 0; x < data[z][y].length; x += gridSize) {
+                for (int x = 0; x < data.xSize(); x += gridSize) {
 
                     cube = computeVertices(x, y, z, currentSlice);
                     cubeIndex = cube.getIndex(level);
@@ -349,8 +344,8 @@ public class MCRunner implements Runnable {
         Cube[][] currentSlice;
 
         if (lowerSlice == null) {
-            int yDim = (int) Math.ceil(data[0].length / (float) gridSize);
-            int xDim = (int) Math.ceil(data[0][0].length / (float) gridSize);
+            int yDim = (int) Math.ceil(data.ySize() / (float) gridSize);
+            int xDim = (int) Math.ceil(data.xSize() / (float) gridSize);
 
             lowerSlice = new Cube[yDim][xDim];
 
@@ -362,8 +357,8 @@ public class MCRunner implements Runnable {
 
             currentSlice = lowerSlice;
         } else if (upperSlice == null) {
-            int yDim = (int) Math.ceil(data[0].length / (float) gridSize);
-            int xDim = (int) Math.ceil(data[0][0].length / (float) gridSize);
+            int yDim = (int) Math.ceil(data.ySize() / (float) gridSize);
+            int xDim = (int) Math.ceil(data.xSize() / (float) gridSize);
 
             upperSlice = new Cube[yDim][xDim];
 
@@ -384,7 +379,7 @@ public class MCRunner implements Runnable {
     }
 
     /**
-     * Computes the locations, weights and gradients of the vertices of the cube whose vertex 0 is at the given
+     * Computes the locations, densities and gradients of the vertices of the cube whose vertex 0 is at the given
      * position in the <code>data</code>
      *
      * @param x the x coordinate of the cubes vertex 0
@@ -394,7 +389,7 @@ public class MCRunner implements Runnable {
      * @return the <code>Cube</code> whose vertices were computed
      */
     private Cube computeVertices(int x, int y, int z, Cube[][] currentSlice) {
-        WeightedVertex v;
+        DensityVertex v;
         int cubeX = x / gridSize;
         int cubeY = y / gridSize;
 
@@ -409,7 +404,7 @@ public class MCRunner implements Runnable {
         } else {
             v = cube.getVertex(0);
             v.setLocation(x, y, z);
-            v.setWeight(weight(x, y, z));
+            v.setDensity(data.density(x, y, z));
             computeGradient(x, y, z, v);
         }
 
@@ -420,7 +415,7 @@ public class MCRunner implements Runnable {
         } else {
             v = cube.getVertex(1);
             v.setLocation(x + gridSize, y, z);
-            v.setWeight(weight(x + gridSize, y, z));
+            v.setDensity(data.density(x + gridSize, y, z));
             computeGradient(x + gridSize, y, z, v);
         }
 
@@ -429,7 +424,7 @@ public class MCRunner implements Runnable {
         } else {
             v = cube.getVertex(2);
             v.setLocation(x + gridSize, y + gridSize, z);
-            v.setWeight(weight(x + gridSize, y + gridSize, z));
+            v.setDensity(data.density(x + gridSize, y + gridSize, z));
             computeGradient(x + gridSize, y + gridSize, z, v);
         }
 
@@ -440,7 +435,7 @@ public class MCRunner implements Runnable {
         } else {
             v = cube.getVertex(3);
             v.setLocation(x, y + gridSize, z);
-            v.setWeight(weight(x, y + gridSize, z));
+            v.setDensity(data.density(x, y + gridSize, z));
             computeGradient(x, y + gridSize, z, v);
         }
 
@@ -451,7 +446,7 @@ public class MCRunner implements Runnable {
         } else {
             v = cube.getVertex(4);
             v.setLocation(x, y, z + gridSize);
-            v.setWeight(weight(x, y, z + gridSize));
+            v.setDensity(data.density(x, y, z + gridSize));
             computeGradient(x, y, z + gridSize, v);
         }
 
@@ -460,13 +455,13 @@ public class MCRunner implements Runnable {
         } else {
             v = cube.getVertex(5);
             v.setLocation(x + gridSize, y, z + gridSize);
-            v.setWeight(weight(x + gridSize, y, z + gridSize));
+            v.setDensity(data.density(x + gridSize, y, z + gridSize));
             computeGradient(x + gridSize, y, z + gridSize, v);
         }
 
         v = cube.getVertex(6);
         v.setLocation(x + gridSize, y + gridSize, z + gridSize);
-        v.setWeight(weight(x + gridSize, y + gridSize, z + gridSize));
+        v.setDensity(data.density(x + gridSize, y + gridSize, z + gridSize));
         computeGradient(x + gridSize, y + gridSize, z + gridSize, v);
 
         if (x != 0) {
@@ -474,7 +469,7 @@ public class MCRunner implements Runnable {
         } else {
             v = cube.getVertex(7);
             v.setLocation(x, y + gridSize, z + gridSize);
-            v.setWeight(weight(x, y + gridSize, z + gridSize));
+            v.setDensity(data.density(x, y + gridSize, z + gridSize));
             computeGradient(x, y + gridSize, z + gridSize, v);
         }
 
@@ -490,38 +485,12 @@ public class MCRunner implements Runnable {
      * @param z the z coordinate of the vertex
      * @param v the vertex
      */
-    private void computeGradient(int x, int y, int z, WeightedVertex v) {
-        float gX = weight(x - gridSize, y, z) - weight(x + gridSize, y, z);
-        float gY = weight(x, y - gridSize, z) - weight(x, y + gridSize, z);
-        float gZ = weight(x, y, z - gridSize) - weight(x, y, z + gridSize);
+    private void computeGradient(int x, int y, int z, DensityVertex v) {
+        float gX = data.density(x - gridSize, y, z) - data.density(x + gridSize, y, z);
+        float gY = data.density(x, y - gridSize, z) - data.density(x, y + gridSize, z);
+        float gZ = data.density(x, y, z - gridSize) - data.density(x, y, z + gridSize);
 
         v.setNormal(gX, gY, gZ);
-    }
-
-    /**
-     * Returns the weight (density) at the given position. If the position is out of bounds of the <code>data</code>
-     * array this method will return 0.
-     *
-     * @param x the x coordinate
-     * @param y the y coordinate
-     * @param z the z coordinate
-     * @return the weight
-     */
-    private float weight(int x, int y, int z) {
-
-        if (z < 0 || z >= data.length) {
-            return 0f;
-        }
-
-        if (y < 0 || y >= data[z].length) {
-            return 0f;
-        }
-
-        if (x < 0 || x >= data[z][y].length) {
-            return 0f;
-        }
-
-        return data[z][y][x];
     }
 
     /**
@@ -638,32 +607,32 @@ public class MCRunner implements Runnable {
      * @param v2 the second vertex of a cube
      * @param edge the vertex of a triangle whose position and normal is to be interpolated
      */
-    private void interpolate(WeightedVertex v1, WeightedVertex v2, Vertex edge) {
+    private void interpolate(DensityVertex v1, DensityVertex v2, Vertex edge) {
         float edgeX, edgeY, edgeZ;
         float normalX, normalY, normalZ;
         double min = Math.pow(10, -4);
         double length;
         float alpha;
 
-        if (Math.abs(level - v1.getWeight()) < min) {
+        if (Math.abs(level - v1.getDensity()) < min) {
             edge.setLocation(v1.getLocation());
             edge.setNormal(v1.getNormal().normalized());
             return;
         }
 
-        if (Math.abs(level - v2.getWeight()) < min) {
+        if (Math.abs(level - v2.getDensity()) < min) {
             edge.setLocation(v2.getLocation());
             edge.setNormal(v2.getNormal().normalized());
             return;
         }
 
-        if (Math.abs(v1.getWeight() - v2.getWeight()) < min) {
+        if (Math.abs(v1.getDensity() - v2.getDensity()) < min) {
             edge.setLocation(v1.getLocation());
             edge.setNormal(v1.getNormal().normalized());
             return;
         }
 
-        alpha = (level - v2.getWeight()) / (v1.getWeight() - v2.getWeight());
+        alpha = (level - v2.getDensity()) / (v1.getDensity() - v2.getDensity());
 
         normalX = alpha * v1.getNormal().getX() + (1 - alpha) * v2.getNormal().getX();
         normalY = alpha * v1.getNormal().getY() + (1 - alpha) * v2.getNormal().getY();

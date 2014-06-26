@@ -13,19 +13,19 @@ package controller.mc_alg;
  */
 public class Cube {
 
-    private WeightedVertex[] vertices; // the 8 vertices of the cube and the density at the vertex
+    private DensityVertex[] vertices; // the 8 vertices of the cube and the density at the vertex
     private Vertex[] edges; // the 12 triangle vertices that may lie on the edges of the cube, one vertex per edge
 
     /**
-     * Constructs a new <code>Cube</code>. All its vertices will be (0, 0, 0) with weight 0 and all its edges will be
+     * Constructs a new <code>Cube</code>. All its vertices will be (0, 0, 0) with density 0 and all its edges will be
      * (0, 0, 0).
      */
     public Cube() {
-        this.vertices = new WeightedVertex[8];
+        this.vertices = new DensityVertex[8];
         this.edges = new Vertex[12];
 
         for (int i = 0; i < vertices.length; i++) {
-            vertices[i] = new WeightedVertex(0f, 0f, 0f, 0f);
+            vertices[i] = new DensityVertex(0f, 0f, 0f, 0f);
         }
 
         for (int i = 0; i < edges.length; i++) {
@@ -39,7 +39,7 @@ public class Cube {
      * @param vertices
      *         the values for the vertices
      */
-    public Cube(WeightedVertex... vertices) {
+    public Cube(DensityVertex... vertices) {
         this();
 
         if ((vertices == null) || (vertices.length != 8)) {
@@ -61,7 +61,7 @@ public class Cube {
      *
      * @return the vertex
      */
-    public WeightedVertex getVertex(int index) {
+    public DensityVertex getVertex(int index) {
         return vertices[index];
     }
 
@@ -74,10 +74,10 @@ public class Cube {
      * @param vertex
      *         the <code>WeightedVertex</code> containing the data to be copied into the cube
      */
-    public void setVertex(int index, WeightedVertex vertex) {
+    public void setVertex(int index, DensityVertex vertex) {
         vertices[index].setLocation(vertex.getLocation());
         vertices[index].setNormal(vertex.getNormal());
-        vertices[index].setWeight(vertex.getWeight());
+        vertices[index].setDensity(vertex.getDensity());
     }
 
     /**
@@ -122,7 +122,7 @@ public class Cube {
         int index = 0;
 
         for (int i = 0; i < 8; i++) {
-            if (getWeight(i) <= level) {
+            if (getDensity(i) <= level) {
                 index |= (int) Math.pow(2, i);
             }
         }
@@ -131,15 +131,15 @@ public class Cube {
     }
 
     /**
-     * Returns the weight of the vertex at the given <code>index</code>.
+     * Returns the density of the vertex at the given <code>index</code>.
      * See the class documentation for a description of the indexing convention used.
      *
      * @param index
      *         the index of the vertex
      *
-     * @return the weight at the vertex
+     * @return the density at the vertex
      */
-    public Float getWeight(int index) {
-        return vertices[index].getWeight();
+    public Float getDensity(int index) {
+        return vertices[index].getDensity();
     }
 }

@@ -1,12 +1,9 @@
 package controller;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import controller.mc_alg.ArrayVolume;
 import controller.mc_alg.MCRunner;
 import controller.mc_alg.metaball_volume.MetaBallVolume;
 import gui.Histogram;
@@ -18,14 +15,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.Slider;
-import javafx.scene.control.Toggle;
-import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -34,8 +24,9 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.dcm4che3.data.Attributes;
 import util.OBJExporter;
+
+import static controller.mc_alg.MCRunner.Type.COMPLETE;
 
 /**
  * JavaFX controller class for fxml/V8.fxml.
@@ -137,7 +128,6 @@ public class Controller {
 
         filesList.getFocusModel().focusedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                Attributes attributes = newValue.getAttributes();
                 WritableImage image = newValue.getImage();
 
                 previewImageService.setOriginalImage(image);
@@ -273,7 +263,7 @@ public class Controller {
             }
 
             rasterLoader.setOnSucceeded(event -> {
-                MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, MCRunner.Type.COMPLETE);
+                MCRunner mcRunner = new MCRunner(new ArrayVolume(rasterLoader.getValue()), level, gridSize, COMPLETE);
 
                 mcProgress.progressProperty().bind(mcRunner.progressProperty());
                 mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));
@@ -287,7 +277,7 @@ public class Controller {
             MCRunner.Type type = MCRunner.Type.valueOf(((RadioButton) selToggle).getText());
 
             rasterLoader.setOnSucceeded(event -> {
-                MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, type);
+                MCRunner mcRunner = new MCRunner(new ArrayVolume(rasterLoader.getValue()), level, gridSize, type);
 
                 mcProgress.progressProperty().bind(mcRunner.progressProperty());
                 mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));

@@ -1,10 +1,6 @@
 package util;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
@@ -24,7 +20,7 @@ public class OBJExporter {
     public static void export(Mesh mesh, File saveFile) {
         String vertex = "v";
         String vertexNormal = "vn";
-        String vertexFormatString = "%s %s %s %s %n";
+        String vectorFormatString = "%s %s %s %s %n";
         String face = "f";
         String faceFormatString = "%s %2$d//%2$d %3$d//%3$d %4$d//%4$d %n";
 
@@ -32,14 +28,14 @@ public class OBJExporter {
 
             FloatBuffer verts = mesh.getVertices();
             while (verts.hasRemaining()) {
-                writer.write(String.format(vertexFormatString, vertex, verts.get(), verts.get(), verts.get()));
+                writer.write(String.format(vectorFormatString, vertex, verts.get(), verts.get(), verts.get()));
             }
 
             writer.write(String.format("%n"));
 
             FloatBuffer norms = mesh.getNormals();
             while (norms.hasRemaining()) {
-                writer.write(String.format(vertexFormatString, vertexNormal, norms.get(), norms.get(), norms.get()));
+                writer.write(String.format(vectorFormatString, vertexNormal, norms.get(), norms.get(), norms.get()));
             }
 
             writer.write(String.format("%n"));
@@ -47,11 +43,11 @@ public class OBJExporter {
             IntBuffer ind = mesh.getIndices();
             while (ind.hasRemaining()) {
 
-                // vertexes and normals are 1 indexed in .obj so we have to add 1 to every index...
+                // vertices and normals are 1 indexed in .obj so we have to add 1 to every index...
                 writer.write(String.format(faceFormatString, face, ind.get() + 1, ind.get() + 1, ind.get() + 1));
             }
         } catch (IOException e) {
-            System.err.println("Could not write the " + saveFile.getName() + " .obj file. "+ e.getMessage());
+            System.err.println("Could not write the " + saveFile.getName() + " .obj file. " + e.getMessage());
         }
     }
 }
