@@ -3,8 +3,12 @@ package gui.opengl;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.SynchronousQueue;
@@ -69,11 +73,59 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
  */
 public class OpenGL_V8 {
 
+    static {
+        String os = System.getProperty("os.name").toLowerCase();
+        String arch = System.getProperty("os.arch").toLowerCase();
+        File libFile;
+        String name;
+
+        if (os.contains("windows")) {
+            if (arch.contains("64")) {
+                name = "lwjgl64.dll";
+            } else {
+                name = "lwjgl.dll";
+            }
+        } else if (os.contains("linux")){
+            if (arch.contains("64")) {
+                name = "liblwjgl64.so";
+            } else {
+                name = "liblwjgl.so";
+            }
+        } else if (os.contains("mac")) {
+            name = "liblwjgl.jnilib";
+        } else {
+            throw new UnsatisfiedLinkError(
+                    "Could not find an appropriate native LWJGL library for " + os + " " + arch + ".");
+        }
+        libFile = new File(name);
+
+        if (!libFile.exists()) {
+            try (InputStream libStream = OpenGL_V8.class.getResourceAsStream("/" + name)) {
+                Files.copy(libStream, libFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                throw new UnsatisfiedLinkError(
+                        "Could not copy the required library to where it can be loaded. " + e.getMessage());
+            }
+        }
+
+        System.load(libFile.getAbsolutePath());
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                String cPath = new File(OpenGL_V8.class.getResource("/").toURI()).getAbsolutePath();
+                String cName = FileDeleter.class.getCanonicalName();
+                String path = libFile.getAbsolutePath();
+                Runtime.getRuntime().exec(new String[] {"java", "-cp", cPath, cName, "5000", path});
+            } catch (IOException | URISyntaxException e) {
+                e.printStackTrace();
+            }
+        }));
+    }
+
     private SynchronousQueue<Mesh> newBuffer;
     private FloatBuffer lightPosition;
     private MCRunner mcRunner;
     private Camera camera;
-    private File scDir; // the screenshot directory
+    private final File scDir; // the screenshot directory
 
     private int vboId;   // Vertex Buffer Object ID (Points)
     private int vboiId;  // Vertex Buffer Object ID (Indices)
