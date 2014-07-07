@@ -3,12 +3,14 @@ package controller;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import controller.mc_alg.ArrayVolume;
 import controller.mc_alg.MCRunner;
+import controller.mc_alg.MCVolume;
 import controller.mc_alg.metaball_volume.MetaBallVolume;
 import gui.Histogram;
 import gui.IntSpinner;
@@ -225,37 +227,38 @@ public class Controller {
         float level = (float) levelSlider.getValue();
         int gridSize = gridSizeSpinner.getValue();
 
-        final Task<float[][][]> rasterLoader;
+        final Task<MCVolume> rasterLoader;
         if (dataSource.getSelectedToggle().equals(imageRButton)) {
 
-            rasterLoader = new Task<float[][][]>() {
+            rasterLoader = new Task<MCVolume>() {
 
                 @Override
-                protected float[][][] call() throws Exception {
+                protected MCVolume call() throws Exception {
                     float[][][] data = new float[images.size()][][];
 
-                    for (int i = 0; i < images.size(); i++) {
-                        data[i] = images.get(i).getImageRaster();
+                    Iterator<DCMImage> it = images.iterator();
+                    for (int i = 0; i < images.size() && it.hasNext(); i++) {
+                        data[i] = it.next().getImageRaster();
                         updateProgress(i, images.size());
                     }
 
-                    return data;
+                    return new ArrayVolume(data);
                 }
             };
 
             dataLoadingProgress.progressProperty().bind(rasterLoader.progressProperty());
         } else if (dataSource.getSelectedToggle().equals(randRButton)) {
 
-            rasterLoader = new Task<float[][][]>() {
+            rasterLoader = new Task<MCVolume>() {
 
                 @Override
-                protected float[][][] call() throws Exception {
+                protected MCVolume call() throws Exception {
                     MetaBallVolume volume = new MetaBallVolume(200, 200, 200);
 
                     volume.setBalls(10);
                     dataLoadingProgress.progressProperty().bind(volume.progressProperty());
 
-                    return volume.getVolume();
+                    return new ArrayVolume(volume.getVolume());
                 }
             };
         } else {
@@ -274,7 +277,7 @@ public class Controller {
             }
 
             rasterLoader.setOnSucceeded(event -> {
-                MCRunner mcRunner = new MCRunner(new ArrayVolume(rasterLoader.getValue()), level, gridSize, COMPLETE);
+                MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, COMPLETE);
 
                 mcProgress.progressProperty().bind(mcRunner.progressProperty());
                 mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));
@@ -288,7 +291,7 @@ public class Controller {
             MCRunner.Type type = MCRunner.Type.valueOf(((RadioButton) selToggle).getText().toUpperCase());
 
             rasterLoader.setOnSucceeded(event -> {
-                MCRunner mcRunner = new MCRunner(new ArrayVolume(rasterLoader.getValue()), level, gridSize, type);
+                MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, type);
 
                 mcProgress.progressProperty().bind(mcRunner.progressProperty());
                 mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));
