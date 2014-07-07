@@ -231,6 +231,8 @@ public class MCRunner implements Runnable {
         Cube cube;
 
         progress.set(0);
+
+        outer:
         for (int z = 0; z < data.zSize(); z += gridSize) {
 
             currentSlice = updateSlices();
@@ -253,7 +255,7 @@ public class MCRunner implements Runnable {
 
                     interrupted = Thread.interrupted();
                     if (interrupted) {
-                        return;
+                        break outer;
                     }
                 }
             }
@@ -265,7 +267,7 @@ public class MCRunner implements Runnable {
             progress.set((doneCubes += cubesInSlice) / numCubes);
         }
 
-        if (type == COMPLETE) {
+        if (type == COMPLETE && !interrupted) {
             outputMesh();
         }
 
