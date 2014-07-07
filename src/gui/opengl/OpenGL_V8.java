@@ -579,9 +579,8 @@ public class OpenGL_V8 {
      * Updates the title of the window.
      */
     private void updateTitle() {
-        String format = "%s - Triangles: %d | (G) Polygon Mode: %s | (L) Lighting: %s | (C) Cull Face: %s | " +
-                "(K) Coordinate System: %b | (B) Cubes: %b | (N) Normal Lines: %b | (P, PERIOD) Stopped: %b | " +
-                "INSERT for Screenshot";
+        String format = "%s - Triangles: %d | Polygon Mode: %s | Lighting: %s | Cull Face: %s | " +
+                "Coordinate System: %b | Cubes: %b | Normal Lines: %b | Stopped: %b";
         Display.setTitle(String.format(format, TITLE, indicesCount, polyModeDesc, lightingDesc, cullFaceDesc,
                 showCoordinateSystem, showCubes, showNormalLines, stopping));
     }
