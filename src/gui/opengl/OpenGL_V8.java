@@ -127,12 +127,10 @@ public class OpenGL_V8 {
     private Camera camera;
     private final File scDir; // the screenshot directory
 
-    private int vboId;   // Vertex Buffer Object ID (Points)
-    private int vboiId;  // Vertex Buffer Object ID (Indices)
-    private int vbonId;  // Vertex Buffer Object ID (Normals)
-    private int vbonlId; // Vertex Buffer Object ID (Normal Lines)
+    private int vertexVBOID;  // Vertex Buffer Object ID (Points, Normal Points)
+    private int indexVBOID;   // Vertex Buffer Object ID (Indices)
+    private int normalVBOID;  // Vertex Buffer Object ID (Normals)
     private int indicesCount; // how many indices should be drawn (the triangles of the mesh)
-    private int normalLinesCount; // how many normal lines should be drawn
 
     private boolean showNormalLines;
     private boolean showCubes;
@@ -240,20 +238,16 @@ public class OpenGL_V8 {
     private void initGLObjects() {
 
         // create a new Vertex Buffer Object for the vertexes
-        vboId = glGenBuffersARB();
-        glBindBufferARB(GL_ARRAY_BUFFER, vboId);
+        vertexVBOID = glGenBuffersARB();
+        glBindBufferARB(GL_ARRAY_BUFFER, vertexVBOID);
 
         // create a new Vertex Buffer Object for the normals
-        vbonId = glGenBuffersARB();
-        glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
+        normalVBOID = glGenBuffersARB();
+        glBindBufferARB(GL_ARRAY_BUFFER, normalVBOID);
 
         // create a new Vertex Buffer Object for the indices
-        vboiId = glGenBuffersARB();
-        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboId);
-
-        // create a new Vertex Buffer Object for the normal lines
-        vbonlId = glGenBuffersARB();
-        glBindBufferARB(GL_ARRAY_BUFFER, vbonlId);
+        indexVBOID = glGenBuffersARB();
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vertexVBOID);
 
         glBindBufferARB(GL_ARRAY_BUFFER, 0);
         glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -313,14 +307,14 @@ public class OpenGL_V8 {
         glLight(GL_LIGHT0, GL_POSITION, lightPosition);
 
         glEnableClientState(GL_VERTEX_ARRAY);
-        glBindBufferARB(GL_ARRAY_BUFFER, vboId);
-        glVertexPointer(3, GL_FLOAT, 0, 0);
+        glBindBufferARB(GL_ARRAY_BUFFER, vertexVBOID);
+        glVertexPointer(3, GL_FLOAT, 24, 0);
 
         glEnableClientState(GL_NORMAL_ARRAY);
-        glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
+        glBindBufferARB(GL_ARRAY_BUFFER, normalVBOID);
         glNormalPointer(GL_FLOAT, 0, 0);
 
-        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboiId);
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, indexVBOID);
 
         glColor3f(1f, 0, 0);
         glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_INT, 0);
@@ -446,14 +440,14 @@ public class OpenGL_V8 {
         glDisable(GL_LIGHTING);
 
         glEnableClientState(GL_VERTEX_ARRAY);
-        glBindBufferARB(GL_ARRAY_BUFFER, vbonlId);
+        glBindBufferARB(GL_ARRAY_BUFFER, vertexVBOID);
         glVertexPointer(3, GL_FLOAT, 0, 0);
 
         glEnableClientState(GL_NORMAL_ARRAY);
         glBindBufferARB(GL_ARRAY_BUFFER, 0);
 
         glColor3f(0, 0, 1f);
-        glDrawArrays(GL_LINES, 0, normalLinesCount);
+        glDrawArrays(GL_LINES, 0, indicesCount);
 
         if (lighting) {
             glEnable(GL_LIGHTING);
@@ -477,20 +471,16 @@ public class OpenGL_V8 {
         Mesh change = newBuffer.poll();
 
         if (change != null) {
-            indicesCount = change.getIndices().limit();
-            normalLinesCount = change.getNormalLines().limit() / 2;
+            indicesCount = change.getNumIndices();
 
-            glBindBufferARB(GL_ARRAY_BUFFER, vboId);
+            glBindBufferARB(GL_ARRAY_BUFFER, vertexVBOID);
             glBufferDataARB(GL_ARRAY_BUFFER, change.getVertices(), GL_STATIC_DRAW_ARB);
 
-            glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
+            glBindBufferARB(GL_ARRAY_BUFFER, normalVBOID);
             glBufferDataARB(GL_ARRAY_BUFFER, change.getNormals(), GL_STATIC_DRAW_ARB);
 
-            glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboiId);
+            glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, indexVBOID);
             glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, change.getIndices(), GL_STATIC_DRAW_ARB);
-
-            glBindBufferARB(GL_ARRAY_BUFFER, vbonlId);
-            glBufferDataARB(GL_ARRAY_BUFFER, change.getNormalLines(), GL_STATIC_DRAW_ARB);
 
             glBindBufferARB(GL_ARRAY_BUFFER, 0);
             glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -640,9 +630,8 @@ public class OpenGL_V8 {
      * Deletes the buffers created in {@link #initGLObjects()}.
      */
     private void cleanupBuffers() {
-        glDeleteBuffersARB(vboId);
-        glDeleteBuffersARB(vboiId);
-        glDeleteBuffersARB(vbonId);
-        glDeleteBuffersARB(vbonlId);
+        glDeleteBuffersARB(vertexVBOID);
+        glDeleteBuffersARB(indexVBOID);
+        glDeleteBuffersARB(normalVBOID);
     }
 }

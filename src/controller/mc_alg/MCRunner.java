@@ -2,7 +2,12 @@ package controller.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import javafx.beans.property.DoubleProperty;
@@ -283,9 +288,8 @@ public class MCRunner implements Runnable {
         }
 
         if (meshConsumer != null) {
-            FloatBuffer points = BufferUtils.createFloatBuffer(this.points.size() * 3);
+            FloatBuffer points = BufferUtils.createFloatBuffer(this.points.size() * 3 + this.normals.size() * 3);
             FloatBuffer normals = BufferUtils.createFloatBuffer(this.normals.size() * 3);
-            FloatBuffer normalLines = BufferUtils.createFloatBuffer(this.normals.size() * 6);
             IntBuffer indices = BufferUtils.createIntBuffer(this.indices.size());
 
             Iterator<Map.Entry<Vertex, Integer>> pointsIt = this.points.entrySet().iterator();
@@ -307,22 +311,18 @@ public class MCRunner implements Runnable {
                 normals.put(normal.getY());
                 normals.put(normal.getZ());
 
-                normalLines.put(point.getLocation().getX());
-                normalLines.put(point.getLocation().getY());
-                normalLines.put(point.getLocation().getZ());
-                normalLines.put(normalLinePoint.getX());
-                normalLines.put(normalLinePoint.getY());
-                normalLines.put(normalLinePoint.getZ());
+                points.put(normalLinePoint.getX());
+                points.put(normalLinePoint.getY());
+                points.put(normalLinePoint.getZ());
             }
             this.indices.forEach(indices::put);
 
             points.flip();
             normals.flip();
             indices.flip();
-            normalLines.flip();
 
             System.out.println("Pushing " + indices.limit() / 3 + " triangles."); //TODO remove
-            meshConsumer.accept(new Mesh(points, normals, indices, normalLines));
+            meshConsumer.accept(new Mesh(points, normals, indices));
         }
 
         if (type == COMPLETE) {
