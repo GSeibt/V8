@@ -110,6 +110,7 @@
                               <Insets />
                            </HBox.margin></Label>
                         <Slider fx:id="levelSlider" majorTickUnit="50.0" max="255.0" maxWidth="1.7976931348623157E308" minorTickCount="2" HBox.hgrow="ALWAYS" />
+                        <Label fx:id="levelLabel" alignment="CENTER_RIGHT" prefWidth="60.0" text="0" />
                      </children>
                   </HBox>
                </children>

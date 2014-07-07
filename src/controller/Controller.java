@@ -22,15 +22,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.Slider;
-import javafx.scene.control.Toggle;
-import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -48,6 +40,8 @@ import static controller.mc_alg.MCRunner.Type.COMPLETE;
  */
 public class Controller {
 
+    @FXML
+    private Label levelLabel;
     @FXML
     private CheckBox cacheCheckBox;
     @FXML
@@ -113,6 +107,8 @@ public class Controller {
         dataSource.selectedToggleProperty().addListener((o, oldV, newV) -> {
 
             if (randRButton.equals(newV)) {
+                levelSlider.setMin(0);
+                levelSlider.setMax(5);
                 directoriesList.setDisable(true);
                 cacheMode = cacheCheckBox.isSelected();
                 cacheCheckBox.setSelected(false);
@@ -121,6 +117,8 @@ public class Controller {
                 imageView.setDisable(true);
                 addBtn.setDisable(true);
             } else if (imageRButton.equals(newV)) {
+                levelSlider.setMin(0);
+                levelSlider.setMax(255);
                 directoriesList.setDisable(false);
                 cacheCheckBox.setSelected(cacheMode);
                 cacheCheckBox.setDisable(false);
@@ -184,6 +182,8 @@ public class Controller {
                 dataLoadingProgress.setProgress(0);
             }
         });
+
+        levelLabel.textProperty().bind(levelSlider.valueProperty().asString("%.1f"));
     }
 
     /**
