@@ -114,16 +114,20 @@ public class Controller {
                 cacheCheckBox.setSelected(false);
                 cacheCheckBox.setDisable(true);
                 filesList.setDisable(true);
-                imageView.setDisable(true);
+                imageView.setImage(null);
                 addBtn.setDisable(true);
             } else if (imageRButton.equals(newV)) {
+                int focusedIndex;
+
                 levelSlider.setMin(0);
                 levelSlider.setMax(255);
                 directoriesList.setDisable(false);
                 cacheCheckBox.setSelected(cacheMode);
                 cacheCheckBox.setDisable(false);
                 filesList.setDisable(false);
-                imageView.setDisable(false);
+                focusedIndex = filesList.getFocusModel().getFocusedIndex();
+                filesList.getSelectionModel().clearSelection();
+                filesList.getSelectionModel().select(focusedIndex);
                 addBtn.setDisable(false);
             }
         });
