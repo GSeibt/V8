@@ -8,10 +8,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import controller.mc_alg.ArrayVolume;
-import controller.mc_alg.CachedVolume;
 import controller.mc_alg.MCRunner;
-import controller.mc_alg.MCVolume;
+import controller.mc_alg.mc_volume.ArrayVolume;
+import controller.mc_alg.mc_volume.CachedVolume;
+import controller.mc_alg.mc_volume.MCVolume;
 import controller.mc_alg.metaball_volume.MetaBallVolume;
 import gui.Histogram;
 import gui.IntSpinner;

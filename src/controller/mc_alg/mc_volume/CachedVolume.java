@@ -1,4 +1,4 @@
-package controller.mc_alg;
+package controller.mc_alg.mc_volume;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
