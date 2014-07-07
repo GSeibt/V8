@@ -9,10 +9,9 @@ import java.nio.IntBuffer;
  */
 public class Mesh {
 
-    private FloatBuffer vertices; // the vertices of the triangles
+    private FloatBuffer vertices; // vertices of the triangles interspersed with vertices used for drawing normal lines
     private FloatBuffer normals; // the normals at the vertices of the triangles
     private IntBuffer indices; // indices into the vertices and normals array (for glDrawElements(...))
-    private FloatBuffer normalLines; // pairs vertices describing lines, the normals to be drawn with glDrawArrays(...)
 
     /**
      * Constructs a new <code>Mesh</code> containing the given buffers.
@@ -20,17 +19,18 @@ public class Mesh {
      * @param vertices the vertices of the triangles
      * @param normals the normals at the vertices
      * @param indices the indices into <code>vertices</code> and <code>normals</code>
-     * @param normalLines pairs of two vertices describing lines symbolising the normals
      */
-    public Mesh(FloatBuffer vertices, FloatBuffer normals, IntBuffer indices, FloatBuffer normalLines) {
+    public Mesh(FloatBuffer vertices, FloatBuffer normals, IntBuffer indices) {
         this.vertices = vertices;
         this.normals = normals;
         this.indices = indices;
-        this.normalLines = normalLines;
     }
 
     /**
-     * Returns the vertices <code>FloatBuffer</code>.
+     * Returns the vertices <code>FloatBuffer</code>. <br>
+     * The buffer contains pairs of float-triples [p1x,p1y,p1z,p1nx,p1ny,p1nz, ...] where p1x/y/z are the coordinates
+     * of one triangle vertex and p1nx/y/z the coordinates of a point such that the line between p1x/y/z and p1/nx/ny/nz
+     * is a representation of the normal at p1.
      *
      * @return the vertices
      */
@@ -56,12 +56,7 @@ public class Mesh {
         return indices;
     }
 
-    /**
-     * Returns the normal lines <code>FloatBuffer</code>.
-     *
-     * @return the normal lines
-     */
-    public FloatBuffer getNormalLines() {
-        return normalLines;
+    public int getNumIndices() {
+        return indices.limit();
     }
 }

@@ -68,45 +68,56 @@ public class Vector3f implements Cloneable {
     }
 
     /**
-     * Returns the dot-product of this <code>Vector</code> with the given <code>Vector r</code>.
+     * Returns the dot-product of this <code>Vector</code> with the given <code>Vector other</code>.
      *
-     * @param r
+     * @param other
      *         the other <code>Vector</code>
      *
      * @return the dot-product
      */
-    public float dot(Vector3f r) {
-        return x * r.getX() + y * r.getY() + z * r.getZ();
+    public float dot(Vector3f other) {
+        return x * other.getX() + y * other.getY() + z * other.getZ();
     }
 
     /**
      * Returns a new <code>Vector</code> representing the cross product of this <code>Vector</code> with the given
-     * <code>Vector r</code>.
+     * <code>Vector other</code>.
      *
-     * @param r
+     * @param other
      *         the other <code>Vector</code>
      *
      * @return the cross-product
      */
-    public Vector3f cross(Vector3f r) {
-        float x_ = y * r.getZ() - z * r.getY();
-        float y_ = z * r.getX() - x * r.getZ();
-        float z_ = x * r.getY() - y * r.getX();
+    public Vector3f cross(Vector3f other) {
+        float x_ = y * other.getZ() - z * other.getY();
+        float y_ = z * other.getX() - x * other.getZ();
+        float z_ = x * other.getY() - y * other.getX();
 
         return new Vector3f(x_, y_, z_);
+    }
+
+    /**
+     * Returns a new <code>Vector</code> representing the difference between this <code>Vector/code> and the given
+     * <code>Vector other</code>.
+     *
+     * @param other the other <code>Vector</code>
+     * @return the difference
+     */
+    public Vector3f sub(Vector3f other) {
+        return new Vector3f(x - other.getX(), y - other.getY(), z - other.getZ());
     }
 
     /**
      * Returns a new <code>Vector</code> representing the sum of <code>this</code> <code>Vector</code> and the given
      * one.
      *
-     * @param r
+     * @param other
      *         the other <code>Vector</code>
      *
      * @return the sum of the two vectors
      */
-    public Vector3f add(Vector3f r) {
-        return new Vector3f(x + r.getX(), y + r.getY(), z + r.getZ());
+    public Vector3f add(Vector3f other) {
+        return new Vector3f(x + other.getX(), y + other.getY(), z + other.getZ());
     }
 
     /**

@@ -3,8 +3,12 @@ package gui.opengl;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.SynchronousQueue;
@@ -69,22 +73,80 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
  */
 public class OpenGL_V8 {
 
+    static {
+        String os = System.getProperty("os.name").toLowerCase();
+        String arch = System.getProperty("os.arch").toLowerCase();
+        File libFile;
+        String name;
+
+        if (os.contains("windows")) {
+            if (arch.contains("64")) {
+                name = "lwjgl64.dll";
+            } else {
+                name = "lwjgl.dll";
+            }
+        } else if (os.contains("linux")){
+            if (arch.contains("64")) {
+                name = "liblwjgl64.so";
+            } else {
+                name = "liblwjgl.so";
+            }
+        } else if (os.contains("mac")) {
+            name = "liblwjgl.jnilib";
+        } else {
+            throw new UnsatisfiedLinkError(
+                    "Could not find an appropriate native LWJGL library for " + os + " " + arch + ".");
+        }
+        libFile = new File(name);
+
+        if (!libFile.exists()) {
+            try (InputStream libStream = OpenGL_V8.class.getResourceAsStream("/" + name)) {
+                Files.copy(libStream, libFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                throw new UnsatisfiedLinkError(
+                        "Could not copy the required library to where it can be loaded. " + e.getMessage());
+            }
+        }
+
+        System.load(libFile.getAbsolutePath());
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                String cPath = new File(OpenGL_V8.class.getResource("/").toURI()).getAbsolutePath();
+                String cName = FileDeleter.class.getCanonicalName();
+                String path = libFile.getAbsolutePath();
+                Runtime.getRuntime().exec(new String[] {"java", "-cp", cPath, cName, "5000", path});
+            } catch (IOException | URISyntaxException e) {
+                e.printStackTrace();
+            }
+        }));
+    }
+
     private SynchronousQueue<Mesh> newBuffer;
+
     private FloatBuffer lightPosition;
     private MCRunner mcRunner;
     private Camera camera;
-    private File scDir; // the screenshot directory
+    private final File scDir; // the screenshot directory
+    private int vertexVBOID;  // Vertex Buffer Object ID (Points, Normal Points)
 
-    private int vboId;   // Vertex Buffer Object ID (Points)
-    private int vboiId;  // Vertex Buffer Object ID (Indices)
-    private int vbonId;  // Vertex Buffer Object ID (Normals)
-    private int vbonlId; // Vertex Buffer Object ID (Normal Lines)
+    private int indexVBOID;   // Vertex Buffer Object ID (Indices)
+    private int normalVBOID;  // Vertex Buffer Object ID (Normals)
     private int indicesCount; // how many indices should be drawn (the triangles of the mesh)
-    private int normalLinesCount; // how many normal lines should be drawn
-
     private boolean showNormalLines;
+
     private boolean showCubes;
     private boolean showCoordinateSystem;
+
+    // constants and state information for the title of the window
+    private final String TITLE = "V8";
+    private final String off = "Off";
+    private final String on = "On";
+    private final String fill = "Fill";
+    private final String line = "Line";
+    private String polyModeDesc = fill;
+    private String lightingDesc = on;
+    private String cullFaceDesc = off;
+    private boolean stopping = false;
 
     /**
      * Constructs a new <code>OpenGL_V8</code> window that will show the results of the given <code>mcRunner</code>.
@@ -188,20 +250,16 @@ public class OpenGL_V8 {
     private void initGLObjects() {
 
         // create a new Vertex Buffer Object for the vertexes
-        vboId = glGenBuffersARB();
-        glBindBufferARB(GL_ARRAY_BUFFER, vboId);
+        vertexVBOID = glGenBuffersARB();
+        glBindBufferARB(GL_ARRAY_BUFFER, vertexVBOID);
 
         // create a new Vertex Buffer Object for the normals
-        vbonId = glGenBuffersARB();
-        glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
+        normalVBOID = glGenBuffersARB();
+        glBindBufferARB(GL_ARRAY_BUFFER, normalVBOID);
 
         // create a new Vertex Buffer Object for the indices
-        vboiId = glGenBuffersARB();
-        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboId);
-
-        // create a new Vertex Buffer Object for the normal lines
-        vbonlId = glGenBuffersARB();
-        glBindBufferARB(GL_ARRAY_BUFFER, vbonlId);
+        indexVBOID = glGenBuffersARB();
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vertexVBOID);
 
         glBindBufferARB(GL_ARRAY_BUFFER, 0);
         glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -214,7 +272,7 @@ public class OpenGL_V8 {
      */
     private void initDisplay() throws LWJGLException {
         Display.setDisplayMode(new DisplayMode(1024, 786));
-        Display.setTitle("V8");
+        Display.setTitle(TITLE);
         Display.create();
     }
 
@@ -261,14 +319,14 @@ public class OpenGL_V8 {
         glLight(GL_LIGHT0, GL_POSITION, lightPosition);
 
         glEnableClientState(GL_VERTEX_ARRAY);
-        glBindBufferARB(GL_ARRAY_BUFFER, vboId);
-        glVertexPointer(3, GL_FLOAT, 0, 0);
+        glBindBufferARB(GL_ARRAY_BUFFER, vertexVBOID);
+        glVertexPointer(3, GL_FLOAT, 24, 0);
 
         glEnableClientState(GL_NORMAL_ARRAY);
-        glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
+        glBindBufferARB(GL_ARRAY_BUFFER, normalVBOID);
         glNormalPointer(GL_FLOAT, 0, 0);
 
-        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboiId);
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, indexVBOID);
 
         glColor3f(1f, 0, 0);
         glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_INT, 0);
@@ -394,14 +452,14 @@ public class OpenGL_V8 {
         glDisable(GL_LIGHTING);
 
         glEnableClientState(GL_VERTEX_ARRAY);
-        glBindBufferARB(GL_ARRAY_BUFFER, vbonlId);
+        glBindBufferARB(GL_ARRAY_BUFFER, vertexVBOID);
         glVertexPointer(3, GL_FLOAT, 0, 0);
 
         glEnableClientState(GL_NORMAL_ARRAY);
         glBindBufferARB(GL_ARRAY_BUFFER, 0);
 
         glColor3f(0, 0, 1f);
-        glDrawArrays(GL_LINES, 0, normalLinesCount);
+        glDrawArrays(GL_LINES, 0, indicesCount);
 
         if (lighting) {
             glEnable(GL_LIGHTING);
@@ -425,23 +483,21 @@ public class OpenGL_V8 {
         Mesh change = newBuffer.poll();
 
         if (change != null) {
-            indicesCount = change.getIndices().limit();
-            normalLinesCount = change.getNormalLines().limit() / 2;
+            indicesCount = change.getNumIndices();
 
-            glBindBufferARB(GL_ARRAY_BUFFER, vboId);
+            glBindBufferARB(GL_ARRAY_BUFFER, vertexVBOID);
             glBufferDataARB(GL_ARRAY_BUFFER, change.getVertices(), GL_STATIC_DRAW_ARB);
 
-            glBindBufferARB(GL_ARRAY_BUFFER, vbonId);
+            glBindBufferARB(GL_ARRAY_BUFFER, normalVBOID);
             glBufferDataARB(GL_ARRAY_BUFFER, change.getNormals(), GL_STATIC_DRAW_ARB);
 
-            glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, vboiId);
+            glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, indexVBOID);
             glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, change.getIndices(), GL_STATIC_DRAW_ARB);
-
-            glBindBufferARB(GL_ARRAY_BUFFER, vbonlId);
-            glBufferDataARB(GL_ARRAY_BUFFER, change.getNormalLines(), GL_STATIC_DRAW_ARB);
 
             glBindBufferARB(GL_ARRAY_BUFFER, 0);
             glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+            updateTitle();
         }
     }
 
@@ -451,62 +507,82 @@ public class OpenGL_V8 {
     private void input() {
         camera.input(); // move the camera
 
+        boolean gotInput = Keyboard.getNumKeyboardEvents() > 0;
         while (Keyboard.next()) {
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_G) {
-                if (glGetInteger(GL_POLYGON_MODE) == GL_LINE) {
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                } else {
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                }
+
+            if (!Keyboard.getEventKeyState()) {
+                continue;
             }
 
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_L) {
-                if (glIsEnabled(GL_LIGHTING)) {
-                    glDisable(GL_LIGHTING);
-                } else {
-                    glEnable(GL_LIGHTING);
-                }
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_C) {
-                if (glIsEnabled(GL_CULL_FACE)) {
-                    glDisable(GL_CULL_FACE);
-                } else {
-                    glEnable(GL_CULL_FACE);
-                }
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_K) {
-                showCoordinateSystem = !showCoordinateSystem;
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_B) {
-                showCubes = !showCubes;
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_N) {
-                showNormalLines = !showNormalLines;
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_PERIOD) {
-                mcRunner.continueRun();
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_P) {
-                boolean stopping = mcRunner.isStopping();
-
-                if (stopping) {
-                    mcRunner.setStopping(false);
+            switch (Keyboard.getEventKey()) {
+                case Keyboard.KEY_G:
+                    if (glGetInteger(GL_POLYGON_MODE) == GL_LINE) {
+                        polyModeDesc = fill;
+                        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                    } else {
+                        polyModeDesc = line;
+                        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                    }
+                    break;
+                case Keyboard.KEY_L:
+                    if (glIsEnabled(GL_LIGHTING)) {
+                        lightingDesc = off;
+                        glDisable(GL_LIGHTING);
+                    } else {
+                        lightingDesc = on;
+                        glEnable(GL_LIGHTING);
+                    }
+                    break;
+                case Keyboard.KEY_C:
+                    if (glIsEnabled(GL_CULL_FACE)) {
+                        cullFaceDesc = off;
+                        glDisable(GL_CULL_FACE);
+                    } else {
+                        cullFaceDesc = on;
+                        glEnable(GL_CULL_FACE);
+                    }
+                    break;
+                case Keyboard.KEY_K:
+                    showCoordinateSystem = !showCoordinateSystem;
+                    break;
+                case Keyboard.KEY_B:
+                    showCubes = !showCubes;
+                    break;
+                case Keyboard.KEY_N:
+                    showNormalLines = !showNormalLines;
+                    break;
+                case Keyboard.KEY_PERIOD:
                     mcRunner.continueRun();
-                } else {
-                    mcRunner.setStopping(true);
-                }
-            }
+                    break;
+                case Keyboard.KEY_P:
+                    stopping = mcRunner.isStopping();
 
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_INSERT) {
-                screenshot();
+                    if (stopping) {
+                        mcRunner.setStopping(false);
+                        mcRunner.continueRun();
+                    } else {
+                        mcRunner.setStopping(true);
+                    }
+                    break;
+                case Keyboard.KEY_INSERT:
+                    screenshot();
+                    break;
             }
         }
+
+        if (gotInput) {
+            updateTitle();
+        }
+    }
+
+    /**
+     * Updates the title of the window.
+     */
+    private void updateTitle() {
+        String format = "%s - Triangles: %d | Polygon Mode: %s | Lighting: %s | Cull Face: %s | " +
+                "Coordinate System: %b | Cubes: %b | Normal Lines: %b | Stopped: %b";
+        Display.setTitle(String.format(format, TITLE, indicesCount / 3, polyModeDesc, lightingDesc, cullFaceDesc,
+                showCoordinateSystem, showCubes, showNormalLines, stopping));
     }
 
     /**
@@ -588,9 +664,8 @@ public class OpenGL_V8 {
      * Deletes the buffers created in {@link #initGLObjects()}.
      */
     private void cleanupBuffers() {
-        glDeleteBuffersARB(vboId);
-        glDeleteBuffersARB(vboiId);
-        glDeleteBuffersARB(vbonId);
-        glDeleteBuffersARB(vbonlId);
+        glDeleteBuffersARB(vertexVBOID);
+        glDeleteBuffersARB(indexVBOID);
+        glDeleteBuffersARB(normalVBOID);
     }
 }

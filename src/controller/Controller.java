@@ -1,10 +1,17 @@
 package controller;
 
 import java.io.File;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
-import controller.mc_alg.ArrayVolume;
 import controller.mc_alg.MCRunner;
+import controller.mc_alg.mc_volume.ArrayVolume;
+import controller.mc_alg.mc_volume.CachedVolume;
+import controller.mc_alg.mc_volume.MCVolume;
 import controller.mc_alg.metaball_volume.MetaBallVolume;
 import gui.Histogram;
 import gui.IntSpinner;
@@ -15,7 +22,15 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.Slider;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -24,7 +39,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import util.OBJExporter;
+import util.Exporter;
 
 import static controller.mc_alg.MCRunner.Type.COMPLETE;
 
@@ -33,6 +48,8 @@ import static controller.mc_alg.MCRunner.Type.COMPLETE;
  */
 public class Controller {
 
+    @FXML
+    private CheckBox cacheCheckBox;
     @FXML
     private Slider levelSlider;
     @FXML
@@ -214,37 +231,50 @@ public class Controller {
         float level = (float) levelSlider.getValue();
         int gridSize = gridSizeSpinner.getValue();
 
-        final Task<float[][][]> rasterLoader;
-        if (dataSource.getSelectedToggle().equals(imageRButton)) {
+        final Task<MCVolume> rasterLoader;
 
-            rasterLoader = new Task<float[][][]>() {
+        if (cacheCheckBox.isSelected()) {
+
+            rasterLoader = new Task<MCVolume>() {
 
                 @Override
-                protected float[][][] call() throws Exception {
+                protected MCVolume call() throws Exception {
+                    return new CachedVolume(images, 4);
+                }
+            };
+
+            dataLoadingProgress.progressProperty().setValue(-1);
+        } else if (dataSource.getSelectedToggle().equals(imageRButton)) {
+
+            rasterLoader = new Task<MCVolume>() {
+
+                @Override
+                protected MCVolume call() throws Exception {
                     float[][][] data = new float[images.size()][][];
 
-                    for (int i = 0; i < images.size(); i++) {
-                        data[i] = images.get(i).getImageRaster();
+                    Iterator<DCMImage> it = images.iterator();
+                    for (int i = 0; i < images.size() && it.hasNext(); i++) {
+                        data[i] = it.next().getImageRaster();
                         updateProgress(i, images.size());
                     }
 
-                    return data;
+                    return new ArrayVolume(data);
                 }
             };
 
             dataLoadingProgress.progressProperty().bind(rasterLoader.progressProperty());
         } else if (dataSource.getSelectedToggle().equals(randRButton)) {
 
-            rasterLoader = new Task<float[][][]>() {
+            rasterLoader = new Task<MCVolume>() {
 
                 @Override
-                protected float[][][] call() throws Exception {
+                protected MCVolume call() throws Exception {
                     MetaBallVolume volume = new MetaBallVolume(200, 200, 200);
 
                     volume.setBalls(10);
                     dataLoadingProgress.progressProperty().bind(volume.progressProperty());
 
-                    return volume.getVolume();
+                    return new ArrayVolume(volume.getVolume());
                 }
             };
         } else {
@@ -255,6 +285,7 @@ public class Controller {
         if (selToggle.equals(exportRBtn)) {
             FileChooser fileChooser = new FileChooser();
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Wavefront OBJ", "*.obj"));
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Surface Tesselation Language", "*.stl"));
 
             File saveFile = fileChooser.showSaveDialog(stage);
 
@@ -263,21 +294,27 @@ public class Controller {
             }
 
             rasterLoader.setOnSucceeded(event -> {
-                MCRunner mcRunner = new MCRunner(new ArrayVolume(rasterLoader.getValue()), level, gridSize, COMPLETE);
+                MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, COMPLETE);
 
                 mcProgress.progressProperty().bind(mcRunner.progressProperty());
                 mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));
-                mcRunner.setOnMeshFinished(m -> new Thread(() -> OBJExporter.export(m, saveFile)).start());
+                mcRunner.setOnMeshFinished(m -> new Thread(() -> {
+                    if (saveFile.getName().endsWith("obj")) {
+                        Exporter.exportOBJ(m, saveFile);
+                    } else if (saveFile.getName().endsWith("stl")) {
+                        Exporter.exportSTL(m, saveFile);
+                    }
+                }).start());
 
                 Thread runnerThread = new Thread(mcRunner);
                 runnerThread.setName(MCRunner.class.getSimpleName());
                 runnerThread.start();
             });
         } else if (selToggle.equals(cubeRBtn) || selToggle.equals(sliceRBtn) || selToggle.equals(completeRBtn)) {
-            MCRunner.Type type = MCRunner.Type.valueOf(((RadioButton) selToggle).getText());
+            MCRunner.Type type = MCRunner.Type.valueOf(((RadioButton) selToggle).getText().toUpperCase());
 
             rasterLoader.setOnSucceeded(event -> {
-                MCRunner mcRunner = new MCRunner(new ArrayVolume(rasterLoader.getValue()), level, gridSize, type);
+                MCRunner mcRunner = new MCRunner(rasterLoader.getValue(), level, gridSize, type);
 
                 mcProgress.progressProperty().bind(mcRunner.progressProperty());
                 mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));
