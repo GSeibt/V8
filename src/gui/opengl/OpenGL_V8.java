@@ -581,7 +581,7 @@ public class OpenGL_V8 {
     private void updateTitle() {
         String format = "%s - Triangles: %d | Polygon Mode: %s | Lighting: %s | Cull Face: %s | " +
                 "Coordinate System: %b | Cubes: %b | Normal Lines: %b | Stopped: %b";
-        Display.setTitle(String.format(format, TITLE, indicesCount, polyModeDesc, lightingDesc, cullFaceDesc,
+        Display.setTitle(String.format(format, TITLE, indicesCount / 3, polyModeDesc, lightingDesc, cullFaceDesc,
                 showCoordinateSystem, showCubes, showNormalLines, stopping));
     }
 
