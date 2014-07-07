@@ -7,12 +7,25 @@ import java.util.Map;
 
 import controller.DCMImage;
 
+/**
+ * A <code>MCVolume</code> that takes data from an internal FIFO cache of slices.
+ * This implementation will call {@link controller.DCMImage#reset()} when the slice is removed from the cache.
+ */
 public class CachedVolume implements MCVolume {
 
+    /**
+     * <code>LinkedHashMap</code> used to maintain the cache.
+     */
     private class CacheMap extends LinkedHashMap<Integer, float[][]> {
 
         private final int maxEntries;
 
+        /**
+         * Constructs a new <code>CacheMap</code> that will drop its eldest entry when its size exceeds
+         * <code>maxEntries</code>.
+         *
+         * @param maxEntries the maximum number of entries for this <code>Map</code>
+         */
         private CacheMap(int maxEntries) {
             this.maxEntries = maxEntries;
         }
@@ -34,6 +47,13 @@ public class CachedVolume implements MCVolume {
     private int xSize;
     private int ySize;
 
+    /**
+     * Constructs a new <code>CachedVolume</code> backed by the given <code>List</code> of <code>DCMImage</code>s.
+     * The cache for this <code>CachedVolume</code> will contain at most <code>maxSize</code> image raster.
+     *
+     * @param images the <code>DCMImage</code>s to take data from
+     * @param maxSize the maximum size of the data cache
+     */
     public CachedVolume(List<DCMImage> images, int maxSize) {
         this.images = new ArrayList<>(images);
         this.cache = new CacheMap(maxSize);
@@ -49,6 +69,12 @@ public class CachedVolume implements MCVolume {
         }
     }
 
+    /**
+     * Returns the slice with index z from the cache.
+     *
+     * @param z the slice index
+     * @return the slice
+     */
     private float[][] get(int z) {
 
         if (!cache.containsKey(z)) {
