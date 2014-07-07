@@ -93,6 +93,7 @@ public class Controller {
     private Stage stage;
 
     boolean previewMode = false;
+    boolean cacheMode;
     private PreviewImageService previewImageService;
 
     /**
@@ -103,6 +104,7 @@ public class Controller {
         dirCache = new HashMap<>();
         directories = directoriesList.getItems();
         previewImageService = new PreviewImageService();
+        cacheMode = cacheCheckBox.isSelected();
 
         previewImageService.setOnSucceeded(event -> {
             imageView.setImage((Image) event.getSource().getValue());
@@ -112,11 +114,16 @@ public class Controller {
 
             if (randRButton.equals(newV)) {
                 directoriesList.setDisable(true);
+                cacheMode = cacheCheckBox.isSelected();
+                cacheCheckBox.setSelected(false);
+                cacheCheckBox.setDisable(true);
                 filesList.setDisable(true);
                 imageView.setDisable(true);
                 addBtn.setDisable(true);
             } else if (imageRButton.equals(newV)) {
                 directoriesList.setDisable(false);
+                cacheCheckBox.setSelected(cacheMode);
+                cacheCheckBox.setDisable(false);
                 filesList.setDisable(false);
                 imageView.setDisable(false);
                 addBtn.setDisable(false);
@@ -166,6 +173,15 @@ public class Controller {
         imageView.setPreserveRatio(false);
         imageView.fitHeightProperty().bind(imagePane.heightProperty());
         imageView.fitWidthProperty().bind(imagePane.widthProperty());
+
+        loadingBarBox.visibleProperty().addListener((o, oldV, newV) -> {
+            if (oldV && !newV) {
+                mcProgress.progressProperty().unbind();
+                mcProgress.setProgress(0);
+                dataLoadingProgress.progressProperty().unbind();
+                dataLoadingProgress.setProgress(0);
+            }
+        });
     }
 
     /**
@@ -233,7 +249,7 @@ public class Controller {
 
         final Task<MCVolume> rasterLoader;
 
-        if (cacheCheckBox.isSelected()) {
+        if (cacheCheckBox.isSelected() && !dataSource.getSelectedToggle().equals(randRButton)) {
 
             rasterLoader = new Task<MCVolume>() {
 
@@ -280,6 +296,8 @@ public class Controller {
         } else {
             return;
         }
+
+        loadingBarBox.setVisible(true);
 
         Toggle selToggle = mcType.getSelectedToggle();
         if (selToggle.equals(exportRBtn)) {
@@ -330,8 +348,6 @@ public class Controller {
         Thread rasterLoaderThread = new Thread(rasterLoader);
         rasterLoaderThread.setName("RasterLoader");
         rasterLoaderThread.start();
-
-        loadingBarBox.setVisible(true);
     }
 
     /**
