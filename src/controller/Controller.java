@@ -150,7 +150,7 @@ public class Controller {
             }
         });
 
-        filesList.getFocusModel().focusedItemProperty().addListener((observable, oldValue, newValue) -> {
+        filesList.getFocusModel().focusedItemProperty().addListener((value, oldValue, newValue) -> {
             if (newValue != null) {
                 WritableImage image = newValue.getImage();
 
@@ -166,8 +166,10 @@ public class Controller {
 
         levelSlider.valueProperty().addListener((slider, oldV, newV) -> {
             previewMode = true;
-            previewImageService.setLevel(newV.doubleValue());
-            previewImageService.restart();
+            if (!previewImageService.isRunning()) {
+                previewImageService.setLevel(newV.doubleValue());
+                previewImageService.restart();
+            }
         });
 
         imageView.setPreserveRatio(false);
