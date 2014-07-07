@@ -122,19 +122,31 @@ public class OpenGL_V8 {
     }
 
     private SynchronousQueue<Mesh> newBuffer;
+
     private FloatBuffer lightPosition;
     private MCRunner mcRunner;
     private Camera camera;
     private final File scDir; // the screenshot directory
-
     private int vertexVBOID;  // Vertex Buffer Object ID (Points, Normal Points)
+
     private int indexVBOID;   // Vertex Buffer Object ID (Indices)
     private int normalVBOID;  // Vertex Buffer Object ID (Normals)
     private int indicesCount; // how many indices should be drawn (the triangles of the mesh)
-
     private boolean showNormalLines;
+
     private boolean showCubes;
     private boolean showCoordinateSystem;
+
+    // constants and state information for the title of the window
+    private final String TITLE = "V8";
+    private final String off = "Off";
+    private final String on = "On";
+    private final String fill = "Fill";
+    private final String line = "Line";
+    private String polyModeDesc = fill;
+    private String lightingDesc = on;
+    private String cullFaceDesc = off;
+    private boolean stopping = false;
 
     /**
      * Constructs a new <code>OpenGL_V8</code> window that will show the results of the given <code>mcRunner</code>.
@@ -260,7 +272,7 @@ public class OpenGL_V8 {
      */
     private void initDisplay() throws LWJGLException {
         Display.setDisplayMode(new DisplayMode(1024, 786));
-        Display.setTitle("V8");
+        Display.setTitle(TITLE);
         Display.create();
     }
 
@@ -484,6 +496,8 @@ public class OpenGL_V8 {
 
             glBindBufferARB(GL_ARRAY_BUFFER, 0);
             glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+            updateTitle();
         }
     }
 
@@ -493,62 +507,83 @@ public class OpenGL_V8 {
     private void input() {
         camera.input(); // move the camera
 
+        boolean gotInput = Keyboard.getNumKeyboardEvents() > 0;
         while (Keyboard.next()) {
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_G) {
-                if (glGetInteger(GL_POLYGON_MODE) == GL_LINE) {
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                } else {
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                }
+
+            if (!Keyboard.getEventKeyState()) {
+                continue;
             }
 
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_L) {
-                if (glIsEnabled(GL_LIGHTING)) {
-                    glDisable(GL_LIGHTING);
-                } else {
-                    glEnable(GL_LIGHTING);
-                }
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_C) {
-                if (glIsEnabled(GL_CULL_FACE)) {
-                    glDisable(GL_CULL_FACE);
-                } else {
-                    glEnable(GL_CULL_FACE);
-                }
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_K) {
-                showCoordinateSystem = !showCoordinateSystem;
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_B) {
-                showCubes = !showCubes;
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_N) {
-                showNormalLines = !showNormalLines;
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_PERIOD) {
-                mcRunner.continueRun();
-            }
-
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_P) {
-                boolean stopping = mcRunner.isStopping();
-
-                if (stopping) {
-                    mcRunner.setStopping(false);
+            switch (Keyboard.getEventKey()) {
+                case Keyboard.KEY_G:
+                    if (glGetInteger(GL_POLYGON_MODE) == GL_LINE) {
+                        polyModeDesc = fill;
+                        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                    } else {
+                        polyModeDesc = line;
+                        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                    }
+                    break;
+                case Keyboard.KEY_L:
+                    if (glIsEnabled(GL_LIGHTING)) {
+                        lightingDesc = off;
+                        glDisable(GL_LIGHTING);
+                    } else {
+                        lightingDesc = on;
+                        glEnable(GL_LIGHTING);
+                    }
+                    break;
+                case Keyboard.KEY_C:
+                    if (glIsEnabled(GL_CULL_FACE)) {
+                        cullFaceDesc = off;
+                        glDisable(GL_CULL_FACE);
+                    } else {
+                        cullFaceDesc = on;
+                        glEnable(GL_CULL_FACE);
+                    }
+                    break;
+                case Keyboard.KEY_K:
+                    showCoordinateSystem = !showCoordinateSystem;
+                    break;
+                case Keyboard.KEY_B:
+                    showCubes = !showCubes;
+                    break;
+                case Keyboard.KEY_N:
+                    showNormalLines = !showNormalLines;
+                    break;
+                case Keyboard.KEY_PERIOD:
                     mcRunner.continueRun();
-                } else {
-                    mcRunner.setStopping(true);
-                }
-            }
+                    break;
+                case Keyboard.KEY_P:
+                    stopping = mcRunner.isStopping();
 
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_INSERT) {
-                screenshot();
+                    if (stopping) {
+                        mcRunner.setStopping(false);
+                        mcRunner.continueRun();
+                    } else {
+                        mcRunner.setStopping(true);
+                    }
+                    break;
+                case Keyboard.KEY_INSERT:
+                    screenshot();
+                    break;
             }
         }
+
+        if (gotInput) {
+            updateTitle();
+        }
+    }
+
+    /**
+     * Updates the title of the window.
+     */
+    private void updateTitle() {
+        String format = "%s - Triangles: %d | (G) Polygon Mode: %s | (L) Lighting: %s | (C) Cull Face: %s | " +
+                "(K) Coordinate System: %b | (B) Cubes: %b | (N) Normal Lines: %b | (P, PERIOD) Stopped: %b | " +
+                "INSERT for Screenshot";
+        Display.setTitle(String.format(format, TITLE, indicesCount, polyModeDesc, lightingDesc, cullFaceDesc,
+                showCoordinateSystem, showCubes, showNormalLines, stopping));
     }
 
     /**
