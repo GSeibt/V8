@@ -14,6 +14,6 @@
   <rowConstraints>
     <RowConstraints vgrow="SOMETIMES" />
   </rowConstraints>
-<children><Button fx:id="decButton" mnemonicParsing="false" onAction="#decrease" style="-fx-background-radius: 0; -fx-background-insets: 0;" text="-" GridPane.columnIndex="1" /><Button fx:id="incButton" mnemonicParsing="false" onAction="#increase" style="-fx-background-radius: 0; -fx-background-insets: 0;" text="+" GridPane.columnIndex="2" /><TextField fx:id="textField" style="-fx-background-radius: 0;" />
+<children><Button fx:id="decButton" mnemonicParsing="false" onAction="#decrease" style="-fx-background-radius: 0; -fx-background-insets: 0;" text="-" GridPane.columnIndex="1" /><Button fx:id="incButton" mnemonicParsing="false" onAction="#increase" style="-fx-background-radius: 0; -fx-background-insets: 0;" text="+" GridPane.columnIndex="2" /><TextField fx:id="textField" prefColumnCount="4" style="-fx-background-radius: 0;" />
 </children>
 </fx:root>

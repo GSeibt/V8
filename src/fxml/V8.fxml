@@ -85,6 +85,7 @@
                <children>
                   <HBox alignment="CENTER_RIGHT" spacing="15.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                      <children>
+                        <CheckBox fx:id="cacheCheckBox" mnemonicParsing="false" text="Low Memory" />
                               <RadioButton fx:id="cubeRBtn" mnemonicParsing="false" text="Cube">
                                   <toggleGroup>
                                       <ToggleGroup fx:id="mcType" />

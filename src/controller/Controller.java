@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import controller.mc_alg.ArrayVolume;
+import controller.mc_alg.CachedVolume;
 import controller.mc_alg.MCRunner;
 import controller.mc_alg.MCVolume;
 import controller.mc_alg.metaball_volume.MetaBallVolume;
@@ -22,6 +23,7 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
@@ -46,6 +48,8 @@ import static controller.mc_alg.MCRunner.Type.COMPLETE;
  */
 public class Controller {
 
+    @FXML
+    private CheckBox cacheCheckBox;
     @FXML
     private Slider levelSlider;
     @FXML
@@ -228,7 +232,19 @@ public class Controller {
         int gridSize = gridSizeSpinner.getValue();
 
         final Task<MCVolume> rasterLoader;
-        if (dataSource.getSelectedToggle().equals(imageRButton)) {
+
+        if (cacheCheckBox.isSelected()) {
+
+            rasterLoader = new Task<MCVolume>() {
+
+                @Override
+                protected MCVolume call() throws Exception {
+                    return new CachedVolume(images, 4);
+                }
+            };
+
+            dataLoadingProgress.progressProperty().setValue(-1);
+        } else if (dataSource.getSelectedToggle().equals(imageRButton)) {
 
             rasterLoader = new Task<MCVolume>() {
 
