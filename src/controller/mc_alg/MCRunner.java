@@ -223,8 +223,8 @@ public class MCRunner implements Runnable {
     public void run() {
         long startTime = System.nanoTime();
 
-        int cubesInSlice = data.xSize() * data.ySize();
-        double numCubes = (data.zSize() * cubesInSlice) / Math.pow(gridSize, 3);
+        int cubesInSlice = data.xSize() * data.ySize() / (int) Math.pow(gridSize, 2);
+        double numCubes = (data.zSize() * cubesInSlice) / gridSize;
         int doneCubes = 0;
         int cubeIndex;
         Cube[][] currentSlice;
