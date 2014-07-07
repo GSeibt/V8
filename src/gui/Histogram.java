@@ -51,6 +51,7 @@ public class Histogram extends Stage {
         xAxis.setLabel("Pixel Value");
         yAxis.setLabel("Quantity");
         chart.setLegendVisible(false);
+        chart.setAnimated(false);
 
         Task<XYChart.Series<String, Number>> dataWorker = new Task<XYChart.Series<String, Number>>() {
 
