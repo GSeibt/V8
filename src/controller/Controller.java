@@ -39,7 +39,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import util.OBJExporter;
+import util.Exporter;
 
 import static controller.mc_alg.MCRunner.Type.COMPLETE;
 
@@ -285,6 +285,7 @@ public class Controller {
         if (selToggle.equals(exportRBtn)) {
             FileChooser fileChooser = new FileChooser();
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Wavefront OBJ", "*.obj"));
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Surface Tesselation Language", "*.stl"));
 
             File saveFile = fileChooser.showSaveDialog(stage);
 
@@ -297,7 +298,13 @@ public class Controller {
 
                 mcProgress.progressProperty().bind(mcRunner.progressProperty());
                 mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));
-                mcRunner.setOnMeshFinished(m -> new Thread(() -> OBJExporter.export(m, saveFile)).start());
+                mcRunner.setOnMeshFinished(m -> new Thread(() -> {
+                    if (saveFile.getName().endsWith("obj")) {
+                        Exporter.exportOBJ(m, saveFile);
+                    } else if (saveFile.getName().endsWith("stl")) {
+                        Exporter.exportSTL(m, saveFile);
+                    }
+                }).start());
 
                 Thread runnerThread = new Thread(mcRunner);
                 runnerThread.setName(MCRunner.class.getSimpleName());
