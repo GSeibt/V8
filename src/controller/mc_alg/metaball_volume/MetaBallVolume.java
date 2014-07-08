@@ -84,15 +84,53 @@ public class MetaBallVolume {
 
     /**
      * Adds a random <code>MetaBall</code> to the volume.
+     * The intensity will be between 1 and 300.
      */
     public void addRandomBall() {
+        addRandomBall(1, 300);
+    }
+
+    /**
+     * Adds a random <code>MetaBall</code> to the volume.
+     *
+     * @param minIntensity the minimum intensity for the ball
+     * @param maxIntensity the maximum intensity for the ball
+     */
+    public void addRandomBall(int minIntensity, int maxIntensity) {
         int x = rInt(0, x_dim - 1);
         int y = rInt(0, y_dim - 1);
         int z = rInt(0, z_dim - 1);
-        int intensity = rInt(1, 100);
+        int intensity = rInt(minIntensity, maxIntensity);
         int posNeg = (Math.random() < 0.3) ? -1 : 1;
 
         addBall(x, y, z, intensity * posNeg);
+    }
+
+    /**
+     * Sets the size in x of this <code>MetaBallVolume</code>.
+     *
+     * @param x_dim the new size
+     */
+    public void setX_dim(int x_dim) {
+        this.x_dim = x_dim;
+    }
+
+    /**
+     * Sets the size in y of this <code>MetaBallVolume</code>.
+     *
+     * @param y_dim the new size
+     */
+    public void setY_dim(int y_dim) {
+        this.y_dim = y_dim;
+    }
+
+    /**
+     * Sets the size in z of this <code>MetaBallVolume</code>.
+     *
+     * @param z_dim the new size
+     */
+    public void setZ_dim(int z_dim) {
+        this.z_dim = z_dim;
     }
 
     /**
