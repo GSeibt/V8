@@ -1,6 +1,13 @@
 package util;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -92,9 +99,11 @@ public class Exporter {
         }
 
         int numFaces = mesh.getIndices().limit() / 3;
+
+        // an int for the number of faces and for every face 12 floats and one short for the attribute byte count
+        ByteBuffer outputBuffer = ByteBuffer.allocate(4 + numFaces * (12 * 4 + 2)).order(ByteOrder.LITTLE_ENDIAN);
         IntBuffer indices = mesh.getIndices();
         FloatBuffer vertices = mesh.getVertices();
-        ByteBuffer outputBuffer = ByteBuffer.allocate(4 + numFaces * (12 * 4 + 2)).order(ByteOrder.LITTLE_ENDIAN);
         Vector3f v1 = new Vector3f(0, 0, 0);
         Vector3f v2 = new Vector3f(0, 0, 0);
         Vector3f v3 = new Vector3f(0, 0, 0);
@@ -113,7 +122,7 @@ public class Exporter {
             while (indices.hasRemaining()) {
 
                 for (int i = 0; i < 3; i++) {
-                    index = indices.get() * 6;
+                    index = indices.get() * 6; // *6 instead of *3 because we have to skip the normal points
                     vectors[i].setXYZ(vertices.get(index), vertices.get(index + 1), vertices.get(index + 2));
                 }
 
