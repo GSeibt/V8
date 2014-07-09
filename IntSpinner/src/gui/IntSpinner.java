@@ -55,39 +55,31 @@ public class IntSpinner extends GridPane {
         }
 
         setValue(start);
+
+        textField.textProperty().addListener((textV, oldV, newV) -> {
+            if (!newV.isEmpty()) {
+                try {
+                    int newValue = Integer.parseInt(newV);
+                    setValue(newValue);
+                } catch (NumberFormatException e) {
+                    textField.setText(oldV);
+                }
+            }
+        });
     }
 
     @FXML
     public void decrease(ActionEvent event) {
         int newValue = value.get() - step.get();
 
-        if (newValue < start.get()) {
-
-            if (cyclic.get()) {
-                setValue(end.get() - (start.get() - newValue));
-            }
-        } else {
-            setValue(newValue);
-        }
+        setValue(newValue);
     }
 
     @FXML
     public void increase(ActionEvent event) {
         int newValue = value.get() + step.get();
 
-        if (newValue > end.get()) {
-
-            if (cyclic.get()) {
-                setValue(start.get() + (newValue - end.get()));
-            }
-        } else {
-            setValue(newValue);
-        }
-    }
-
-    private void setValue(int newValue) {
-        textField.setText(String.valueOf(newValue));
-        value.set(newValue);
+        setValue(newValue);
     }
 
     public int getStart() {
@@ -116,6 +108,11 @@ public class IntSpinner extends GridPane {
     }
 
     public void setEnd(int end) {
+
+        if (end < value.get()) {
+            setValue(end);
+        }
+
         this.end.set(end);
     }
 
@@ -149,5 +146,27 @@ public class IntSpinner extends GridPane {
 
     public IntegerProperty valueProperty() {
         return value;
+    }
+
+    public void setValue(int newValue) {
+
+        if (newValue < start.get()) {
+
+            if (cyclic.get()) {
+                newValue = end.get() - (start.get() - newValue);
+            } else {
+                newValue = start.get();
+            }
+        } else if (newValue > end.get()) {
+
+            if (cyclic.get()) {
+                newValue = start.get() + (newValue - end.get());
+            } else {
+                newValue = end.get();
+            }
+        }
+
+        textField.setText(String.valueOf(newValue));
+        value.set(newValue);
     }
 }
