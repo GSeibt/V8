@@ -1,5 +1,6 @@
 package controller.mc_alg.metaball_volume;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -66,6 +67,34 @@ public class MetaBallVolume {
         }
 
         return volume;
+    }
+
+    /**
+     * Returns the number of balls currently in the volume.
+     *
+     * @return the number of balls
+     */
+    public int getNumBalls() {
+        return metaBalls.size();
+    }
+
+    /**
+     * Adds the given ball to the volume.
+     *
+     * @param metaBall the ball to be added
+     */
+    public void addBall(MetaBall metaBall) {
+        metaBalls.add(metaBall);
+    }
+
+    /**
+     * Adds all given <code>MetaBall</code>s to the volume.
+     * Additionally this method provides easy opportunities for jokes to anyone interested.
+     *
+     * @param balls the
+     */
+    public void addAllBalls(Collection<? extends MetaBall> balls) {
+        metaBalls.addAll(balls);
     }
 
     /**
