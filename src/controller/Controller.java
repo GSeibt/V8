@@ -15,6 +15,7 @@ import controller.mc_alg.mc_volume.MCVolume;
 import controller.mc_alg.metaball_volume.MetaBallVolume;
 import gui.Histogram;
 import gui.IntSpinner;
+import gui.MVolumeDesigner;
 import gui.PreviewImageService;
 import gui.opengl.OpenGL_V8;
 import javafx.application.Platform;
@@ -286,14 +287,16 @@ public class Controller {
 
             dataLoadingProgress.progressProperty().bind(rasterLoader.progressProperty());
         } else if (dataSource.getSelectedToggle().equals(randRButton)) {
+            MetaBallVolume volume = MVolumeDesigner.showVolumeDesigner();
+
+            if (volume == null) {
+                return;
+            }
 
             rasterLoader = new Task<MCVolume>() {
 
                 @Override
                 protected MCVolume call() throws Exception {
-                    MetaBallVolume volume = new MetaBallVolume(200, 200, 200);
-
-                    volume.setBalls(10);
                     dataLoadingProgress.progressProperty().bind(volume.progressProperty());
 
                     return new ArrayVolume(volume.getVolume());
