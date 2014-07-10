@@ -2,12 +2,7 @@ package controller.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 import controller.mc_alg.mc_volume.MCVolume;
@@ -46,6 +41,68 @@ public class MCRunner implements Runnable {
         COMPLETE
     }
 
+    private static class EdgeId {
+        private int cubeX;
+        private int cubeY;
+        private int cubeZ;
+        private int index;
+
+        public static EdgeId getInstance = new EdgeId(0, 0, 0, 0);
+
+        private EdgeId(int cubeX, int cubeY, int cubeZ, int index) {
+            this.cubeX = cubeX;
+            this.cubeY = cubeY;
+            this.cubeZ = cubeZ;
+            this.index = index;
+        }
+
+        public static EdgeId get(int x, int y, int z, int index) {
+            getInstance.cubeX = x;
+            getInstance.cubeY = y;
+            getInstance.cubeZ = z;
+            getInstance.index = index;
+            return getInstance;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EdgeId edgeId = (EdgeId) o;
+
+            if (cubeX != edgeId.cubeX) {
+                return false;
+            }
+            if (cubeY != edgeId.cubeY) {
+                return false;
+            }
+            if (cubeZ != edgeId.cubeZ) {
+                return false;
+            }
+            if (index != edgeId.index) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = cubeX;
+            result = 31 * result + cubeY;
+            result = 31 * result + cubeZ;
+            result = 31 * result + index;
+            return result;
+        }
+    }
+
+    private Map<EdgeId, Vertex> edgeCache;
+
     private DoubleProperty progress; // 0 or negative => 0%, 1 or greater => 100%
 
     private MCVolume data;
@@ -58,16 +115,6 @@ public class MCRunner implements Runnable {
     private volatile boolean stopping; // whether this MCRunner stops after every mesh update
     private volatile boolean stopped; // whether this MCRunner has stopped
     private boolean interrupted; // whether the executing Thread was interrupted
-
-    /*
-     * During the execution of the algorithm two slices of the geometry (calculated vertices of cubes, normals,
-     * gradients and triangle vertices) will remain in memory. After every slice of data the two references (upperSlice,
-     * lowerSlice) will be swapped. The upperSlice will be worked on by the algorithm (overwriting the values that
-     * are stored in the cubes from the previous iteration), the lowerSlice (and parts of upperSlice that have already
-     * been updated) will be used for lookup of previously calculated information.
-     */
-    private Cube[][] upperSlice;
-    private Cube[][] lowerSlice;
 
     private int numLastTriangles; // how many triangles were pushed in the last mesh update
     private Map<Vertex, Integer> points; // the mesh vertices, a Map with iteration order = insertion order is used
@@ -138,6 +185,7 @@ public class MCRunner implements Runnable {
         this.points = new LinkedHashMap<>(POINTS_CAPACITY);
         this.indices = new LinkedList<>();
         this.normals = new LinkedList<>();
+        this.edgeCache = new HashMap<>();
     }
 
     /**
@@ -222,30 +270,26 @@ public class MCRunner implements Runnable {
     @Override
     public void run() {
         long startTime = System.nanoTime();
-
-        int cubesInSlice = data.xSize() * data.ySize() / (int) Math.pow(gridSize, 2);
-        double numCubes = (data.zSize() * cubesInSlice) / gridSize;
+        int cubesInSlice = data.xSize() * data.ySize() / gridSize * gridSize;
+        int numCubes = (data.zSize() * cubesInSlice) / gridSize;
+        Cube cube = new Cube();
         int doneCubes = 0;
         int cubeIndex;
-        Cube[][] currentSlice;
-        Cube cube;
 
         progress.set(0);
 
         outer:
         for (int z = 0; z < data.zSize(); z += gridSize) {
 
-            currentSlice = updateSlices();
-
             for (int y = 0; y < data.ySize(); y += gridSize) {
 
                 for (int x = 0; x < data.xSize(); x += gridSize) {
 
-                    cube = computeVertices(x, y, z, currentSlice);
+                    computeVertices(x, y, z, cube);
                     cubeIndex = cube.getIndex(level);
 
                     if ((cubeIndex != 0) && (cubeIndex != 255)) {
-                        computeEdges(x, y, z, cube, cubeIndex, currentSlice);
+                        computeEdges(x, y, z, cube, cubeIndex);
                         updateMesh(cube, cubeIndex);
                     }
 
@@ -264,7 +308,9 @@ public class MCRunner implements Runnable {
                 outputMesh();
             }
 
-            progress.set((doneCubes += cubesInSlice) / numCubes);
+            cleanCache(z);
+
+            progress.set((doneCubes += cubesInSlice) / (float) numCubes);
         }
 
         if (type == COMPLETE && !interrupted) {
@@ -274,6 +320,18 @@ public class MCRunner implements Runnable {
         if (onFinish != null) {
             onFinish.accept(System.nanoTime() - startTime);
         }
+    }
+
+    private void cleanCache(int z) {
+        List<EdgeId> toRemove = new LinkedList<>();
+
+        edgeCache.forEach((id, vertex) -> {
+            if (id.cubeZ == z) {
+                toRemove.add(id);
+            }
+        });
+
+        toRemove.forEach(edgeCache::remove);
     }
 
     /**
@@ -338,157 +396,64 @@ public class MCRunner implements Runnable {
     }
 
     /**
-     * Updates upper- and lowerSlice references as described at their declaration.
-     * If this is the first or second time the method is called, upper- or lowerSlice will be initialized.
-     *
-     * @return the slice that the algorithm should currently work on
-     */
-    private Cube[][] updateSlices() {
-        Cube[][] currentSlice;
-
-        if (lowerSlice == null) {
-            int yDim = (int) Math.ceil(data.ySize() / (float) gridSize);
-            int xDim = (int) Math.ceil(data.xSize() / (float) gridSize);
-
-            lowerSlice = new Cube[yDim][xDim];
-
-            for (Cube[] cubes : lowerSlice) {
-                for (int i = 0; i < cubes.length; i++) {
-                    cubes[i] = new Cube();
-                }
-            }
-
-            currentSlice = lowerSlice;
-        } else if (upperSlice == null) {
-            int yDim = (int) Math.ceil(data.ySize() / (float) gridSize);
-            int xDim = (int) Math.ceil(data.xSize() / (float) gridSize);
-
-            upperSlice = new Cube[yDim][xDim];
-
-            for (Cube[] cubes : upperSlice) {
-                for (int i = 0; i < cubes.length; i++) {
-                    cubes[i] = new Cube();
-                }
-            }
-
-            currentSlice = upperSlice;
-        } else {
-            currentSlice = lowerSlice;
-            lowerSlice = upperSlice;
-            upperSlice = currentSlice;
-        }
-
-        return currentSlice;
-    }
-
-    /**
      * Computes the locations, densities and gradients of the vertices of the cube whose vertex 0 is at the given
      * position in the <code>data</code>
      *
      * @param x the x coordinate of the cubes vertex 0
      * @param y the y coordinate of the cubes vertex 0
      * @param z the z coordinate of the cubes vertex 0
-     * @param currentSlice the slice the algorithm is currently working on
-     * @return the <code>Cube</code> whose vertices were computed
      */
-    private Cube computeVertices(int x, int y, int z, Cube[][] currentSlice) {
+    private void computeVertices(int x, int y, int z, Cube cube) {
         DensityVertex v;
-        int cubeX = x / gridSize;
-        int cubeY = y / gridSize;
 
-        Cube cube = currentSlice[cubeY][cubeX];
+        v = cube.getVertex(0);
+        v.setLocation(x, y, z);
+        v.setDensity(data.density(x, y, z));
 
-        if (x != 0) {
-            cube.setVertex(0, currentSlice[cubeY][cubeX - 1].getVertex(1));
-        } else if (y != 0) {
-            cube.setVertex(0, currentSlice[cubeY - 1][cubeX].getVertex(3));
-        } else if (z != 0) {
-            cube.setVertex(0, lowerSlice[cubeY][cubeX].getVertex(4));
-        } else {
-            v = cube.getVertex(0);
-            v.setLocation(x, y, z);
-            v.setDensity(data.density(x, y, z));
-            computeGradient(x, y, z, v);
-        }
+        v = cube.getVertex(1);
+        v.setLocation(x + gridSize, y, z);
+        v.setDensity(data.density(x + gridSize, y, z));
 
-        if (y != 0) {
-            cube.setVertex(1, currentSlice[cubeY - 1][cubeX].getVertex(2));
-        } else if (z != 0) {
-            cube.setVertex(1, lowerSlice[cubeY][cubeX].getVertex(5));
-        } else {
-            v = cube.getVertex(1);
-            v.setLocation(x + gridSize, y, z);
-            v.setDensity(data.density(x + gridSize, y, z));
-            computeGradient(x + gridSize, y, z, v);
-        }
+        v = cube.getVertex(2);
+        v.setLocation(x + gridSize, y + gridSize, z);
+        v.setDensity(data.density(x + gridSize, y + gridSize, z));
 
-        if (z != 0) {
-            cube.setVertex(2, lowerSlice[cubeY][cubeX].getVertex(6));
-        } else {
-            v = cube.getVertex(2);
-            v.setLocation(x + gridSize, y + gridSize, z);
-            v.setDensity(data.density(x + gridSize, y + gridSize, z));
-            computeGradient(x + gridSize, y + gridSize, z, v);
-        }
+        v = cube.getVertex(3);
+        v.setLocation(x, y + gridSize, z);
+        v.setDensity(data.density(x, y + gridSize, z));
 
-        if (x != 0) {
-            cube.setVertex(3, currentSlice[cubeY][cubeX - 1].getVertex(2));
-        } else if (z != 0) {
-            cube.setVertex(3, lowerSlice[cubeY][cubeX].getVertex(7));
-        } else {
-            v = cube.getVertex(3);
-            v.setLocation(x, y + gridSize, z);
-            v.setDensity(data.density(x, y + gridSize, z));
-            computeGradient(x, y + gridSize, z, v);
-        }
+        v = cube.getVertex(4);
+        v.setLocation(x, y, z + gridSize);
+        v.setDensity(data.density(x, y, z + gridSize));
 
-        if (x != 0) {
-            cube.setVertex(4, currentSlice[cubeY][cubeX - 1].getVertex(5));
-        } else if (y != 0) {
-            cube.setVertex(4, currentSlice[cubeY - 1][cubeX].getVertex(7));
-        } else {
-            v = cube.getVertex(4);
-            v.setLocation(x, y, z + gridSize);
-            v.setDensity(data.density(x, y, z + gridSize));
-            computeGradient(x, y, z + gridSize, v);
-        }
-
-        if (y != 0) {
-            cube.setVertex(5, currentSlice[cubeY - 1][cubeX].getVertex(6));
-        } else {
-            v = cube.getVertex(5);
-            v.setLocation(x + gridSize, y, z + gridSize);
-            v.setDensity(data.density(x + gridSize, y, z + gridSize));
-            computeGradient(x + gridSize, y, z + gridSize, v);
-        }
+        v = cube.getVertex(5);
+        v.setLocation(x + gridSize, y, z + gridSize);
+        v.setDensity(data.density(x + gridSize, y, z + gridSize));
 
         v = cube.getVertex(6);
         v.setLocation(x + gridSize, y + gridSize, z + gridSize);
         v.setDensity(data.density(x + gridSize, y + gridSize, z + gridSize));
-        computeGradient(x + gridSize, y + gridSize, z + gridSize, v);
 
-        if (x != 0) {
-            cube.setVertex(7, currentSlice[cubeY][cubeX - 1].getVertex(6));
-        } else {
-            v = cube.getVertex(7);
-            v.setLocation(x, y + gridSize, z + gridSize);
-            v.setDensity(data.density(x, y + gridSize, z + gridSize));
-            computeGradient(x, y + gridSize, z + gridSize, v);
+        v = cube.getVertex(7);
+        v.setLocation(x, y + gridSize, z + gridSize);
+        v.setDensity(data.density(x, y + gridSize, z + gridSize));
+
+        for (int i = 0; i < 8; i++) {
+            computeGradient(cube.getVertex(i));
         }
-
-        return cube;
     }
 
     /**
      * Computes the gradient (using central differences) of the <code>WeightedVertex</code> <code>v</code> located
      * at the given position.
      *
-     * @param x the x coordinate of the vertex
-     * @param y the y coordinate of the vertex
-     * @param z the z coordinate of the vertex
      * @param v the vertex
      */
-    private void computeGradient(int x, int y, int z, DensityVertex v) {
+    private void computeGradient(DensityVertex v) {
+        int x = (int) v.getLocation().getX();
+        int y = (int) v.getLocation().getY();
+        int z = (int) v.getLocation().getZ();
+
         float gX = data.density(x - gridSize, y, z) - data.density(x + gridSize, y, z);
         float gY = data.density(x, y - gridSize, z) - data.density(x, y + gridSize, z);
         float gZ = data.density(x, y, z - gridSize) - data.density(x, y, z + gridSize);
@@ -498,141 +463,204 @@ public class MCRunner implements Runnable {
 
     /**
      * Computes the position and normal of all appropriate triangle vertices (that lie on the edges of the cube).
-     *
-     * @param x the x coordinate of the cubes vertex 0
+     *  @param x the x coordinate of the cubes vertex 0
      * @param y the y coordinate of the cubes vertex 0
      * @param z the z coordinate of the cubes vertex 0
      * @param cube the cube whose edges are to be computed
-     * @param cubeIndex the index of the cube (see {@link controller.mc_alg.Cube#getIndex(float)})
-     * @param currentSlice the slice the algorithm is currently working on
+     * @param cubeIndex the index of the cube (see {@link Cube#getIndex(float)})
      */
-    private void computeEdges(int x, int y, int z, Cube cube, int cubeIndex, Cube[][] currentSlice) {
+    private void computeEdges(int x, int y, int z, Cube cube, int cubeIndex) {
         int edgeIndex = Tables.getEdgeIndex(cubeIndex);
-        int cubeX = x / gridSize;
-        int cubeY = y / gridSize;
+
 
         if ((edgeIndex & 1) == 1) { // Edge 0
+            Vertex edge = null;
+
             if (y != 0) {
-                cube.setEdge(0, currentSlice[cubeY - 1][cubeX].getEdge(2));
+                edge = edgeCache.get(EdgeId.get(x, y - gridSize, z, 2));
             } else if (z != 0) {
-                cube.setEdge(0, lowerSlice[cubeY][cubeX].getEdge(4));
-            } else {
-                interpolate(cube.getVertex(0), cube.getVertex(1), cube.getEdge(0));
+                edge = edgeCache.get(EdgeId.get(x, y, z - gridSize, 4));
             }
+
+            if (edge == null) {
+                edge = interpolate(cube.getVertex(0), cube.getVertex(1));
+                edgeCache.put(new EdgeId(x, y, z, 0), edge);
+            }
+
+            cube.setEdge(0, edge);
         }
 
         if ((edgeIndex & 2) == 2) { // Edge 1
+            Vertex edge = null;
+
             if (z != 0) {
-                cube.setEdge(1, lowerSlice[cubeY][cubeX].getEdge(5));
-            } else {
-                interpolate(cube.getVertex(1), cube.getVertex(2), cube.getEdge(1));
+                edge = edgeCache.get(EdgeId.get(x, y, z - gridSize, 5));
             }
+
+            if (edge == null) {
+                edge = interpolate(cube.getVertex(1), cube.getVertex(2));
+                edgeCache.put(new EdgeId(x, y, z, 1), edge);
+            }
+            cube.setEdge(1, edge);
         }
 
         if ((edgeIndex & 4) == 4) { // Edge 2
+            Vertex edge = null;
+
             if (z != 0) {
-                cube.setEdge(2, lowerSlice[cubeY][cubeX].getEdge(6));
-            } else {
-                interpolate(cube.getVertex(2), cube.getVertex(3), cube.getEdge(2));
+                edge = edgeCache.get(EdgeId.get(x, y, z - gridSize, 6));
             }
+
+            if (edge == null) {
+                edge = interpolate(cube.getVertex(2), cube.getVertex(3));
+                edgeCache.put(new EdgeId(x, y, z, 2), edge);
+            }
+            cube.setEdge(2, edge);
         }
 
         if ((edgeIndex & 8) == 8) { // Edge 3
+            Vertex edge = null;
+
             if (x != 0) {
-                cube.setEdge(3, currentSlice[cubeY][cubeX - 1].getEdge(1));
+                edge = edgeCache.get(EdgeId.get(x - gridSize, y, z, 1));
             } else if (z != 0) {
-                cube.setEdge(3, lowerSlice[cubeY][cubeX].getEdge(7));
-            } else {
-                interpolate(cube.getVertex(3), cube.getVertex(0), cube.getEdge(3));
+                edge = edgeCache.get(EdgeId.get(x, y, z - gridSize, 7));
             }
+
+            if (edge == null) {
+                edge = interpolate(cube.getVertex(3), cube.getVertex(0));
+                edgeCache.put(new EdgeId(x, y, z, 3), edge);
+            }
+            cube.setEdge(3, edge);
         }
 
         if ((edgeIndex & 16) == 16) { // Edge 4
+            Vertex edge = null;
+
             if (y != 0) {
-                cube.setEdge(4, currentSlice[cubeY - 1][cubeX].getEdge(6));
-            } else {
-                interpolate(cube.getVertex(4), cube.getVertex(5), cube.getEdge(4));
+                edge = edgeCache.get(EdgeId.get(x, y - gridSize, z, 6));
             }
+
+            if (edge == null) {
+                edge = interpolate(cube.getVertex(4), cube.getVertex(5));
+                edgeCache.put(new EdgeId(x, y, z, 4), edge);
+            }
+            cube.setEdge(4, edge);
         }
 
         if ((edgeIndex & 32) == 32) { // Edge 5
-            interpolate(cube.getVertex(5), cube.getVertex(6), cube.getEdge(5));
+            Vertex edge;
+
+            edge = interpolate(cube.getVertex(5), cube.getVertex(6));
+            edgeCache.put(new EdgeId(x, y, z, 5), edge);
+            cube.setEdge(5, edge);
         }
 
         if ((edgeIndex & 64) == 64) { // Edge 6
-            interpolate(cube.getVertex(6), cube.getVertex(7), cube.getEdge(6));
+            Vertex edge;
+
+            edge = interpolate(cube.getVertex(6), cube.getVertex(7));
+            edgeCache.put(new EdgeId(x, y, z, 6), edge);
+            cube.setEdge(6, edge);
         }
 
         if ((edgeIndex & 128) == 128) { // Edge 7
+            Vertex edge = null;
+
             if (x != 0) {
-                cube.setEdge(7, currentSlice[cubeY][cubeX - 1].getEdge(5));
-            } else {
-                interpolate(cube.getVertex(7), cube.getVertex(4), cube.getEdge(7));
+                edge = edgeCache.get(EdgeId.get(x - gridSize, y, z, 5));
             }
+
+            if (edge == null) {
+                edge = interpolate(cube.getVertex(7), cube.getVertex(4));
+                edgeCache.put(new EdgeId(x, y, z, 7), edge);
+            }
+            cube.setEdge(7, edge);
         }
 
         if ((edgeIndex & 256) == 256) { // Edge 8
+            Vertex edge = null;
+
             if (x != 0) {
-                cube.setEdge(8, currentSlice[cubeY][cubeX - 1].getEdge(9));
+                edge = edgeCache.get(EdgeId.get(x - gridSize, y, z, 9));
             } else if (y != 0) {
-                cube.setEdge(8, currentSlice[cubeY - 1][cubeX].getEdge(11));
-            } else {
-                interpolate(cube.getVertex(4), cube.getVertex(0), cube.getEdge(8));
+                edge = edgeCache.get(EdgeId.get(x, y - gridSize, z, 11));
             }
+
+            if (edge == null) {
+                edge = interpolate(cube.getVertex(4), cube.getVertex(0));
+                edgeCache.put(new EdgeId(x, y, z, 8), edge);
+            }
+            cube.setEdge(8, edge);
         }
 
         if ((edgeIndex & 512) == 512) { // Edge 9
+            Vertex edge = null;
+
             if (y != 0) {
-                cube.setEdge(9, currentSlice[cubeY - 1][cubeX].getEdge(10));
-            } else {
-                interpolate(cube.getVertex(5), cube.getVertex(1), cube.getEdge(9));
+                edge = edgeCache.get(EdgeId.get(x, y - gridSize, z, 10));
             }
+
+            if (edge == null) {
+                edge = interpolate(cube.getVertex(5), cube.getVertex(1));
+                edgeCache.put(new EdgeId(x, y, z, 9), edge);
+            }
+            cube.setEdge(9, edge);
         }
 
         if ((edgeIndex & 1024) == 1024) { // Edge 10
-            interpolate(cube.getVertex(6), cube.getVertex(2), cube.getEdge(10));
+            Vertex edge;
+
+            edge = interpolate(cube.getVertex(6), cube.getVertex(2));
+            edgeCache.put(new EdgeId(x, y, z, 10), edge);
+            cube.setEdge(10, edge);
         }
 
         if ((edgeIndex & 2048) == 2048) { // Edge 11
+            Vertex edge = null;
+
             if (x != 0) {
-                cube.setEdge(11, currentSlice[cubeY][cubeX - 1].getEdge(10));
-            } else {
-                interpolate(cube.getVertex(7), cube.getVertex(3), cube.getEdge(11));
+                edge = edgeCache.get(EdgeId.get(x - gridSize, y, z, 10));
             }
+
+            if (edge == null) {
+                edge = interpolate(cube.getVertex(7), cube.getVertex(3));
+                edgeCache.put(new EdgeId(x, y, z, 11), edge);
+            }
+            cube.setEdge(11, edge);
         }
     }
 
     /**
      * Linearly interpolates the position and normal of <code>edge</code> (that is assumed to lie on the edge between
      * <code>v1</code> and <code>v2</code>).
-     *
-     * @param v1 the first vertex of a cube
+     *  @param v1 the first vertex of a cube
      * @param v2 the second vertex of a cube
-     * @param edge the vertex of a triangle whose position and normal is to be interpolated
      */
-    private void interpolate(DensityVertex v1, DensityVertex v2, Vertex edge) {
+    private Vertex interpolate(DensityVertex v1, DensityVertex v2) {
         float edgeX, edgeY, edgeZ;
         float normalX, normalY, normalZ;
         double min = Math.pow(10, -4);
         double length;
         float alpha;
+        Vertex edge = new Vertex(0, 0, 0);
 
         if (Math.abs(level - v1.getDensity()) < min) {
             edge.setLocation(v1.getLocation());
             edge.setNormal(v1.getNormal().normalized());
-            return;
+            return edge;
         }
 
         if (Math.abs(level - v2.getDensity()) < min) {
             edge.setLocation(v2.getLocation());
             edge.setNormal(v2.getNormal().normalized());
-            return;
+            return edge;
         }
 
         if (Math.abs(v1.getDensity() - v2.getDensity()) < min) {
             edge.setLocation(v1.getLocation());
             edge.setNormal(v1.getNormal().normalized());
-            return;
+            return edge;
         }
 
         alpha = (level - v2.getDensity()) / (v1.getDensity() - v2.getDensity());
@@ -652,6 +680,7 @@ public class MCRunner implements Runnable {
 
         edge.setLocation(edgeX, edgeY, edgeZ);
         edge.setNormal(normalX, normalY, normalZ);
+        return edge;
     }
 
     /**
