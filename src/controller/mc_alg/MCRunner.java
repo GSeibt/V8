@@ -2,7 +2,14 @@ package controller.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import controller.mc_alg.mc_volume.MCVolume;
@@ -179,13 +186,13 @@ public class MCRunner implements Runnable {
         this.stopping = false;
         this.stopped = false;
         this.interrupted = false;
-
         this.numLastTriangles = 0;
-        int POINTS_CAPACITY = 100000;
-        this.points = new LinkedHashMap<>(POINTS_CAPACITY);
-        this.indices = new LinkedList<>();
-        this.normals = new LinkedList<>();
-        this.edgeCache = new HashMap<>();
+
+        int capacity = 100000;
+        this.points = new LinkedHashMap<>(capacity);
+        this.indices = new ArrayList<>(capacity);
+        this.normals = new ArrayList<>(capacity);
+        this.edgeCache = new HashMap<>(capacity);
     }
 
     /**
