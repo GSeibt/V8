@@ -479,7 +479,6 @@ public class MCRunner implements Runnable {
     private void computeEdges(int x, int y, int z, Cube cube, int cubeIndex) {
         int edgeIndex = Tables.getEdgeIndex(cubeIndex);
 
-
         if ((edgeIndex & 1) == 1) { // Edge 0
             Vertex edge = null;
 
