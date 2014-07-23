@@ -1,12 +1,15 @@
 package controller;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
 
 import controller.mc_alg.MCRunner;
 import controller.mc_alg.mc_volume.ArrayVolume;
@@ -22,6 +25,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -178,6 +182,31 @@ public class Controller {
         imageView.setPreserveRatio(false);
         imageView.fitHeightProperty().bind(imagePane.heightProperty());
         imageView.fitWidthProperty().bind(imagePane.widthProperty());
+
+        MenuItem exportItem = new MenuItem("Export PNG");
+        ContextMenu contextMenu = new ContextMenu(exportItem);
+
+        exportItem.setOnAction(event -> {
+            Image image = imageView.getImage();
+
+            FileChooser fileChooser = new FileChooser();
+            File saveFile = fileChooser.showSaveDialog(stage);
+
+            if (saveFile != null) {
+                try {
+                    BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+                    ImageIO.write(bufferedImage, "PNG", saveFile);
+                } catch (IOException e) {
+                    System.err.println("Could not write the image to " + saveFile.getName());
+                }
+            }
+        });
+
+        imageView.setOnContextMenuRequested(event -> {
+            if (imageView.getImage() != null) {
+                contextMenu.show(imageView, event.getScreenX(), event.getScreenY());
+            }
+        });
 
         loadingBarBox.visibleProperty().addListener((o, oldV, newV) -> {
             if (oldV && !newV) {
