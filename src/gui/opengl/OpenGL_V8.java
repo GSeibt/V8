@@ -187,7 +187,7 @@ public class OpenGL_V8 {
      */
     private void initGL() {
         glMatrixMode(GL_MODELVIEW);
-        glClearColor(0.5f, 0.5f, 0.5f, 1);
+        glClearColor(0, 0, 0, 1);
         glClearDepth(1);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
@@ -328,7 +328,7 @@ public class OpenGL_V8 {
 
         glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, indexVBOID);
 
-        glColor3f(1f, 0, 0);
+        glColor3f(1f, 1f, 1f);
         glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_INT, 0);
 
         if (showNormalLines) {
@@ -599,7 +599,7 @@ public class OpenGL_V8 {
         glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 
         new Thread(() -> {
-            String format = "BMP"; // JPG works too
+            String format = "PNG";
             File screenshot;
 
             synchronized (scDir) {
@@ -613,7 +613,7 @@ public class OpenGL_V8 {
                     }
                 }
 
-                File[] scFiles = scDir.listFiles((ignored, name) -> name.matches("SC_[0-9]+\\.(bmp|jpg)"));
+                File[] scFiles = scDir.listFiles((ignored, name) -> name.matches("SC_[0-9]+\\.png"));
                 int nextIndex = Arrays.stream(scFiles)
                         .map(f -> Integer.parseInt(new Scanner(f.getName()).findInLine("[0-9]+")))
                         .max(Integer::compare)
