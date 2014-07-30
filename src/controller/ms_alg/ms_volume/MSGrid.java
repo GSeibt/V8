@@ -3,7 +3,7 @@ package controller.ms_alg.ms_volume;
 /**
  * A data source for the <code>MSRunner</code>.
  */
-public interface MSVolume {
+public interface MSGrid {
 
     /**
      * Returns the density at the given position. If the position is out of bounds the method will return 0.
