@@ -465,6 +465,10 @@ public class MCRunner implements Runnable {
         float gY = data.density(x, y - gridSize, z) - data.density(x, y + gridSize, z);
         float gZ = data.density(x, y, z - gridSize) - data.density(x, y, z + gridSize);
 
+        gX /= gridSize;
+        gY /= gridSize;
+        gZ /= gridSize;
+
         v.setNormal(gX, gY, gZ);
     }
 
