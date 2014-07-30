@@ -3,19 +3,14 @@ package controller.ms_alg;
 public class Square {
 
     private DensityVertex2D[] vertices;
-    private Float[] densities;
     private Vertex2D[] edges;
 
     public Square() {
-        this.vertices = new DensityVertex2D[8];
-        this.edges = new Vertex2D[8];
+        this.vertices = new DensityVertex2D[4];
+        this.edges = new Vertex2D[4];
 
         for (int i = 0; i < vertices.length; i++) {
             vertices[i] = new DensityVertex2D();
-        }
-
-        for (int i = 0; i < densities.length; i++) {
-            densities[i] = (float) 0;
         }
 
         for (int i = 0; i < edges.length; i++) {
@@ -35,7 +30,7 @@ public class Square {
         short index = 0;
 
         for (int i = 0; i < 4; i++) {
-            if (densities[i] <= level) {
+            if (vertices[i].getDensity() <= level) {
                 index |= (short) Math.pow(2, i);
             }
         }
