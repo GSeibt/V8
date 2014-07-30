@@ -190,6 +190,7 @@ public class Controller {
             Image image = imageView.getImage();
 
             FileChooser fileChooser = new FileChooser();
+            fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Portable Network Graphics", "*.png"));
             File saveFile = fileChooser.showSaveDialog(stage);
 
             if (saveFile != null) {
