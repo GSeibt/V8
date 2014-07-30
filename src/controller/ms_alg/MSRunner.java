@@ -3,16 +3,16 @@ package controller.ms_alg;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
-import controller.ms_alg.ms_volume.MSVolume;
+import controller.ms_alg.ms_volume.MSGrid;
 import org.lwjgl.BufferUtils;
 
-public class MSRunner implements Callable<Mesh2D> {
+public class MSRunner implements Runnable {
 
     private static short[] edges = {
             0b0000, 0b1001, 0b0011, 0b1010, 0b0110, 0b1111, 0b0101, 0b1100, 0b1100, 0b0101, 0b1111, 0b0110, 0b1010,
@@ -24,22 +24,23 @@ public class MSRunner implements Callable<Mesh2D> {
             {1, 3}, {0, 1}, {0, 3}, {}
     };
 
-    private final MSVolume data;
+    private final MSGrid data;
     private final float level;
 
     private Map<Vertex2D, Integer> vertices;
     private List<Integer> indices;
 
-    public MSRunner(MSVolume data, float level) {
+    private Consumer<Mesh2D> meshConsumer;
+
+    public MSRunner(MSGrid data, float level) {
         this.data = data;
         this.level = level;
-
-        this.vertices = new HashMap<>();
+        this.vertices = new LinkedHashMap<>();
         this.indices = new ArrayList<>();
     }
 
     @Override
-    public Mesh2D call() throws Exception {
+    public void run() {
         short squareIndex;
         Square square = new Square();
 
@@ -57,9 +58,14 @@ public class MSRunner implements Callable<Mesh2D> {
             }
         }
 
+        if (meshConsumer != null) {
+            meshConsumer.accept(createMesh());
+        }
+    }
+
+    private Mesh2D createMesh() {
         FloatBuffer vertices = BufferUtils.createFloatBuffer(this.vertices.size() * 2);
         IntBuffer indices = BufferUtils.createIntBuffer(this.indices.size());
-
         Iterator<Map.Entry<Vertex2D, Integer>> vertexIt = this.vertices.entrySet().iterator();
 
         Vertex2D vertex2D;
@@ -78,19 +84,23 @@ public class MSRunner implements Callable<Mesh2D> {
     }
 
     private void computeVertices(int x, int y, Square square) {
-        Vertex2D v;
+        DensityVertex2D v;
 
         v = square.getVertex(0);
         v.setXY(x, y);
+        v.setDensity(data.density(x, y));
 
         v = square.getVertex(1);
         v.setXY(x + 1, y);
+        v.setDensity(data.density(x + 1, y));
 
         v = square.getVertex(2);
         v.setXY(x + 1, y + 1);
+        v.setDensity(data.density(x + 1, y + 1));
 
         v = square.getVertex(3);
         v.setXY(x, y + 1);
+        v.setDensity(data.density(x, y + 1));
     }
 
     private void computeEdges(int x, int y, Square square, short squareIndex) {
@@ -169,5 +179,13 @@ public class MSRunner implements Callable<Mesh2D> {
         edge.setXY(edgeX, edgeY);
 
         return edge;
+    }
+
+    public void setMeshConsumer(Consumer<Mesh2D> meshConsumer) {
+        this.meshConsumer = meshConsumer;
+    }
+
+    public MSGrid getData() {
+        return data;
     }
 }
