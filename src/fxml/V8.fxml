@@ -142,6 +142,7 @@
                                 </VBox>
                         <Button mnemonicParsing="false" onAction="#resetClicked" text="Clear" />
                                 <Button alignment="CENTER" mnemonicParsing="false" onAction="#histogramClicked" text="Histogram" />
+                        <Button mnemonicParsing="false" onAction="#marchingSquaresClicked" text="Marching Squares" />
                             </children>
                      <StackPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

@@ -16,8 +16,11 @@ import controller.mc_alg.mc_volume.ArrayVolume;
 import controller.mc_alg.mc_volume.CachedVolume;
 import controller.mc_alg.mc_volume.MCVolume;
 import controller.mc_alg.metaball_volume.MetaBallVolume;
+import controller.ms_alg.MSRunner;
+import controller.ms_alg.ms_volume.GridVolume;
 import gui.Histogram;
 import gui.IntSpinner;
+import gui.MSView;
 import gui.MVolumeDesigner;
 import gui.PreviewImageService;
 import gui.opengl.OpenGL_V8;
@@ -396,5 +399,16 @@ public class Controller {
     private void resetClicked() {
         previewMode = false;
         imageView.setImage(previewImageService.getOriginalImage());
+    }
+
+    /**
+     * ActionListener for the 'Marching Squares' button.
+     */
+    @FXML
+    public void marchingSquaresClicked() {
+        float level = (float) levelSlider.getValue();
+        GridVolume data = new GridVolume(filesList.getFocusModel().getFocusedItem().getImageRaster());
+        MSRunner runner = new MSRunner(data, level);
+        new MSView(runner).show();
     }
 }
