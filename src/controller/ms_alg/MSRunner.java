@@ -7,12 +7,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.concurrent.Callable;
 
 import controller.ms_alg.ms_volume.MSGrid;
 import org.lwjgl.BufferUtils;
 
-public class MSRunner implements Runnable {
+public class MSRunner implements Callable<Mesh2D> {
 
     private static short[] edges = {
             0b0000, 0b1001, 0b0011, 0b1010, 0b0110, 0b1111, 0b0101, 0b1100, 0b1100, 0b0101, 0b1111, 0b0110, 0b1010,
@@ -26,27 +26,27 @@ public class MSRunner implements Runnable {
 
     private final MSGrid data;
     private final float level;
+    private final int gridSize;
 
     private Map<Vertex2D, Integer> vertices;
     private List<Integer> indices;
 
-    private Consumer<Mesh2D> meshConsumer;
-
-    public MSRunner(MSGrid data, float level) {
+    public MSRunner(MSGrid data, float level, int gridSize) {
         this.data = data;
         this.level = level;
+        this.gridSize = gridSize;
         this.vertices = new LinkedHashMap<>();
         this.indices = new ArrayList<>();
     }
 
     @Override
-    public void run() {
+    public Mesh2D call() {
         short squareIndex;
         Square square = new Square();
 
-        for (int y = 0; y < data.ySize(); y++) {
+        for (int y = 0; y < data.ySize(); y += gridSize) {
 
-            for (int x = 0; x < data.xSize(); x++) {
+            for (int x = 0; x < data.xSize(); x += gridSize) {
 
                 computeVertices(x, y, square);
                 squareIndex = square.getIndex(level);
@@ -58,12 +58,6 @@ public class MSRunner implements Runnable {
             }
         }
 
-        if (meshConsumer != null) {
-            meshConsumer.accept(createMesh());
-        }
-    }
-
-    private Mesh2D createMesh() {
         FloatBuffer vertices = BufferUtils.createFloatBuffer(this.vertices.size() * 2);
         IntBuffer indices = BufferUtils.createIntBuffer(this.indices.size());
         Iterator<Map.Entry<Vertex2D, Integer>> vertexIt = this.vertices.entrySet().iterator();
@@ -91,16 +85,16 @@ public class MSRunner implements Runnable {
         v.setDensity(data.density(x, y));
 
         v = square.getVertex(1);
-        v.setXY(x + 1, y);
-        v.setDensity(data.density(x + 1, y));
+        v.setXY(x + gridSize, y);
+        v.setDensity(data.density(x + gridSize, y));
 
         v = square.getVertex(2);
-        v.setXY(x + 1, y + 1);
-        v.setDensity(data.density(x + 1, y + 1));
+        v.setXY(x + gridSize, y + gridSize);
+        v.setDensity(data.density(x + gridSize, y + gridSize));
 
         v = square.getVertex(3);
-        v.setXY(x, y + 1);
-        v.setDensity(data.density(x, y + 1));
+        v.setXY(x, y + gridSize);
+        v.setDensity(data.density(x, y + gridSize));
     }
 
     private void computeEdges(int x, int y, Square square, short squareIndex) {
@@ -179,10 +173,6 @@ public class MSRunner implements Runnable {
         edge.setXY(edgeX, edgeY);
 
         return edge;
-    }
-
-    public void setMeshConsumer(Consumer<Mesh2D> meshConsumer) {
-        this.meshConsumer = meshConsumer;
     }
 
     public MSGrid getData() {
