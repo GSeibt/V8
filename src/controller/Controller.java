@@ -16,8 +16,6 @@ import controller.mc_alg.mc_volume.ArrayVolume;
 import controller.mc_alg.mc_volume.CachedVolume;
 import controller.mc_alg.mc_volume.MCVolume;
 import controller.mc_alg.metaball_volume.MetaBallVolume;
-import controller.ms_alg.MSRunner;
-import controller.ms_alg.ms_volume.GridVolume;
 import gui.Histogram;
 import gui.IntSpinner;
 import gui.MSView;
@@ -406,9 +404,10 @@ public class Controller {
      */
     @FXML
     public void marchingSquaresClicked() {
-        float level = (float) levelSlider.getValue();
-        GridVolume data = new GridVolume(filesList.getFocusModel().getFocusedItem().getImageRaster());
-        MSRunner runner = new MSRunner(data, level);
-        new MSView(runner).show();
+        DCMImage image = filesList.getFocusModel().getFocusedItem();
+
+        if (image != null) {
+            new MSView(filesList, levelSlider, gridSizeSpinner).show();
+        }
     }
 }
