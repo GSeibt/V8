@@ -465,6 +465,10 @@ public class MCRunner implements Runnable {
         float gY = data.density(x, y - gridSize, z) - data.density(x, y + gridSize, z);
         float gZ = data.density(x, y, z - gridSize) - data.density(x, y, z + gridSize);
 
+        gX /= gridSize;
+        gY /= gridSize;
+        gZ /= gridSize;
+
         v.setNormal(gX, gY, gZ);
     }
 
@@ -478,7 +482,6 @@ public class MCRunner implements Runnable {
      */
     private void computeEdges(int x, int y, int z, Cube cube, int cubeIndex) {
         int edgeIndex = Tables.getEdgeIndex(cubeIndex);
-
 
         if ((edgeIndex & 1) == 1) { // Edge 0
             Vertex edge = null;

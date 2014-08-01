@@ -122,7 +122,7 @@
                               <ImageView fx:id="imageView" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                           </children>
                       </Pane>
-                        <HBox alignment="BOTTOM_CENTER" fillHeight="false" spacing="5.0" StackPane.alignment="BOTTOM_CENTER">
+                        <HBox alignment="BOTTOM_CENTER" fillHeight="false" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" spacing="5.0" StackPane.alignment="BOTTOM_CENTER">
                             <children>
                                 <VBox fx:id="loadingBarBox" alignment="BOTTOM_LEFT" opacity="0.75" style="-fx-background-color: white; -fx-background-radius: 2;" visible="false" HBox.hgrow="ALWAYS">
                                     <children>
@@ -142,6 +142,7 @@
                                 </VBox>
                         <Button mnemonicParsing="false" onAction="#resetClicked" text="Clear" />
                                 <Button alignment="CENTER" mnemonicParsing="false" onAction="#histogramClicked" text="Histogram" />
+                        <Button mnemonicParsing="false" onAction="#marchingSquaresClicked" text="Marching Squares" />
                             </children>
                      <StackPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
