@@ -127,13 +127,13 @@ public class OpenGL_V8 {
     private MCRunner mcRunner;
     private Camera camera;
     private final File scDir; // the screenshot directory
-    private int vertexVBOID;  // Vertex Buffer Object ID (Points, Normal Points)
 
+    private int vertexVBOID;  // Vertex Buffer Object ID (Points, Normal Points)
     private int indexVBOID;   // Vertex Buffer Object ID (Indices)
     private int normalVBOID;  // Vertex Buffer Object ID (Normals)
     private int indicesCount; // how many indices should be drawn (the triangles of the mesh)
-    private boolean showNormalLines;
 
+    private boolean showNormalLines;
     private boolean showCubes;
     private boolean showCoordinateSystem;
 
