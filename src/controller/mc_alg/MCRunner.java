@@ -2,14 +2,7 @@ package controller.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 import controller.mc_alg.mc_volume.MCVolume;
@@ -21,7 +14,8 @@ import util.Vector3f;
 import static controller.mc_alg.MCRunner.Type.*;
 
 /**
- * Runnable that performs the Marching Cubes algorithm over a 3D array of floats that are interpreted as density data.
+ * <code>Runnable</code> that performs the Marching Cubes algorithm over a given <code>MCVolume</code> that are
+ * interpreted as density data.
  * Can be configured to update the resulting triangle mesh after every cube, slice, or after the whole computation is
  * finished. Optionally the computation can pause after every update.
  */
@@ -454,7 +448,8 @@ public class MCRunner implements Runnable {
      * Computes the gradient (using central differences) of the <code>WeightedVertex</code> <code>v</code> located
      * at the given position.
      *
-     * @param v the vertex
+     * @param v
+     *         the vertex
      */
     private void computeGradient(DensityVertex v) {
         int x = (int) v.getLocation().getX();
@@ -474,11 +469,17 @@ public class MCRunner implements Runnable {
 
     /**
      * Computes the position and normal of all appropriate triangle vertices (that lie on the edges of the cube).
-     *  @param x the x coordinate of the cubes vertex 0
-     * @param y the y coordinate of the cubes vertex 0
-     * @param z the z coordinate of the cubes vertex 0
-     * @param cube the cube whose edges are to be computed
-     * @param cubeIndex the index of the cube (see {@link Cube#getIndex(float)})
+     *
+     * @param x
+     *         the x coordinate of the cubes vertex 0
+     * @param y
+     *         the y coordinate of the cubes vertex 0
+     * @param z
+     *         the z coordinate of the cubes vertex 0
+     * @param cube
+     *         the cube whose edges are to be computed
+     * @param cubeIndex
+     *         the index of the cube (see {@link Cube#getIndex(float)})
      */
     private void computeEdges(int x, int y, int z, Cube cube, int cubeIndex) {
         int edgeIndex = Tables.getEdgeIndex(cubeIndex);
@@ -642,10 +643,13 @@ public class MCRunner implements Runnable {
     }
 
     /**
-     * Linearly interpolates the position and normal of <code>edge</code> (that is assumed to lie on the edge between
-     * <code>v1</code> and <code>v2</code>).
-     *  @param v1 the first vertex of a cube
-     * @param v2 the second vertex of a cube
+     * Linearly interpolates the position and normal of a <code>Vertex</code> that is assumed to lie on the edge between
+     * <code>v1</code> and <code>v2</code>.
+     *
+     * @param v1
+     *         the first vertex of a cube
+     * @param v2
+     *         the second vertex of a cube
      */
     private Vertex interpolate(DensityVertex v1, DensityVertex v2) {
         float edgeX, edgeY, edgeZ;
@@ -690,6 +694,7 @@ public class MCRunner implements Runnable {
 
         edge.setLocation(edgeX, edgeY, edgeZ);
         edge.setNormal(normalX, normalY, normalZ);
+
         return edge;
     }
 
@@ -698,8 +703,10 @@ public class MCRunner implements Runnable {
      * from the edges of the given <code>Cube</code> according to
      * {@link controller.mc_alg.Tables#getTriangleIndex(int)}.
      *
-     * @param cube the cube with whose edges the mesh is to be updated
-     * @param cubeIndex the index of the cube (see {@link controller.mc_alg.Cube#getIndex(float)})
+     * @param cube
+     *         the cube with whose edges the mesh is to be updated
+     * @param cubeIndex
+     *         the index of the cube (see {@link controller.mc_alg.Cube#getIndex(float)})
      */
     private void updateMesh(Cube cube, int cubeIndex) {
         Vertex edge;

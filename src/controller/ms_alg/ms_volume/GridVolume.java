@@ -1,9 +1,17 @@
 package controller.ms_alg.ms_volume;
 
+/**
+ * A <code>MSGrid</code> backed by a <code>float[][]</code>.
+ */
 public class GridVolume implements MSGrid {
 
     private final float[][] data;
 
+    /**
+     * Constructs a new <code>GridVolume</code> backed by the given <code>float[][]</code>.
+     *
+     * @param data the data for the <code>MSGrid</code>
+     */
     public GridVolume(float[][] data) {
         this.data = data;
     }

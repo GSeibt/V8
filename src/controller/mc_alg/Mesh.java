@@ -28,9 +28,9 @@ public class Mesh {
 
     /**
      * Returns the vertices <code>FloatBuffer</code>. <br>
-     * The buffer contains pairs of float-triples [p1x,p1y,p1z,p1nx,p1ny,p1nz, ...] where p1x/y/z are the coordinates
-     * of one triangle vertex and p1nx/y/z the coordinates of a point such that the line between p1x/y/z and p1/nx/ny/nz
-     * is a representation of the normal at p1.
+     * The buffer contains pairs of float-triples [p0x,p0y,p0z,p0nx,p0ny,p0nz, ...] where p0x/y/z are the coordinates
+     * of one triangle vertex and p0nx/y/z the coordinates of a point such that the line between p0x/y/z and p0/nx/ny/nz
+     * is a representation of the normal at p0.
      *
      * @return the vertices
      */
