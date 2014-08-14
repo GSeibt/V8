@@ -1,5 +1,8 @@
 package controller.mc_alg;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * A <code>Cube</code> used in the marching cubes algorithm. The class maintains its own set of vertices and edge
  * vectors, setter methods copy the given values.
@@ -12,6 +15,10 @@ package controller.mc_alg;
  * that can be used for lookup in the {@link controller.mc_alg.Tables} class.
  */
 public class Cube {
+
+    public static List<Integer> bottomIndices = Arrays.asList(0, 1, 2, 3);
+    public static List<Integer> topIndices = Arrays.asList(4, 5, 6, 7);
+    public static List<Integer> sideIndices = Arrays.asList(8, 9, 10, 11);
 
     private DensityVertex[] vertices; // the 8 vertices of the cube and the density at the vertex
     private Vertex[] edges; // the 12 triangle vertices that may lie on the edges of the cube, one vertex per edge

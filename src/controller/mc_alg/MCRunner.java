@@ -323,11 +323,16 @@ public class MCRunner implements Runnable {
         }
     }
 
+    /**
+     * Removes mappings from the <code>edgeCache</code> that will no be used by the algorithm again.
+     *
+     * @param z the layer that the algorithm finished
+     */
     private void cleanCache(int z) {
         List<EdgeId> toRemove = new LinkedList<>();
 
         edgeCache.forEach((id, vertex) -> {
-            if (id.cubeZ == z) {
+            if (id.cubeZ == z - 1 || !Cube.topIndices.contains(id.index)) {
                 toRemove.add(id);
             }
         });
