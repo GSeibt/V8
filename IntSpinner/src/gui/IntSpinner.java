@@ -13,6 +13,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 
+/**
+ * A configurable spinner over an integer value.
+ *
+ * @see javax.swing.JSpinner
+ */
 public class IntSpinner extends GridPane {
 
     private final IntegerProperty start;
@@ -28,14 +33,32 @@ public class IntSpinner extends GridPane {
     @FXML
     private TextField textField;
 
+    /**
+     * Constructs a new <code>IntSpinner</code> with start = 0, end = 1, step = 1 that is not cyclic.
+     */
     public IntSpinner() {
         this(0,1,1,false);
     }
 
+    /**
+     * Constructs a new <code>IntSpinner</code> with the given start and end values. Its step will be 1 and it will
+     * not be cyclic.
+     *
+     * @param start the start value for the <code>IntSpinner</code>
+     * @param end the end value for the <code>IntSpinner</code>
+     */
     public IntSpinner(int start, int end) {
         this(start, end, 1, false);
     }
 
+    /**
+     * Constructs a new <code>IntSpinner</code> with the given configuration.
+     *
+     * @param start the start value for the <code>IntSpinner</code>
+     * @param end the end value for the <code>IntSpinner</code>
+     * @param step the increment/decrement with one click of the +/- buttons
+     * @param cyclic whether the <code>IntSpinner</code> should be cyclic
+     */
     public IntSpinner(int start, int end, int step, boolean cyclic) {
         this.start = new SimpleIntegerProperty(start);
         this.end = new SimpleIntegerProperty(end);
