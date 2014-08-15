@@ -3,7 +3,9 @@ package controller.mc_alg.metaball_volume;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import controller.mc_alg.mc_volume.MCVolume;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 
@@ -12,12 +14,12 @@ import javafx.beans.property.SimpleDoubleProperty;
  *
  * @see <a href="http://en.wikipedia.org/wiki/Metaballs">Metaballs</a>
  */
-public class MetaBallVolume {
+public class MetaBallVolume implements MCVolume {
 
     // dimension of the volume
-    private int x_dim;
-    private int y_dim;
-    private int z_dim;
+    private int xSize;
+    private int ySize;
+    private int zSize;
 
     // the MetaBall instances in the volume
     private List<MetaBall> metaBalls;
@@ -27,17 +29,17 @@ public class MetaBallVolume {
     /**
      * Constructs a new <code>MetaBallVolume</code> with the given dimensions.
      *
-     * @param x_dim
+     * @param xSize
      *         the size in x
-     * @param y_dim
+     * @param ySize
      *         the size in y
-     * @param z_dim
+     * @param zSize
      *         the size in z
      */
-    public MetaBallVolume(int x_dim, int y_dim, int z_dim) {
-        this.x_dim = x_dim;
-        this.y_dim = y_dim;
-        this.z_dim = z_dim;
+    public MetaBallVolume(int xSize, int ySize, int zSize) {
+        this.xSize = xSize;
+        this.ySize = ySize;
+        this.zSize = zSize;
         this.metaBalls = new LinkedList<>();
         this.progress = new SimpleDoubleProperty(0);
     }
@@ -49,8 +51,8 @@ public class MetaBallVolume {
      * @return the volume
      */
     public float[][][] getVolume() {
-        float[][][] volume = new float[z_dim][y_dim][x_dim];
-        float numValues = z_dim * y_dim * x_dim * metaBalls.size();
+        float[][][] volume = new float[zSize][ySize][xSize];
+        float numValues = zSize * ySize * xSize * metaBalls.size();
         int doneValues = 0;
 
         progress.set(0);
@@ -126,9 +128,9 @@ public class MetaBallVolume {
      * @param maxIntensity the maximum intensity for the ball
      */
     public void addRandomBall(int minIntensity, int maxIntensity) {
-        int x = rInt(0, x_dim - 1);
-        int y = rInt(0, y_dim - 1);
-        int z = rInt(0, z_dim - 1);
+        int x = rInt(0, xSize - 1);
+        int y = rInt(0, ySize - 1);
+        int z = rInt(0, zSize - 1);
         int intensity = rInt(minIntensity, maxIntensity);
         int posNeg = (Math.random() < 0.3) ? -1 : 1;
 
@@ -138,28 +140,28 @@ public class MetaBallVolume {
     /**
      * Sets the size in x of this <code>MetaBallVolume</code>.
      *
-     * @param x_dim the new size
+     * @param xSize the new size
      */
-    public void setX_dim(int x_dim) {
-        this.x_dim = x_dim;
+    public void setXSize(int xSize) {
+        this.xSize = xSize;
     }
 
     /**
      * Sets the size in y of this <code>MetaBallVolume</code>.
      *
-     * @param y_dim the new size
+     * @param ySize the new size
      */
-    public void setY_dim(int y_dim) {
-        this.y_dim = y_dim;
+    public void setYSize(int ySize) {
+        this.ySize = ySize;
     }
 
     /**
      * Sets the size in z of this <code>MetaBallVolume</code>.
      *
-     * @param z_dim the new size
+     * @param zSize the new size
      */
-    public void setZ_dim(int z_dim) {
-        this.z_dim = z_dim;
+    public void setZSize(int zSize) {
+        this.zSize = zSize;
     }
 
     /**
@@ -215,5 +217,38 @@ public class MetaBallVolume {
      */
     public DoubleProperty progressProperty() {
         return progress;
+    }
+
+    @Override
+    public float density(int x, int y, int z) {
+
+        if (z < 0 || z >= zSize()) {
+            return 0f;
+        }
+
+        if (y < 0 || y >= ySize()) {
+            return 0f;
+        }
+
+        if (x < 0 || x >= xSize()) {
+            return 0f;
+        }
+
+        return metaBalls.stream().collect(Collectors.summingDouble(ball -> ball.density(x, y, z))).floatValue();
+    }
+
+    @Override
+    public int xSize() {
+        return xSize;
+    }
+
+    @Override
+    public int ySize() {
+        return ySize;
+    }
+
+    @Override
+    public int zSize() {
+        return zSize;
     }
 }

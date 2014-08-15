@@ -13,6 +13,9 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
+/**
+ * A dialog that lets the user design a Metaball volume for use with the <code>MCRunner</code>.
+ */
 public class MVolumeDesigner extends GridPane {
 
     @FXML
@@ -57,15 +60,15 @@ public class MVolumeDesigner extends GridPane {
         tempVolume = new MetaBallVolume(sizeX.getValue(), sizeY.getValue(), sizeZ.getValue());
 
         sizeX.valueProperty().addListener((observable, oldV, newV) -> {
-            tempVolume.setX_dim(newV.intValue());
+            tempVolume.setXSize(newV.intValue());
         });
 
         sizeY.valueProperty().addListener((observable, oldV, newV) -> {
-            tempVolume.setY_dim(newV.intValue());
+            tempVolume.setYSize(newV.intValue());
         });
 
         sizeZ.valueProperty().addListener((observable, oldV, newV) -> {
-            tempVolume.setZ_dim(newV.intValue());
+            tempVolume.setZSize(newV.intValue());
         });
 
         posX.endProperty().bind(sizeX.valueProperty());
