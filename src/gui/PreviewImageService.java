@@ -9,8 +9,8 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
 /**
- * A <code>Service</code> that produces a B/W image from the given original where black pixels have a grey value
- * <= the given level and white pixels have a grey value above the given level.
+ * A <code>Service</code> that produces an image from the given original where pixels with a grey value greater than
+ * the given level are colored red and all other pixels retain their original color.
  */
 public class PreviewImageService extends Service<Image> {
 
