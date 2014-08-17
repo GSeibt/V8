@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import gui.IntSpinner?>
-<?import javafx.geometry.Insets?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
@@ -24,7 +24,7 @@
                         <Font size="15.0" />
                     </font>
                 </Label>
-                <RadioButton fx:id="randRButton" mnemonicParsing="false" text="Random">
+                <RadioButton fx:id="randRButton" mnemonicParsing="false" text="Metaballs">
                     <toggleGroup>
                         <ToggleGroup fx:id="dataSource" />
                     </toggleGroup>

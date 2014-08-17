@@ -68,6 +68,8 @@ public class MetaBallVolume implements MCVolume {
             }
         }
 
+        // TODO use parallelStream to speed this up
+
         return volume;
     }
 
