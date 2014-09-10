@@ -10,7 +10,7 @@ public class ArrayVolume implements MCVolume {
     /**
      * Constructs a new <code>ArrayVolume</code> backed by the given array.
      *
-     * @param data
+     * @param data the date for this <code>ArrayVolume</code>
      */
     public ArrayVolume(float[][][] data) {
         this.data = data;
