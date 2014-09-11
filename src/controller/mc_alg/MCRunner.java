@@ -227,11 +227,11 @@ public class MCRunner implements Runnable {
         progress.set(0);
 
         outer:
-        for (int z = 0; z < data.zSize(); z += gridSize) {
+        for (int z = 0; z < data.zSize() - gridSize; z += gridSize) {
 
-            for (int y = 0; y < data.ySize(); y += gridSize) {
+            for (int y = 0; y < data.ySize() - gridSize; y += gridSize) {
 
-                for (int x = 0; x < data.xSize(); x += gridSize) {
+                for (int x = 0; x < data.xSize() - gridSize; x += gridSize) {
 
                     computeVertices(x, y, z, cube);
                     cubeIndex = cube.getIndex(level);
