@@ -97,7 +97,7 @@ public class Vector3f implements Cloneable {
     }
 
     /**
-     * Returns a new <code>Vector</code> representing the difference between this <code>Vector/code> and the given
+     * Returns a new <code>Vector</code> representing the difference between this <code>Vector</code> and the given
      * <code>Vector other</code>.
      *
      * @param other the other <code>Vector</code>

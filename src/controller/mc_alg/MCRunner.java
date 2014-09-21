@@ -2,7 +2,14 @@ package controller.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import controller.mc_alg.mc_volume.MCVolume;
@@ -42,67 +49,7 @@ public class MCRunner implements Runnable {
         COMPLETE
     }
 
-    private static class EdgeId {
-        private int cubeX;
-        private int cubeY;
-        private int cubeZ;
-        private int index;
-
-        public static EdgeId getInstance = new EdgeId(0, 0, 0, 0);
-
-        private EdgeId(int cubeX, int cubeY, int cubeZ, int index) {
-            this.cubeX = cubeX;
-            this.cubeY = cubeY;
-            this.cubeZ = cubeZ;
-            this.index = index;
-        }
-
-        public static EdgeId get(int x, int y, int z, int index) {
-            getInstance.cubeX = x;
-            getInstance.cubeY = y;
-            getInstance.cubeZ = z;
-            getInstance.index = index;
-            return getInstance;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            EdgeId edgeId = (EdgeId) o;
-
-            if (cubeX != edgeId.cubeX) {
-                return false;
-            }
-            if (cubeY != edgeId.cubeY) {
-                return false;
-            }
-            if (cubeZ != edgeId.cubeZ) {
-                return false;
-            }
-            if (index != edgeId.index) {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = cubeX;
-            result = 31 * result + cubeY;
-            result = 31 * result + cubeZ;
-            result = 31 * result + index;
-            return result;
-        }
-    }
-
-    private Map<EdgeId, Vertex> edgeCache;
+    private Map<Long, Vertex> edgeCache;
 
     private DoubleProperty progress; // 0 or negative => 0%, 1 or greater => 100%
 
@@ -326,18 +273,52 @@ public class MCRunner implements Runnable {
     /**
      * Removes mappings from the <code>edgeCache</code> that will no be used by the algorithm again.
      *
-     * @param z the layer that the algorithm finished
+     * @param z
+     *         the layer that the algorithm finished
      */
     private void cleanCache(int z) {
-        List<EdgeId> toRemove = new LinkedList<>();
+        List<Long> toRemove = new LinkedList<>();
 
         edgeCache.forEach((id, vertex) -> {
-            if (id.cubeZ == z - 1 || !Cube.topIndices.contains(id.index)) {
+            int cubeZ = (int) (id & 0xffffff) >>> 4; // extract z from the id
+            int cubeIndex = (int) (id & 0xf); // extract the index from the id
+
+            if (cubeZ == z - 1 || !Cube.topIndices.contains(cubeIndex)) {
                 toRemove.add(id);
             }
         });
 
         toRemove.forEach(edgeCache::remove);
+    }
+
+    /**
+     * Packs the given integers into a <code>long</code> to be used as a key into <code>edgeCache</code>.
+     * <code>x</code>, <code>y</code>, and <code>z</code> will receive 20 bit each, <code>index</code> will receive
+     * 4 bit. The <code>long</code> will have the format [x,y,z,index].
+     *
+     * @param x
+     *         the x coordinate of the cubes vertex 0
+     * @param y
+     *         the y coordinate of the cubes vertex 0
+     * @param z
+     *         the z coordinate of the cubes vertex 0
+     * @param index
+     *         the index of the edge
+     *
+     * @return a <code>long</code> of the specified format
+     */
+    private long packLong(int x, int y, int z, int index) {
+        long edgeID = 0;
+
+        edgeID |= x;
+        edgeID = edgeID << 20;
+        edgeID |= y;
+        edgeID = edgeID << 20;
+        edgeID |= z;
+        edgeID = edgeID << 4;
+        edgeID |= index;
+
+        return edgeID;
     }
 
     /**
@@ -493,16 +474,15 @@ public class MCRunner implements Runnable {
             Vertex edge = null;
 
             if (y != 0) {
-                edge = edgeCache.get(EdgeId.get(x, y - gridSize, z, 2));
+                edge = edgeCache.get(packLong(x, y - gridSize, z, 2));
             } else if (z != 0) {
-                edge = edgeCache.get(EdgeId.get(x, y, z - gridSize, 4));
+                edge = edgeCache.get(packLong(x, y, z - gridSize, 4));
             }
 
             if (edge == null) {
                 edge = interpolate(cube.getVertex(0), cube.getVertex(1));
-                edgeCache.put(new EdgeId(x, y, z, 0), edge);
+                edgeCache.put(packLong(x, y, z, 0), edge);
             }
-
             cube.setEdge(0, edge);
         }
 
@@ -510,12 +490,12 @@ public class MCRunner implements Runnable {
             Vertex edge = null;
 
             if (z != 0) {
-                edge = edgeCache.get(EdgeId.get(x, y, z - gridSize, 5));
+                edge = edgeCache.get(packLong(x, y, z - gridSize, 5));
             }
 
             if (edge == null) {
                 edge = interpolate(cube.getVertex(1), cube.getVertex(2));
-                edgeCache.put(new EdgeId(x, y, z, 1), edge);
+                edgeCache.put(packLong(x, y, z, 1), edge);
             }
             cube.setEdge(1, edge);
         }
@@ -524,12 +504,12 @@ public class MCRunner implements Runnable {
             Vertex edge = null;
 
             if (z != 0) {
-                edge = edgeCache.get(EdgeId.get(x, y, z - gridSize, 6));
+                edge = edgeCache.get(packLong(x, y, z - gridSize, 6));
             }
 
             if (edge == null) {
                 edge = interpolate(cube.getVertex(2), cube.getVertex(3));
-                edgeCache.put(new EdgeId(x, y, z, 2), edge);
+                edgeCache.put(packLong(x, y, z, 2), edge);
             }
             cube.setEdge(2, edge);
         }
@@ -538,14 +518,14 @@ public class MCRunner implements Runnable {
             Vertex edge = null;
 
             if (x != 0) {
-                edge = edgeCache.get(EdgeId.get(x - gridSize, y, z, 1));
+                edge = edgeCache.get(packLong(x - gridSize, y, z, 1));
             } else if (z != 0) {
-                edge = edgeCache.get(EdgeId.get(x, y, z - gridSize, 7));
+                edge = edgeCache.get(packLong(x, y, z - gridSize, 7));
             }
 
             if (edge == null) {
                 edge = interpolate(cube.getVertex(3), cube.getVertex(0));
-                edgeCache.put(new EdgeId(x, y, z, 3), edge);
+                edgeCache.put(packLong(x, y, z, 3), edge);
             }
             cube.setEdge(3, edge);
         }
@@ -554,12 +534,12 @@ public class MCRunner implements Runnable {
             Vertex edge = null;
 
             if (y != 0) {
-                edge = edgeCache.get(EdgeId.get(x, y - gridSize, z, 6));
+                edge = edgeCache.get(packLong(x, y - gridSize, z, 6));
             }
 
             if (edge == null) {
                 edge = interpolate(cube.getVertex(4), cube.getVertex(5));
-                edgeCache.put(new EdgeId(x, y, z, 4), edge);
+                edgeCache.put(packLong(x, y, z, 4), edge);
             }
             cube.setEdge(4, edge);
         }
@@ -568,7 +548,7 @@ public class MCRunner implements Runnable {
             Vertex edge;
 
             edge = interpolate(cube.getVertex(5), cube.getVertex(6));
-            edgeCache.put(new EdgeId(x, y, z, 5), edge);
+            edgeCache.put(packLong(x, y, z, 5), edge);
             cube.setEdge(5, edge);
         }
 
@@ -576,7 +556,7 @@ public class MCRunner implements Runnable {
             Vertex edge;
 
             edge = interpolate(cube.getVertex(6), cube.getVertex(7));
-            edgeCache.put(new EdgeId(x, y, z, 6), edge);
+            edgeCache.put(packLong(x, y, z, 6), edge);
             cube.setEdge(6, edge);
         }
 
@@ -584,12 +564,12 @@ public class MCRunner implements Runnable {
             Vertex edge = null;
 
             if (x != 0) {
-                edge = edgeCache.get(EdgeId.get(x - gridSize, y, z, 5));
+                edge = edgeCache.get(packLong(x - gridSize, y, z, 5));
             }
 
             if (edge == null) {
                 edge = interpolate(cube.getVertex(7), cube.getVertex(4));
-                edgeCache.put(new EdgeId(x, y, z, 7), edge);
+                edgeCache.put(packLong(x, y, z, 7), edge);
             }
             cube.setEdge(7, edge);
         }
@@ -598,14 +578,14 @@ public class MCRunner implements Runnable {
             Vertex edge = null;
 
             if (x != 0) {
-                edge = edgeCache.get(EdgeId.get(x - gridSize, y, z, 9));
+                edge = edgeCache.get(packLong(x - gridSize, y, z, 9));
             } else if (y != 0) {
-                edge = edgeCache.get(EdgeId.get(x, y - gridSize, z, 11));
+                edge = edgeCache.get(packLong(x, y - gridSize, z, 11));
             }
 
             if (edge == null) {
                 edge = interpolate(cube.getVertex(4), cube.getVertex(0));
-                edgeCache.put(new EdgeId(x, y, z, 8), edge);
+                edgeCache.put(packLong(x, y, z, 8), edge);
             }
             cube.setEdge(8, edge);
         }
@@ -614,12 +594,12 @@ public class MCRunner implements Runnable {
             Vertex edge = null;
 
             if (y != 0) {
-                edge = edgeCache.get(EdgeId.get(x, y - gridSize, z, 10));
+                edge = edgeCache.get(packLong(x, y - gridSize, z, 10));
             }
 
             if (edge == null) {
                 edge = interpolate(cube.getVertex(5), cube.getVertex(1));
-                edgeCache.put(new EdgeId(x, y, z, 9), edge);
+                edgeCache.put(packLong(x, y, z, 9), edge);
             }
             cube.setEdge(9, edge);
         }
@@ -628,7 +608,7 @@ public class MCRunner implements Runnable {
             Vertex edge;
 
             edge = interpolate(cube.getVertex(6), cube.getVertex(2));
-            edgeCache.put(new EdgeId(x, y, z, 10), edge);
+            edgeCache.put(packLong(x, y, z, 10), edge);
             cube.setEdge(10, edge);
         }
 
@@ -636,12 +616,12 @@ public class MCRunner implements Runnable {
             Vertex edge = null;
 
             if (x != 0) {
-                edge = edgeCache.get(EdgeId.get(x - gridSize, y, z, 10));
+                edge = edgeCache.get(packLong(x - gridSize, y, z, 10));
             }
 
             if (edge == null) {
                 edge = interpolate(cube.getVertex(7), cube.getVertex(3));
-                edgeCache.put(new EdgeId(x, y, z, 11), edge);
+                edgeCache.put(packLong(x, y, z, 11), edge);
             }
             cube.setEdge(11, edge);
         }
