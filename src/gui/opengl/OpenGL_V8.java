@@ -555,13 +555,13 @@ public class OpenGL_V8 {
                     mcRunner.continueRun();
                     break;
                 case Keyboard.KEY_P:
-                    stopping = mcRunner.isStopping();
+                    stopping = mcRunner.isPausing();
 
                     if (stopping) {
-                        mcRunner.setStopping(false);
+                        mcRunner.setPausing(false);
                         mcRunner.continueRun();
                     } else {
-                        mcRunner.setStopping(true);
+                        mcRunner.setPausing(true);
                     }
                     break;
                 case Keyboard.KEY_INSERT:

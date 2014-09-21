@@ -2,14 +2,7 @@ package controller.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 import controller.mc_alg.mc_volume.MCVolume;
@@ -60,8 +53,8 @@ public class MCRunner implements Runnable {
     private Consumer<Mesh> meshConsumer; // will be called with the current mesh after every mesh update
     private Consumer<Long> onFinish;
 
-    private volatile boolean stopping; // whether this MCRunner stops after every mesh update
-    private volatile boolean stopped; // whether this MCRunner has stopped
+    private volatile boolean pausing; // whether this MCRunner stops after every mesh update
+    private volatile boolean paused; // whether this MCRunner was paused
     private boolean interrupted; // whether the executing Thread was interrupted
 
     private int numLastTriangles; // how many triangles were pushed in the last mesh update
@@ -124,8 +117,8 @@ public class MCRunner implements Runnable {
         this.gridSize = gridSize;
         this.type = type;
 
-        this.stopping = false;
-        this.stopped = false;
+        this.pausing = false;
+        this.paused = false;
         this.interrupted = false;
         this.numLastTriangles = 0;
 
@@ -174,24 +167,24 @@ public class MCRunner implements Runnable {
     }
 
     /**
-     * Returns whether this <code>MCRunner</code> is stopping after every mesh update.
+     * Returns whether this <code>MCRunner</code> is pausing after every mesh update.
      * The default is <code>false</code>.
      *
-     * @return true iff the <code>MCRunner</code> is stopping after every mesh update
+     * @return true iff the <code>MCRunner</code> is pausing after every mesh update
      */
-    public boolean isStopping() {
-        return stopping;
+    public boolean isPausing() {
+        return pausing;
     }
 
     /**
-     * Sets whether this <code>MCRunner</code> is stopping after every mesh update.
+     * Sets whether this <code>MCRunner</code> is pausing after every mesh update.
      * The default is <code>false</code>.
      *
-     * @param stopping
-     *         whether this <code>MCRunner</code> is stopping after every mesh update
+     * @param pausing
+     *         whether this <code>MCRunner</code> is pausing after every mesh update
      */
-    public void setStopping(boolean stopping) {
-        this.stopping = stopping;
+    public void setPausing(boolean pausing) {
+        this.pausing = pausing;
     }
 
     /**
@@ -325,7 +318,7 @@ public class MCRunner implements Runnable {
      * Converts the <code>points</code>, <code>normals</code> and <code>indices</code> into a <code>Mesh</code> and
      * feeds the <code>meshConsumer</code> with it. If no new triangles were created or the consumer is
      * <code>null</code> no update will be performed. If the type is not <code>COMPLETE</code> (in which case this
-     * method is called only once) and this <code>MCRunner</code> is stopping this method stops the run.
+     * method is called only once) and this <code>MCRunner</code> is pausing this method pauses the run.
      */
     private void outputMesh() {
 
@@ -377,8 +370,8 @@ public class MCRunner implements Runnable {
             return;
         }
 
-        if (stopping) {
-            stopRun();
+        if (pausing) {
+            pauseRun();
         }
     }
 
@@ -729,15 +722,15 @@ public class MCRunner implements Runnable {
     }
 
     /**
-     * Stops the execution of the Marching Cubes algorithm. No mesh update will be produced until after
+     * Pauses the execution of the Marching Cubes algorithm. No mesh update will be produced until after
      * {@link #continueRun()} is called.
      */
-    public void stopRun() {
+    public void pauseRun() {
 
         synchronized (this) {
-            stopped = true;
+            paused = true;
 
-            while (stopped) {
+            while (paused) {
                 try {
                     wait();
                 } catch (InterruptedException e) {
@@ -754,7 +747,7 @@ public class MCRunner implements Runnable {
     public void continueRun() {
 
         synchronized (this) {
-            stopped = false;
+            paused = false;
             this.notify();
         }
     }
