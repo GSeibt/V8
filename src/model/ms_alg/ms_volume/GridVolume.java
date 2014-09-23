@@ -1,4 +1,4 @@
-package controller.ms_alg.ms_volume;
+package model.ms_alg.ms_volume;
 
 /**
  * A <code>MSGrid</code> backed by a <code>float[][]</code>.

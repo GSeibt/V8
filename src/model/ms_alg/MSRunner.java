@@ -1,11 +1,11 @@
-package controller.ms_alg;
+package model.ms_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import controller.ms_alg.ms_volume.MSGrid;
+import model.ms_alg.ms_volume.MSGrid;
 import org.lwjgl.BufferUtils;
 
 /**
@@ -15,7 +15,7 @@ import org.lwjgl.BufferUtils;
 public class MSRunner implements Callable<Mesh2D> {
 
     /**
-     * Analogous to {@link controller.mc_alg.Tables#EDGES}.
+     * Analogous to {@link model.mc_alg.Tables#EDGES}.
      */
     private static short[] edges = {
             0b0000, 0b1001, 0b0011, 0b1010, 0b0110, 0b1111, 0b0101, 0b1100, 0b1100, 0b0101, 0b1111, 0b0110, 0b1010,
@@ -23,7 +23,7 @@ public class MSRunner implements Callable<Mesh2D> {
     };
 
     /**
-     * Analogous to {@link controller.mc_alg.Tables#TRIANGLES}.
+     * Analogous to {@link model.mc_alg.Tables#TRIANGLES}.
      */
     private static short[][] lines = {
             {}, {0, 3}, {0, 1}, {1, 3}, {1, 2}, {0, 1, 2, 3}, {0, 2}, {2, 3}, {2, 3}, {0, 2}, {1, 2, 3, 0}, {1, 2},

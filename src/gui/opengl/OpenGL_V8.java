@@ -14,8 +14,8 @@ import java.util.Scanner;
 import java.util.concurrent.SynchronousQueue;
 import javax.imageio.ImageIO;
 
-import controller.mc_alg.MCRunner;
-import controller.mc_alg.Mesh;
+import model.mc_alg.MCRunner;
+import model.mc_alg.Mesh;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;

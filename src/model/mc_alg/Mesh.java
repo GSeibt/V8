@@ -1,4 +1,4 @@
-package controller.mc_alg;
+package model.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;

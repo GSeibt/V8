@@ -1,4 +1,4 @@
-package controller.mc_alg.metaball_volume;
+package model.mc_alg.metaball_volume;
 
 /**
  * A <code>MetaBall</code> in a <code>MetaBallVolume</code>.

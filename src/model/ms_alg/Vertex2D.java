@@ -1,4 +1,4 @@
-package controller.ms_alg;
+package model.ms_alg;
 
 /**
  * A vertex in 2D space.

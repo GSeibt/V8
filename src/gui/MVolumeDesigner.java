@@ -2,7 +2,6 @@ package gui;
 
 import java.io.IOException;
 
-import controller.mc_alg.metaball_volume.MetaBallVolume;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -12,6 +11,7 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import model.mc_alg.metaball_volume.MetaBallVolume;
 
 /**
  * A dialog that lets the user design a Metaball volume for use with the <code>MCRunner</code>.

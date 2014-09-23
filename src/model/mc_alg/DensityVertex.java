@@ -1,4 +1,4 @@
-package controller.mc_alg;
+package model.mc_alg;
 
 /**
  * A <code>Vertex</code> that has a density associated with it.

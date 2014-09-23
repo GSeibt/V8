@@ -3,24 +3,10 @@ package controller;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.imageio.ImageIO;
 
-import controller.mc_alg.MCRunner;
-import controller.mc_alg.mc_volume.ArrayVolume;
-import controller.mc_alg.mc_volume.CachedVolume;
-import controller.mc_alg.mc_volume.MCVolume;
-import controller.mc_alg.metaball_volume.MetaBallVolume;
-import gui.Histogram;
-import gui.IntSpinner;
-import gui.MSView;
-import gui.MVolumeDesigner;
-import gui.PreviewImageService;
+import gui.*;
 import gui.opengl.OpenGL_V8;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -37,9 +23,14 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import model.mc_alg.MCRunner;
+import model.mc_alg.mc_volume.ArrayVolume;
+import model.mc_alg.mc_volume.CachedVolume;
+import model.mc_alg.mc_volume.MCVolume;
+import model.mc_alg.metaball_volume.MetaBallVolume;
 import util.Exporter;
 
-import static controller.mc_alg.MCRunner.Type.COMPLETE;
+import static model.mc_alg.MCRunner.Type.COMPLETE;
 
 /**
  * JavaFX controller class for fxml/V8.fxml.

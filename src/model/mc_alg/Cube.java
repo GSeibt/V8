@@ -1,4 +1,4 @@
-package controller.mc_alg;
+package model.mc_alg;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
  * </center>
  * The cube index is formed by setting bit <code>i</code> in an int to 1 if vertex <code>i</code>
  * in the cube is less than or equal to the level. All other bits are 0. This results in a cube index between 0 and 255
- * that can be used for lookup in the {@link controller.mc_alg.Tables} class.
+ * that can be used for lookup in the {@link model.mc_alg.Tables} class.
  */
 public class Cube {
 
@@ -123,8 +123,8 @@ public class Cube {
      *
      * @return the cube index
      *
-     * @see controller.mc_alg.Tables#getEdgeIndex(int)
-     * @see controller.mc_alg.Tables#getTriangleIndex(int)
+     * @see model.mc_alg.Tables#getEdgeIndex(int)
+     * @see model.mc_alg.Tables#getTriangleIndex(int)
      */
     public int getIndex(float level) {
         int index = 0;

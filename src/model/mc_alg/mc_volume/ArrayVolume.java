@@ -1,4 +1,4 @@
-package controller.mc_alg.mc_volume;
+package model.mc_alg.mc_volume;
 
 /**
  * A <code>MCVolume</code> backed by a <code>float[][][]</code>.

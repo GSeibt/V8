@@ -1,4 +1,4 @@
-package controller.mc_alg.mc_volume;
+package model.mc_alg.mc_volume;
 
 /**
  * A data source for the <code>MCRunner</code>.

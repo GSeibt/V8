@@ -1,17 +1,17 @@
-package controller.mc_alg;
+package model.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
 import java.util.function.Consumer;
 
-import controller.mc_alg.mc_volume.MCVolume;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import model.mc_alg.mc_volume.MCVolume;
 import org.lwjgl.BufferUtils;
 import util.Vector3f;
 
-import static controller.mc_alg.MCRunner.Type.*;
+import static model.mc_alg.MCRunner.Type.*;
 
 /**
  * <code>Runnable</code> that performs the Marching Cubes algorithm over a given <code>MCVolume</code> that are
@@ -679,12 +679,12 @@ public class MCRunner implements Runnable {
     /**
      * Updates the <code>points</code>, <code>normals</code>, and <code>indices</code> with triangles constructed
      * from the edges of the given <code>Cube</code> according to
-     * {@link controller.mc_alg.Tables#getTriangleIndex(int)}.
+     * {@link model.mc_alg.Tables#getTriangleIndex(int)}.
      *
      * @param cube
      *         the cube with whose edges the mesh is to be updated
      * @param cubeIndex
-     *         the index of the cube (see {@link controller.mc_alg.Cube#getIndex(float)})
+     *         the index of the cube (see {@link model.mc_alg.Cube#getIndex(float)})
      */
     private void updateMesh(Cube cube, int cubeIndex) {
         Vertex edge;

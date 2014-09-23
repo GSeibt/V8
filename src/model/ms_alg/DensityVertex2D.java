@@ -1,4 +1,4 @@
-package controller.ms_alg;
+package model.ms_alg;
 
 /**
  * A <code>Vertex2D</code> that additionally contains a density value.

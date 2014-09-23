@@ -1,4 +1,4 @@
-package controller.ms_alg;
+package model.ms_alg;
 
 /**
  * A <code>Square</code> used in the Marching Squares algorithm.
@@ -46,7 +46,7 @@ public class Square {
     }
 
     /**
-     * Returns the squares index analogous to {@link controller.mc_alg.Cube#getIndex(float)}.
+     * Returns the squares index analogous to {@link model.mc_alg.Cube#getIndex(float)}.
      *
      * @param level the level to be used
      * @return the index

@@ -1,13 +1,13 @@
-package controller.mc_alg.metaball_volume;
+package model.mc_alg.metaball_volume;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import controller.mc_alg.mc_volume.MCVolume;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import model.mc_alg.mc_volume.MCVolume;
 
 /**
  * A volume containing <code>MetaBall</code> instances.

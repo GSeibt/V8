@@ -1,4 +1,4 @@
-package controller.mc_alg;
+package model.mc_alg;
 
 /**
  * Lookup tables based on <a href="http://paulbourke.net/geometry/polygonise/">paulbourke.net/geometry/polygonise/</a>.
