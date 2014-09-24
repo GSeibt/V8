@@ -14,8 +14,7 @@ import util.Vector3f;
 import static model.mc_alg.MCRunner.Type.*;
 
 /**
- * <code>Runnable</code> that performs the Marching Cubes algorithm over a given <code>MCVolume</code> that are
- * interpreted as density data.
+ * <code>Runnable</code> that performs the Marching Cubes algorithm over the values of a given <code>MCVolume</code>.
  * Can be configured to update the resulting triangle mesh after every cube, slice, or after the whole computation is
  * finished. Optionally the computation can pause after every update.
  */
@@ -69,7 +68,7 @@ public class MCRunner implements Runnable {
      * @param data
      *         the data for the Marching Cubes algorithm
      * @param level
-     *         the density level for the Marching Cubes algorithm
+     *         the level for the Marching Cubes algorithm
      *
      * @throws NullPointerException
      *         if <code>data</code> or <code>type</code> is <code>null</code>
@@ -86,7 +85,7 @@ public class MCRunner implements Runnable {
      * @param data
      *         the data for the Marching Cubes algorithm
      * @param level
-     *         the density level for the Marching Cubes algorithm
+     *         the level for the Marching Cubes algorithm
      * @param gridSize
      *         the grid size (that is the x/y/z dimensions of the cubes)
      * @param type
@@ -376,12 +375,13 @@ public class MCRunner implements Runnable {
     }
 
     /**
-     * Computes the locations, densities and gradients of the vertices of the cube whose vertex 0 is at the given
+     * Computes the locations, values and gradients of the corner vertices of the cube whose vertex 0 is at the given
      * position in the <code>data</code>
      *
      * @param x the x coordinate of the cubes vertex 0
      * @param y the y coordinate of the cubes vertex 0
      * @param z the z coordinate of the cubes vertex 0
+     * @param cube the cube whose vertices are to be computed
      */
     private void computeVertices(int x, int y, int z, Cube cube) {
         Vertex4f v;

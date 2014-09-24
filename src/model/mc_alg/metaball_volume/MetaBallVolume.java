@@ -45,7 +45,7 @@ public class MetaBallVolume implements MCVolume {
     }
 
     /**
-     * Constructs a float array containing the density values resulting from all the <code>MetaBall</code>s in this
+     * Constructs a float array containing the values resulting from all the <code>MetaBall</code>s in this
      * volume.
      *
      * @return the volume
@@ -60,7 +60,7 @@ public class MetaBallVolume implements MCVolume {
             for (int z = 0; z < volume.length; z++) {
                 for (int y = 0; y < volume[z].length; y++) {
                     for (int x = 0; x < volume[z][y].length; x++) {
-                        volume[z][y][x] += ball.density(x, y, z);
+                        volume[z][y][x] += ball.value(x, y, z);
                         doneValues++;
                     }
                 }
@@ -236,7 +236,7 @@ public class MetaBallVolume implements MCVolume {
             return 0f;
         }
 
-        return metaBalls.stream().collect(Collectors.summingDouble(ball -> ball.density(x, y, z))).floatValue();
+        return metaBalls.stream().collect(Collectors.summingDouble(ball -> ball.value(x, y, z))).floatValue();
     }
 
     @Override
