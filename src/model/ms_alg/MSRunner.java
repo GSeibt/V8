@@ -104,23 +104,23 @@ public class MSRunner implements Callable<Mesh2D> {
      *         the square
      */
     private void computeVertices(int x, int y, Square square) {
-        DensityVertex2D v;
+        CornerVertex2D v;
 
         v = square.getVertex(0);
         v.setXY(x, y);
-        v.setDensity(data.density(x, y));
+        v.setValue(data.density(x, y));
 
         v = square.getVertex(1);
         v.setXY(x + gridSize, y);
-        v.setDensity(data.density(x + gridSize, y));
+        v.setValue(data.density(x + gridSize, y));
 
         v = square.getVertex(2);
         v.setXY(x + gridSize, y + gridSize);
-        v.setDensity(data.density(x + gridSize, y + gridSize));
+        v.setValue(data.density(x + gridSize, y + gridSize));
 
         v = square.getVertex(3);
         v.setXY(x, y + gridSize);
-        v.setDensity(data.density(x, y + gridSize));
+        v.setValue(data.density(x, y + gridSize));
     }
 
     /**
@@ -204,26 +204,26 @@ public class MSRunner implements Callable<Mesh2D> {
      * @param v2
      *         the second vertex of a cube
      */
-    private Vertex2D interpolate(DensityVertex2D v1, DensityVertex2D v2) {
+    private Vertex2D interpolate(CornerVertex2D v1, CornerVertex2D v2) {
         Vertex2D edge = new Vertex2D();
         double min = Math.pow(10, -4);
 
-        if (Math.abs(level - v1.getDensity()) < min) {
+        if (Math.abs(level - v1.getValue()) < min) {
             edge.setXY(v1.getX(), v1.getY());
             return edge;
         }
 
-        if (Math.abs(level - v2.getDensity()) < min) {
+        if (Math.abs(level - v2.getValue()) < min) {
             edge.setXY(v2.getX(), v2.getY());
             return edge;
         }
 
-        if (Math.abs(v1.getDensity() - v2.getDensity()) < min) {
+        if (Math.abs(v1.getValue() - v2.getValue()) < min) {
             edge.setXY(v1.getX(), v1.getY());
             return edge;
         }
 
-        float alpha = (level - v2.getDensity()) / (v1.getDensity() - v2.getDensity());
+        float alpha = (level - v2.getValue()) / (v1.getValue() - v2.getValue());
         float edgeX = alpha * v1.getX() + (1 - alpha) * v2.getX();
         float edgeY = alpha * v1.getY() + (1 - alpha) * v2.getY();
 
