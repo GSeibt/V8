@@ -384,39 +384,39 @@ public class MCRunner implements Runnable {
      * @param z the z coordinate of the cubes vertex 0
      */
     private void computeVertices(int x, int y, int z, Cube cube) {
-        DensityVertex v;
+        Vertex4f v;
 
         v = cube.getVertex(0);
         v.setLocation(x, y, z);
-        v.setDensity(data.value(x, y, z));
+        v.setValue(data.value(x, y, z));
 
         v = cube.getVertex(1);
         v.setLocation(x + gridSize, y, z);
-        v.setDensity(data.value(x + gridSize, y, z));
+        v.setValue(data.value(x + gridSize, y, z));
 
         v = cube.getVertex(2);
         v.setLocation(x + gridSize, y + gridSize, z);
-        v.setDensity(data.value(x + gridSize, y + gridSize, z));
+        v.setValue(data.value(x + gridSize, y + gridSize, z));
 
         v = cube.getVertex(3);
         v.setLocation(x, y + gridSize, z);
-        v.setDensity(data.value(x, y + gridSize, z));
+        v.setValue(data.value(x, y + gridSize, z));
 
         v = cube.getVertex(4);
         v.setLocation(x, y, z + gridSize);
-        v.setDensity(data.value(x, y, z + gridSize));
+        v.setValue(data.value(x, y, z + gridSize));
 
         v = cube.getVertex(5);
         v.setLocation(x + gridSize, y, z + gridSize);
-        v.setDensity(data.value(x + gridSize, y, z + gridSize));
+        v.setValue(data.value(x + gridSize, y, z + gridSize));
 
         v = cube.getVertex(6);
         v.setLocation(x + gridSize, y + gridSize, z + gridSize);
-        v.setDensity(data.value(x + gridSize, y + gridSize, z + gridSize));
+        v.setValue(data.value(x + gridSize, y + gridSize, z + gridSize));
 
         v = cube.getVertex(7);
         v.setLocation(x, y + gridSize, z + gridSize);
-        v.setDensity(data.value(x, y + gridSize, z + gridSize));
+        v.setValue(data.value(x, y + gridSize, z + gridSize));
 
         for (int i = 0; i < 8; i++) {
             computeGradient(cube.getVertex(i));
@@ -430,7 +430,7 @@ public class MCRunner implements Runnable {
      * @param v
      *         the vertex
      */
-    private void computeGradient(DensityVertex v) {
+    private void computeGradient(Vertex4f v) {
         int x = (int) v.getLocation().getX();
         int y = (int) v.getLocation().getY();
         int z = (int) v.getLocation().getZ();
@@ -629,7 +629,7 @@ public class MCRunner implements Runnable {
      * @param v2
      *         the second vertex of a cube
      */
-    private Vertex interpolate(DensityVertex v1, DensityVertex v2) {
+    private Vertex interpolate(Vertex4f v1, Vertex4f v2) {
         float edgeX, edgeY, edgeZ;
         float normalX, normalY, normalZ;
         double min = Math.pow(10, -4);
@@ -637,25 +637,25 @@ public class MCRunner implements Runnable {
         float alpha;
         Vertex edge = new Vertex(0, 0, 0);
 
-        if (Math.abs(level - v1.getDensity()) < min) {
+        if (Math.abs(level - v1.getValue()) < min) {
             edge.setLocation(v1.getLocation());
             edge.setNormal(v1.getNormal().normalized());
             return edge;
         }
 
-        if (Math.abs(level - v2.getDensity()) < min) {
+        if (Math.abs(level - v2.getValue()) < min) {
             edge.setLocation(v2.getLocation());
             edge.setNormal(v2.getNormal().normalized());
             return edge;
         }
 
-        if (Math.abs(v1.getDensity() - v2.getDensity()) < min) {
+        if (Math.abs(v1.getValue() - v2.getValue()) < min) {
             edge.setLocation(v1.getLocation());
             edge.setNormal(v1.getNormal().normalized());
             return edge;
         }
 
-        alpha = (level - v2.getDensity()) / (v1.getDensity() - v2.getDensity());
+        alpha = (level - v2.getValue()) / (v1.getValue() - v2.getValue());
 
         normalX = alpha * v1.getNormal().getX() + (1 - alpha) * v2.getNormal().getX();
         normalY = alpha * v1.getNormal().getY() + (1 - alpha) * v2.getNormal().getY();

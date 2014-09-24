@@ -21,7 +21,7 @@ public class Cube {
     public static List<Integer> topIndices = Arrays.asList(4, 5, 6, 7);
     public static List<Integer> sideIndices = Arrays.asList(8, 9, 10, 11);
 
-    private DensityVertex[] vertices; // the 8 vertices of the cube and the density at the vertex
+    private Vertex4f[] vertices; // the 8 vertices of the cube and the value at the vertex
     private Vertex[] edges; // the 12 triangle vertices that may lie on the edges of the cube, one vertex per edge
 
     /**
@@ -29,11 +29,11 @@ public class Cube {
      * (0, 0, 0).
      */
     public Cube() {
-        this.vertices = new DensityVertex[8];
+        this.vertices = new Vertex4f[8];
         this.edges = new Vertex[12];
 
         for (int i = 0; i < vertices.length; i++) {
-            vertices[i] = new DensityVertex(0f, 0f, 0f, 0f);
+            vertices[i] = new Vertex4f(0f, 0f, 0f, 0f);
         }
 
         for (int i = 0; i < edges.length; i++) {
@@ -47,7 +47,7 @@ public class Cube {
      * @param vertices
      *         the values for the vertices
      */
-    public Cube(DensityVertex... vertices) {
+    public Cube(Vertex4f... vertices) {
         this();
 
         if ((vertices == null) || (vertices.length != 8)) {
@@ -69,7 +69,7 @@ public class Cube {
      *
      * @return the vertex
      */
-    public DensityVertex getVertex(int index) {
+    public Vertex4f getVertex(int index) {
         return vertices[index];
     }
 
@@ -82,10 +82,10 @@ public class Cube {
      * @param vertex
      *         the <code>WeightedVertex</code> containing the data to be copied into the cube
      */
-    public void setVertex(int index, DensityVertex vertex) {
+    public void setVertex(int index, Vertex4f vertex) {
         vertices[index].setLocation(vertex.getLocation());
         vertices[index].setNormal(vertex.getNormal());
-        vertices[index].setDensity(vertex.getDensity());
+        vertices[index].setValue(vertex.getValue());
     }
 
     /**
@@ -148,6 +148,6 @@ public class Cube {
      * @return the density at the vertex
      */
     public Float getDensity(int index) {
-        return vertices[index].getDensity();
+        return vertices[index].getValue();
     }
 }
