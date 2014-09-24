@@ -17,7 +17,7 @@ public class GridVolume implements MSGrid {
     }
 
     @Override
-    public float density(int x, int y) {
+    public float value(int x, int y) {
 
         if (x < 0 || x >= xSize()) {
             return 0f;

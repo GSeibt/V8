@@ -43,7 +43,7 @@ public class MSRunner implements Callable<Mesh2D> {
      * @param data
      *         the data for the Marching Squares algorithm
      * @param level
-     *         the density level for the Marching Squares algorithm
+     *         the level for the Marching Squares algorithm
      * @param gridSize
      *         the grid size (the x/y dimension of the squares)
      */
@@ -108,19 +108,19 @@ public class MSRunner implements Callable<Mesh2D> {
 
         v = square.getVertex(0);
         v.setXY(x, y);
-        v.setValue(data.density(x, y));
+        v.setValue(data.value(x, y));
 
         v = square.getVertex(1);
         v.setXY(x + gridSize, y);
-        v.setValue(data.density(x + gridSize, y));
+        v.setValue(data.value(x + gridSize, y));
 
         v = square.getVertex(2);
         v.setXY(x + gridSize, y + gridSize);
-        v.setValue(data.density(x + gridSize, y + gridSize));
+        v.setValue(data.value(x + gridSize, y + gridSize));
 
         v = square.getVertex(3);
         v.setXY(x, y + gridSize);
-        v.setValue(data.density(x, y + gridSize));
+        v.setValue(data.value(x, y + gridSize));
     }
 
     /**

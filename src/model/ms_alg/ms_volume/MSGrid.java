@@ -6,13 +6,13 @@ package model.ms_alg.ms_volume;
 public interface MSGrid {
 
     /**
-     * Returns the density at the given position. If the position is out of bounds the method will return 0.
+     * Returns the value at the given position. If the position is out of bounds the method will return 0.
      *
      * @param x the x coordinate
      * @param y the y coordinate
-     * @return the density
+     * @return the value
      */
-    float density(int x, int y);
+    float value(int x, int y);
 
     /**
      * Returns the x size of the <code>MCVolume</code>.
