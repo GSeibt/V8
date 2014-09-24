@@ -388,35 +388,35 @@ public class MCRunner implements Runnable {
 
         v = cube.getVertex(0);
         v.setLocation(x, y, z);
-        v.setDensity(data.density(x, y, z));
+        v.setDensity(data.value(x, y, z));
 
         v = cube.getVertex(1);
         v.setLocation(x + gridSize, y, z);
-        v.setDensity(data.density(x + gridSize, y, z));
+        v.setDensity(data.value(x + gridSize, y, z));
 
         v = cube.getVertex(2);
         v.setLocation(x + gridSize, y + gridSize, z);
-        v.setDensity(data.density(x + gridSize, y + gridSize, z));
+        v.setDensity(data.value(x + gridSize, y + gridSize, z));
 
         v = cube.getVertex(3);
         v.setLocation(x, y + gridSize, z);
-        v.setDensity(data.density(x, y + gridSize, z));
+        v.setDensity(data.value(x, y + gridSize, z));
 
         v = cube.getVertex(4);
         v.setLocation(x, y, z + gridSize);
-        v.setDensity(data.density(x, y, z + gridSize));
+        v.setDensity(data.value(x, y, z + gridSize));
 
         v = cube.getVertex(5);
         v.setLocation(x + gridSize, y, z + gridSize);
-        v.setDensity(data.density(x + gridSize, y, z + gridSize));
+        v.setDensity(data.value(x + gridSize, y, z + gridSize));
 
         v = cube.getVertex(6);
         v.setLocation(x + gridSize, y + gridSize, z + gridSize);
-        v.setDensity(data.density(x + gridSize, y + gridSize, z + gridSize));
+        v.setDensity(data.value(x + gridSize, y + gridSize, z + gridSize));
 
         v = cube.getVertex(7);
         v.setLocation(x, y + gridSize, z + gridSize);
-        v.setDensity(data.density(x, y + gridSize, z + gridSize));
+        v.setDensity(data.value(x, y + gridSize, z + gridSize));
 
         for (int i = 0; i < 8; i++) {
             computeGradient(cube.getVertex(i));
@@ -435,9 +435,9 @@ public class MCRunner implements Runnable {
         int y = (int) v.getLocation().getY();
         int z = (int) v.getLocation().getZ();
 
-        float gX = data.density(x - gridSize, y, z) - data.density(x + gridSize, y, z);
-        float gY = data.density(x, y - gridSize, z) - data.density(x, y + gridSize, z);
-        float gZ = data.density(x, y, z - gridSize) - data.density(x, y, z + gridSize);
+        float gX = data.value(x - gridSize, y, z) - data.value(x + gridSize, y, z);
+        float gY = data.value(x, y - gridSize, z) - data.value(x, y + gridSize, z);
+        float gZ = data.value(x, y, z - gridSize) - data.value(x, y, z + gridSize);
 
         gX /= gridSize;
         gY /= gridSize;

@@ -18,7 +18,7 @@ public class ArrayVolume implements MCVolume {
     }
 
     @Override
-    public float density(int x, int y, int z) {
+    public float value(int x, int y, int z) {
 
         if (z < 0 || z >= zSize()) {
             return 0f;
