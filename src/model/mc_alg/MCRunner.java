@@ -384,7 +384,7 @@ public class MCRunner implements Runnable {
      * @param cube the cube whose vertices are to be computed
      */
     private void computeVertices(int x, int y, int z, Cube cube) {
-        Vertex4f v;
+        CornerVertex v;
 
         v = cube.getVertex(0);
         v.setLocation(x, y, z);
@@ -430,7 +430,7 @@ public class MCRunner implements Runnable {
      * @param v
      *         the vertex
      */
-    private void computeGradient(Vertex4f v) {
+    private void computeGradient(CornerVertex v) {
         int x = (int) v.getLocation().getX();
         int y = (int) v.getLocation().getY();
         int z = (int) v.getLocation().getZ();
@@ -629,7 +629,7 @@ public class MCRunner implements Runnable {
      * @param v2
      *         the second vertex of a cube
      */
-    private Vertex interpolate(Vertex4f v1, Vertex4f v2) {
+    private Vertex interpolate(CornerVertex v1, CornerVertex v2) {
         float edgeX, edgeY, edgeZ;
         float normalX, normalY, normalZ;
         double min = Math.pow(10, -4);
