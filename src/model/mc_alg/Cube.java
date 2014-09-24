@@ -25,7 +25,7 @@ public class Cube {
     private Vertex[] edges; // the 12 triangle vertices that may lie on the edges of the cube, one vertex per edge
 
     /**
-     * Constructs a new <code>Cube</code>. All its vertices will be (0, 0, 0) with density 0 and all its edges will be
+     * Constructs a new <code>Cube</code>. All its vertices will be (0, 0, 0) with value 0 and all its edges will be
      * (0, 0, 0).
      */
     public Cube() {
@@ -130,7 +130,7 @@ public class Cube {
         int index = 0;
 
         for (int i = 0; i < 8; i++) {
-            if (getDensity(i) <= level) {
+            if (getValue(i) <= level) {
                 index |= (int) Math.pow(2, i);
             }
         }
@@ -139,15 +139,17 @@ public class Cube {
     }
 
     /**
-     * Returns the density of the vertex at the given <code>index</code>.
+     * Returns the fourth value of the vertex at the given <code>index</code>.
      * See the class documentation for a description of the indexing convention used.
      *
      * @param index
      *         the index of the vertex
      *
-     * @return the density at the vertex
+     * @return the value at the vertex
+     *
+     * @see Vertex4f#getValue()
      */
-    public Float getDensity(int index) {
+    public Float getValue(int index) {
         return vertices[index].getValue();
     }
 }
