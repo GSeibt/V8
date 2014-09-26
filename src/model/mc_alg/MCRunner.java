@@ -2,13 +2,20 @@ package model.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import model.mc_alg.mc_volume.MCVolume;
-import org.lwjgl.BufferUtils;
+import util.Buffers;
 import util.Vector3f;
 
 import static model.mc_alg.MCRunner.Type.*;
@@ -328,9 +335,9 @@ public class MCRunner implements Runnable {
         }
 
         if (meshConsumer != null) {
-            FloatBuffer points = BufferUtils.createFloatBuffer(this.points.size() * 3 + this.normals.size() * 3);
-            FloatBuffer normals = BufferUtils.createFloatBuffer(this.normals.size() * 3);
-            IntBuffer indices = BufferUtils.createIntBuffer(this.indices.size());
+            FloatBuffer points = Buffers.allocateFloatBuffer(this.points.size() * 3 + this.normals.size() * 3);
+            FloatBuffer normals = Buffers.allocateFloatBuffer(this.normals.size() * 3);
+            IntBuffer indices = Buffers.allocateIntBuffer(this.indices.size());
 
             Iterator<Map.Entry<Vertex, Integer>> pointsIt = this.points.entrySet().iterator();
             Iterator<Vector3f> normalsIt = this.normals.iterator();

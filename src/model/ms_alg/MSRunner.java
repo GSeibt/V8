@@ -2,11 +2,15 @@ package model.ms_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import model.ms_alg.ms_volume.MSGrid;
-import org.lwjgl.BufferUtils;
+import util.Buffers;
 
 /**
  * <code>Callable</code> that when executed performs the Marching Squares algorithm over the given data. Produces
@@ -74,8 +78,8 @@ public class MSRunner implements Callable<Mesh2D> {
             }
         }
 
-        FloatBuffer vertices = BufferUtils.createFloatBuffer(this.vertices.size() * 2);
-        IntBuffer indices = BufferUtils.createIntBuffer(this.indices.size());
+        FloatBuffer vertices = Buffers.allocateFloatBuffer(this.vertices.size() * 2);
+        IntBuffer indices = Buffers.allocateIntBuffer(this.indices.size());
         Iterator<Map.Entry<Vertex2D, Integer>> vertexIt = this.vertices.entrySet().iterator();
 
         Vertex2D vertex2D;
