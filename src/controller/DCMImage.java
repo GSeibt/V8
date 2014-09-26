@@ -72,7 +72,7 @@ public class DCMImage {
             }
         } catch (Exception e) {
             System.err.println("Could not read the images in " + file.getName());
-            System.err.println(e.toString() + " " + e.getMessage());
+            System.err.println(e);
         }
 
         return images;
