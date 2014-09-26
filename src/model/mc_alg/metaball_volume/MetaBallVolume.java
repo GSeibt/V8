@@ -1,13 +1,15 @@
-package controller.mc_alg.metaball_volume;
+package model.mc_alg.metaball_volume;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import controller.mc_alg.mc_volume.MCVolume;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import model.mc_alg.mc_volume.MCVolume;
 
 /**
  * A volume containing <code>MetaBall</code> instances.
@@ -24,7 +26,7 @@ public class MetaBallVolume implements MCVolume {
     // the MetaBall instances in the volume
     private List<MetaBall> metaBalls;
 
-    private DoubleProperty progress;
+    private final DoubleProperty progress;
 
     /**
      * Constructs a new <code>MetaBallVolume</code> with the given dimensions.
@@ -45,7 +47,7 @@ public class MetaBallVolume implements MCVolume {
     }
 
     /**
-     * Constructs a float array containing the density values resulting from all the <code>MetaBall</code>s in this
+     * Constructs a float array containing the values resulting from all the <code>MetaBall</code>s in this
      * volume.
      *
      * @return the volume
@@ -53,22 +55,22 @@ public class MetaBallVolume implements MCVolume {
     public float[][][] getVolume() {
         float[][][] volume = new float[zSize][ySize][xSize];
         float numValues = zSize * ySize * xSize * metaBalls.size();
-        int doneValues = 0;
+        AtomicInteger doneValues = new AtomicInteger(0);
 
-        progress.set(0);
-        for (MetaBall ball : metaBalls) {
-            for (int z = 0; z < volume.length; z++) {
+        IntStream.range(0, volume.length).parallel().forEach(z -> {
+            for (MetaBall metaBall : metaBalls) {
                 for (int y = 0; y < volume[z].length; y++) {
                     for (int x = 0; x < volume[z][y].length; x++) {
-                        volume[z][y][x] += ball.density(x, y, z);
-                        doneValues++;
+                        volume[z][y][x] += metaBall.value(x, y, z);
+                        doneValues.incrementAndGet();
                     }
                 }
-                progress.set(doneValues / numValues);
             }
-        }
 
-        // TODO use parallelStream to speed this up
+            synchronized (progress) {
+                progress.setValue(doneValues.get() / numValues);
+            }
+        });
 
         return volume;
     }
@@ -222,7 +224,7 @@ public class MetaBallVolume implements MCVolume {
     }
 
     @Override
-    public float density(int x, int y, int z) {
+    public float value(int x, int y, int z) {
 
         if (z < 0 || z >= zSize()) {
             return 0f;
@@ -236,7 +238,7 @@ public class MetaBallVolume implements MCVolume {
             return 0f;
         }
 
-        return metaBalls.stream().collect(Collectors.summingDouble(ball -> ball.density(x, y, z))).floatValue();
+        return metaBalls.stream().collect(Collectors.summingDouble(ball -> ball.value(x, y, z))).floatValue();
     }
 
     @Override

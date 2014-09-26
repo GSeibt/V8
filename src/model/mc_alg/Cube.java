@@ -1,4 +1,4 @@
-package controller.mc_alg;
+package model.mc_alg;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
  * </center>
  * The cube index is formed by setting bit <code>i</code> in an int to 1 if vertex <code>i</code>
  * in the cube is less than or equal to the level. All other bits are 0. This results in a cube index between 0 and 255
- * that can be used for lookup in the {@link controller.mc_alg.Tables} class.
+ * that can be used for lookup in the {@link model.mc_alg.Tables} class.
  */
 public class Cube {
 
@@ -21,19 +21,19 @@ public class Cube {
     public static List<Integer> topIndices = Arrays.asList(4, 5, 6, 7);
     public static List<Integer> sideIndices = Arrays.asList(8, 9, 10, 11);
 
-    private DensityVertex[] vertices; // the 8 vertices of the cube and the density at the vertex
+    private CornerVertex[] vertices; // the 8 vertices of the cube and the value at the vertex
     private Vertex[] edges; // the 12 triangle vertices that may lie on the edges of the cube, one vertex per edge
 
     /**
-     * Constructs a new <code>Cube</code>. All its vertices will be (0, 0, 0) with density 0 and all its edges will be
+     * Constructs a new <code>Cube</code>. All its vertices will be (0, 0, 0) with value 0 and all its edges will be
      * (0, 0, 0).
      */
     public Cube() {
-        this.vertices = new DensityVertex[8];
+        this.vertices = new CornerVertex[8];
         this.edges = new Vertex[12];
 
         for (int i = 0; i < vertices.length; i++) {
-            vertices[i] = new DensityVertex(0f, 0f, 0f, 0f);
+            vertices[i] = new CornerVertex(0f, 0f, 0f, 0f);
         }
 
         for (int i = 0; i < edges.length; i++) {
@@ -47,7 +47,7 @@ public class Cube {
      * @param vertices
      *         the values for the vertices
      */
-    public Cube(DensityVertex... vertices) {
+    public Cube(CornerVertex... vertices) {
         this();
 
         if ((vertices == null) || (vertices.length != 8)) {
@@ -69,7 +69,7 @@ public class Cube {
      *
      * @return the vertex
      */
-    public DensityVertex getVertex(int index) {
+    public CornerVertex getVertex(int index) {
         return vertices[index];
     }
 
@@ -82,10 +82,10 @@ public class Cube {
      * @param vertex
      *         the <code>WeightedVertex</code> containing the data to be copied into the cube
      */
-    public void setVertex(int index, DensityVertex vertex) {
+    public void setVertex(int index, CornerVertex vertex) {
         vertices[index].setLocation(vertex.getLocation());
         vertices[index].setNormal(vertex.getNormal());
-        vertices[index].setDensity(vertex.getDensity());
+        vertices[index].setValue(vertex.getValue());
     }
 
     /**
@@ -123,14 +123,14 @@ public class Cube {
      *
      * @return the cube index
      *
-     * @see controller.mc_alg.Tables#getEdgeIndex(int)
-     * @see controller.mc_alg.Tables#getTriangleIndex(int)
+     * @see model.mc_alg.Tables#getEdgeIndex(int)
+     * @see model.mc_alg.Tables#getTriangleIndex(int)
      */
     public int getIndex(float level) {
         int index = 0;
 
         for (int i = 0; i < 8; i++) {
-            if (getDensity(i) <= level) {
+            if (getValue(i) <= level) {
                 index |= (int) Math.pow(2, i);
             }
         }
@@ -139,15 +139,17 @@ public class Cube {
     }
 
     /**
-     * Returns the density of the vertex at the given <code>index</code>.
+     * Returns the fourth value of the vertex at the given <code>index</code>.
      * See the class documentation for a description of the indexing convention used.
      *
      * @param index
      *         the index of the vertex
      *
-     * @return the density at the vertex
+     * @return the value at the vertex
+     *
+     * @see CornerVertex#getValue()
      */
-    public Float getDensity(int index) {
-        return vertices[index].getDensity();
+    public Float getValue(int index) {
+        return vertices[index].getValue();
     }
 }

@@ -1,4 +1,4 @@
-package controller.mc_alg.mc_volume;
+package model.mc_alg.mc_volume;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -85,7 +85,7 @@ public class CachedVolume implements MCVolume {
     }
 
     @Override
-    public float density(int x, int y, int z) {
+    public float value(int x, int y, int z) {
 
         if (z < 0 || z >= zSize()) {
             return 0f;

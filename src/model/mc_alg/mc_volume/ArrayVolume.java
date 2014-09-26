@@ -1,4 +1,4 @@
-package controller.mc_alg.mc_volume;
+package model.mc_alg.mc_volume;
 
 /**
  * A <code>MCVolume</code> backed by a <code>float[][][]</code>.
@@ -10,14 +10,15 @@ public class ArrayVolume implements MCVolume {
     /**
      * Constructs a new <code>ArrayVolume</code> backed by the given array.
      *
-     * @param data the date for this <code>ArrayVolume</code>
+     * @param data
+     *         the data array for this <code>ArrayVolume</code>
      */
     public ArrayVolume(float[][][] data) {
         this.data = data;
     }
 
     @Override
-    public float density(int x, int y, int z) {
+    public float value(int x, int y, int z) {
 
         if (z < 0 || z >= zSize()) {
             return 0f;

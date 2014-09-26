@@ -1,4 +1,4 @@
-package controller.ms_alg;
+package model.ms_alg;
 
 /**
  * A <code>Square</code> used in the Marching Squares algorithm.
@@ -6,18 +6,18 @@ package controller.ms_alg;
  */
 public class Square {
 
-    private DensityVertex2D[] vertices;
+    private CornerVertex2D[] vertices;
     private Vertex2D[] edges;
 
     /**
      * Constructs a new <code>Square</code>. All vertices and edges will be (0, 0).
      */
     public Square() {
-        this.vertices = new DensityVertex2D[4];
+        this.vertices = new CornerVertex2D[4];
         this.edges = new Vertex2D[4];
 
         for (int i = 0; i < vertices.length; i++) {
-            vertices[i] = new DensityVertex2D();
+            vertices[i] = new CornerVertex2D();
         }
 
         for (int i = 0; i < edges.length; i++) {
@@ -31,7 +31,7 @@ public class Square {
      * @param index the index of the vertex
      * @return the vertex
      */
-    public DensityVertex2D getVertex(int index) {
+    public CornerVertex2D getVertex(int index) {
         return vertices[index];
     }
 
@@ -46,7 +46,7 @@ public class Square {
     }
 
     /**
-     * Returns the squares index analogous to {@link controller.mc_alg.Cube#getIndex(float)}.
+     * Returns the squares index analogous to {@link model.mc_alg.Cube#getIndex(float)}.
      *
      * @param level the level to be used
      * @return the index
@@ -55,7 +55,7 @@ public class Square {
         short index = 0;
 
         for (int i = 0; i < 4; i++) {
-            if (vertices[i].getDensity() <= level) {
+            if (vertices[i].getValue() <= level) {
                 index |= (short) Math.pow(2, i);
             }
         }

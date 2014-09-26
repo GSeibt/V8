@@ -1,4 +1,4 @@
-package controller.mc_alg.mc_volume;
+package model.mc_alg.mc_volume;
 
 /**
  * A data source for the <code>MCRunner</code>.
@@ -6,14 +6,14 @@ package controller.mc_alg.mc_volume;
 public interface MCVolume {
 
     /**
-     * Returns the density at the given position. If the position is out of bounds the method will return 0.
+     * Returns the value at the given position. If the position is out of bounds the method will return 0.
      *
      * @param x the x coordinate
      * @param y the y coordinate
      * @param z the z coordinate
-     * @return the density
+     * @return the value
      */
-    float density(int x, int y, int z);
+    float value(int x, int y, int z);
 
     /**
      * Returns the x size of the <code>MCVolume</code>.

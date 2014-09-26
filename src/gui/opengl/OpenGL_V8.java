@@ -14,8 +14,8 @@ import java.util.Scanner;
 import java.util.concurrent.SynchronousQueue;
 import javax.imageio.ImageIO;
 
-import controller.mc_alg.MCRunner;
-import controller.mc_alg.Mesh;
+import model.mc_alg.MCRunner;
+import model.mc_alg.Mesh;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -555,13 +555,13 @@ public class OpenGL_V8 {
                     mcRunner.continueRun();
                     break;
                 case Keyboard.KEY_P:
-                    stopping = mcRunner.isStopping();
+                    stopping = mcRunner.isPausing();
 
                     if (stopping) {
-                        mcRunner.setStopping(false);
+                        mcRunner.setPausing(false);
                         mcRunner.continueRun();
                     } else {
-                        mcRunner.setStopping(true);
+                        mcRunner.setPausing(true);
                     }
                     break;
                 case Keyboard.KEY_INSERT:

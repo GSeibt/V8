@@ -1,4 +1,4 @@
-package controller.ms_alg.ms_volume;
+package model.ms_alg.ms_volume;
 
 /**
  * A <code>MSGrid</code> backed by a <code>float[][]</code>.
@@ -17,7 +17,7 @@ public class GridVolume implements MSGrid {
     }
 
     @Override
-    public float density(int x, int y) {
+    public float value(int x, int y) {
 
         if (x < 0 || x >= xSize()) {
             return 0f;

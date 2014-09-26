@@ -1,21 +1,14 @@
 package util;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Calendar;
 
-import controller.mc_alg.Mesh;
 import gui.V8;
+import model.mc_alg.Mesh;
 
 /**
  * An exporter for the .obj and .stl file format.

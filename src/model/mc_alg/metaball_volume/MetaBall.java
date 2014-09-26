@@ -1,9 +1,9 @@
-package controller.mc_alg.metaball_volume;
+package model.mc_alg.metaball_volume;
 
 /**
  * A <code>MetaBall</code> in a <code>MetaBallVolume</code>.
- * The intensity is a multiplicative term in the density equation. It may be negative if a <code>MetaBall</code>
- * that's affecting the density of the volume negatively is desired.
+ * The intensity is a multiplicative term in the value equation. It may be negative if a <code>MetaBall</code>
+ * that's affecting the value of the volume negatively is desired.
  *
  * @see <a href="http://en.wikipedia.org/wiki/Metaballs">Metaballs</a>
  */
@@ -15,7 +15,7 @@ public class MetaBall {
     private final int intensity;
 
     /**
-     * Constructs a new <code>MetaBall</code> of density 1.
+     * Constructs a new <code>MetaBall</code> of value 1.
      *
      * @param x the x coordinate of the center of the ball
      * @param y the y coordinate of the center of the ball
@@ -26,7 +26,7 @@ public class MetaBall {
     }
 
     /**
-     * Constructs a new <code>MetaBall</code> of the given density.
+     * Constructs a new <code>MetaBall</code> of the given value.
      *
      * @param x the x coordinate of the center of the ball
      * @param y the y coordinate of the center of the ball
@@ -41,14 +41,14 @@ public class MetaBall {
     }
 
     /**
-     * Computes the density of this <code>MetaBall</code> at the given coordinate.
+     * Computes the value of this <code>MetaBall</code> at the given coordinate.
      *
-     * @param x the x coordinate for which the density is to be computed
-     * @param y the y coordinate for which the density is to be computed
-     * @param z the z coordinate for which the density is to be computed
-     * @return the density
+     * @param x the x coordinate for which the value is to be computed
+     * @param y the y coordinate for which the value is to be computed
+     * @param z the z coordinate for which the value is to be computed
+     * @return the value
      */
-    public float density(int x, int y, int z) {
+    public float value(int x, int y, int z) {
         int numerator = intensity;
         float denominator = (float) (Math.pow(x - x_pos, 2) + Math.pow(y - y_pos, 2) + Math.pow(z - z_pos, 2));
 

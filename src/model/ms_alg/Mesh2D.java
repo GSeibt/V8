@@ -1,4 +1,4 @@
-package controller.ms_alg;
+package model.ms_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;

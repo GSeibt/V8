@@ -1,28 +1,20 @@
-package controller.mc_alg;
+package model.mc_alg;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
-import controller.mc_alg.mc_volume.MCVolume;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import model.mc_alg.mc_volume.MCVolume;
 import org.lwjgl.BufferUtils;
 import util.Vector3f;
 
-import static controller.mc_alg.MCRunner.Type.*;
+import static model.mc_alg.MCRunner.Type.*;
 
 /**
- * <code>Runnable</code> that performs the Marching Cubes algorithm over a given <code>MCVolume</code> that are
- * interpreted as density data.
+ * <code>Runnable</code> that performs the Marching Cubes algorithm over the values of a given <code>MCVolume</code>.
  * Can be configured to update the resulting triangle mesh after every cube, slice, or after the whole computation is
  * finished. Optionally the computation can pause after every update.
  */
@@ -60,8 +52,8 @@ public class MCRunner implements Runnable {
     private Consumer<Mesh> meshConsumer; // will be called with the current mesh after every mesh update
     private Consumer<Long> onFinish;
 
-    private volatile boolean stopping; // whether this MCRunner stops after every mesh update
-    private volatile boolean stopped; // whether this MCRunner has stopped
+    private volatile boolean pausing; // whether this MCRunner stops after every mesh update
+    private volatile boolean paused; // whether this MCRunner was paused
     private boolean interrupted; // whether the executing Thread was interrupted
 
     private int numLastTriangles; // how many triangles were pushed in the last mesh update
@@ -76,7 +68,7 @@ public class MCRunner implements Runnable {
      * @param data
      *         the data for the Marching Cubes algorithm
      * @param level
-     *         the density level for the Marching Cubes algorithm
+     *         the level for the Marching Cubes algorithm
      *
      * @throws NullPointerException
      *         if <code>data</code> or <code>type</code> is <code>null</code>
@@ -93,7 +85,7 @@ public class MCRunner implements Runnable {
      * @param data
      *         the data for the Marching Cubes algorithm
      * @param level
-     *         the density level for the Marching Cubes algorithm
+     *         the level for the Marching Cubes algorithm
      * @param gridSize
      *         the grid size (that is the x/y/z dimensions of the cubes)
      * @param type
@@ -124,8 +116,8 @@ public class MCRunner implements Runnable {
         this.gridSize = gridSize;
         this.type = type;
 
-        this.stopping = false;
-        this.stopped = false;
+        this.pausing = false;
+        this.paused = false;
         this.interrupted = false;
         this.numLastTriangles = 0;
 
@@ -174,24 +166,24 @@ public class MCRunner implements Runnable {
     }
 
     /**
-     * Returns whether this <code>MCRunner</code> is stopping after every mesh update.
+     * Returns whether this <code>MCRunner</code> is pausing after every mesh update.
      * The default is <code>false</code>.
      *
-     * @return true iff the <code>MCRunner</code> is stopping after every mesh update
+     * @return true iff the <code>MCRunner</code> is pausing after every mesh update
      */
-    public boolean isStopping() {
-        return stopping;
+    public boolean isPausing() {
+        return pausing;
     }
 
     /**
-     * Sets whether this <code>MCRunner</code> is stopping after every mesh update.
+     * Sets whether this <code>MCRunner</code> is pausing after every mesh update.
      * The default is <code>false</code>.
      *
-     * @param stopping
-     *         whether this <code>MCRunner</code> is stopping after every mesh update
+     * @param pausing
+     *         whether this <code>MCRunner</code> is pausing after every mesh update
      */
-    public void setStopping(boolean stopping) {
-        this.stopping = stopping;
+    public void setPausing(boolean pausing) {
+        this.pausing = pausing;
     }
 
     /**
@@ -325,7 +317,7 @@ public class MCRunner implements Runnable {
      * Converts the <code>points</code>, <code>normals</code> and <code>indices</code> into a <code>Mesh</code> and
      * feeds the <code>meshConsumer</code> with it. If no new triangles were created or the consumer is
      * <code>null</code> no update will be performed. If the type is not <code>COMPLETE</code> (in which case this
-     * method is called only once) and this <code>MCRunner</code> is stopping this method stops the run.
+     * method is called only once) and this <code>MCRunner</code> is pausing this method pauses the run.
      */
     private void outputMesh() {
 
@@ -377,53 +369,54 @@ public class MCRunner implements Runnable {
             return;
         }
 
-        if (stopping) {
-            stopRun();
+        if (pausing) {
+            pauseRun();
         }
     }
 
     /**
-     * Computes the locations, densities and gradients of the vertices of the cube whose vertex 0 is at the given
+     * Computes the locations, values and gradients of the corner vertices of the cube whose vertex 0 is at the given
      * position in the <code>data</code>
      *
      * @param x the x coordinate of the cubes vertex 0
      * @param y the y coordinate of the cubes vertex 0
      * @param z the z coordinate of the cubes vertex 0
+     * @param cube the cube whose vertices are to be computed
      */
     private void computeVertices(int x, int y, int z, Cube cube) {
-        DensityVertex v;
+        CornerVertex v;
 
         v = cube.getVertex(0);
         v.setLocation(x, y, z);
-        v.setDensity(data.density(x, y, z));
+        v.setValue(data.value(x, y, z));
 
         v = cube.getVertex(1);
         v.setLocation(x + gridSize, y, z);
-        v.setDensity(data.density(x + gridSize, y, z));
+        v.setValue(data.value(x + gridSize, y, z));
 
         v = cube.getVertex(2);
         v.setLocation(x + gridSize, y + gridSize, z);
-        v.setDensity(data.density(x + gridSize, y + gridSize, z));
+        v.setValue(data.value(x + gridSize, y + gridSize, z));
 
         v = cube.getVertex(3);
         v.setLocation(x, y + gridSize, z);
-        v.setDensity(data.density(x, y + gridSize, z));
+        v.setValue(data.value(x, y + gridSize, z));
 
         v = cube.getVertex(4);
         v.setLocation(x, y, z + gridSize);
-        v.setDensity(data.density(x, y, z + gridSize));
+        v.setValue(data.value(x, y, z + gridSize));
 
         v = cube.getVertex(5);
         v.setLocation(x + gridSize, y, z + gridSize);
-        v.setDensity(data.density(x + gridSize, y, z + gridSize));
+        v.setValue(data.value(x + gridSize, y, z + gridSize));
 
         v = cube.getVertex(6);
         v.setLocation(x + gridSize, y + gridSize, z + gridSize);
-        v.setDensity(data.density(x + gridSize, y + gridSize, z + gridSize));
+        v.setValue(data.value(x + gridSize, y + gridSize, z + gridSize));
 
         v = cube.getVertex(7);
         v.setLocation(x, y + gridSize, z + gridSize);
-        v.setDensity(data.density(x, y + gridSize, z + gridSize));
+        v.setValue(data.value(x, y + gridSize, z + gridSize));
 
         for (int i = 0; i < 8; i++) {
             computeGradient(cube.getVertex(i));
@@ -437,14 +430,14 @@ public class MCRunner implements Runnable {
      * @param v
      *         the vertex
      */
-    private void computeGradient(DensityVertex v) {
+    private void computeGradient(CornerVertex v) {
         int x = (int) v.getLocation().getX();
         int y = (int) v.getLocation().getY();
         int z = (int) v.getLocation().getZ();
 
-        float gX = data.density(x - gridSize, y, z) - data.density(x + gridSize, y, z);
-        float gY = data.density(x, y - gridSize, z) - data.density(x, y + gridSize, z);
-        float gZ = data.density(x, y, z - gridSize) - data.density(x, y, z + gridSize);
+        float gX = data.value(x - gridSize, y, z) - data.value(x + gridSize, y, z);
+        float gY = data.value(x, y - gridSize, z) - data.value(x, y + gridSize, z);
+        float gZ = data.value(x, y, z - gridSize) - data.value(x, y, z + gridSize);
 
         gX /= gridSize;
         gY /= gridSize;
@@ -636,7 +629,7 @@ public class MCRunner implements Runnable {
      * @param v2
      *         the second vertex of a cube
      */
-    private Vertex interpolate(DensityVertex v1, DensityVertex v2) {
+    private Vertex interpolate(CornerVertex v1, CornerVertex v2) {
         float edgeX, edgeY, edgeZ;
         float normalX, normalY, normalZ;
         double min = Math.pow(10, -4);
@@ -644,25 +637,25 @@ public class MCRunner implements Runnable {
         float alpha;
         Vertex edge = new Vertex(0, 0, 0);
 
-        if (Math.abs(level - v1.getDensity()) < min) {
+        if (Math.abs(level - v1.getValue()) < min) {
             edge.setLocation(v1.getLocation());
             edge.setNormal(v1.getNormal().normalized());
             return edge;
         }
 
-        if (Math.abs(level - v2.getDensity()) < min) {
+        if (Math.abs(level - v2.getValue()) < min) {
             edge.setLocation(v2.getLocation());
             edge.setNormal(v2.getNormal().normalized());
             return edge;
         }
 
-        if (Math.abs(v1.getDensity() - v2.getDensity()) < min) {
+        if (Math.abs(v1.getValue() - v2.getValue()) < min) {
             edge.setLocation(v1.getLocation());
             edge.setNormal(v1.getNormal().normalized());
             return edge;
         }
 
-        alpha = (level - v2.getDensity()) / (v1.getDensity() - v2.getDensity());
+        alpha = (level - v2.getValue()) / (v1.getValue() - v2.getValue());
 
         normalX = alpha * v1.getNormal().getX() + (1 - alpha) * v2.getNormal().getX();
         normalY = alpha * v1.getNormal().getY() + (1 - alpha) * v2.getNormal().getY();
@@ -686,12 +679,12 @@ public class MCRunner implements Runnable {
     /**
      * Updates the <code>points</code>, <code>normals</code>, and <code>indices</code> with triangles constructed
      * from the edges of the given <code>Cube</code> according to
-     * {@link controller.mc_alg.Tables#getTriangleIndex(int)}.
+     * {@link model.mc_alg.Tables#getTriangleIndex(int)}.
      *
      * @param cube
      *         the cube with whose edges the mesh is to be updated
      * @param cubeIndex
-     *         the index of the cube (see {@link controller.mc_alg.Cube#getIndex(float)})
+     *         the index of the cube (see {@link model.mc_alg.Cube#getIndex(float)})
      */
     private void updateMesh(Cube cube, int cubeIndex) {
         Vertex edge;
@@ -729,15 +722,15 @@ public class MCRunner implements Runnable {
     }
 
     /**
-     * Stops the execution of the Marching Cubes algorithm. No mesh update will be produced until after
+     * Pauses the execution of the Marching Cubes algorithm. No mesh update will be produced until after
      * {@link #continueRun()} is called.
      */
-    public void stopRun() {
+    public void pauseRun() {
 
         synchronized (this) {
-            stopped = true;
+            paused = true;
 
-            while (stopped) {
+            while (paused) {
                 try {
                     wait();
                 } catch (InterruptedException e) {
@@ -754,7 +747,7 @@ public class MCRunner implements Runnable {
     public void continueRun() {
 
         synchronized (this) {
-            stopped = false;
+            paused = false;
             this.notify();
         }
     }

@@ -4,10 +4,6 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import controller.DCMImage;
-import controller.ms_alg.MSRunner;
-import controller.ms_alg.Mesh2D;
-import controller.ms_alg.ms_volume.GridVolume;
-import controller.ms_alg.ms_volume.MSGrid;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
@@ -19,6 +15,10 @@ import javafx.scene.control.Slider;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import model.ms_alg.MSRunner;
+import model.ms_alg.Mesh2D;
+import model.ms_alg.ms_volume.GridVolume;
+import model.ms_alg.ms_volume.MSGrid;
 
 public class MSView extends Stage {
 

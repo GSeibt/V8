@@ -1,4 +1,4 @@
-package controller.mc_alg;
+package model.mc_alg;
 
 import util.Vector3f;
 
