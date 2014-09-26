@@ -6,7 +6,7 @@ package model.mc_alg;
  */
 public class CornerVertex extends Vertex implements Cloneable {
 
-    private Float value;
+    private float value;
 
     /**
      * Constructs a new <code>CornerVertex</code> with the given position and value. Its normal will be (0, 0, 0).
@@ -26,14 +26,14 @@ public class CornerVertex extends Vertex implements Cloneable {
      *
      * @param value the new value
      */
-    public void setValue(Float value) { this.value = value; }
+    public void setValue(float value) { this.value = value; }
 
     /**
      * Returns the value of this <code>CornerVertex</code>.
      *
      * @return the value
      */
-    public Float getValue() {
+    public float getValue() {
         return value;
     }
 
