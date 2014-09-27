@@ -6,8 +6,7 @@ import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.chart.BarChart;
-import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
@@ -38,7 +37,7 @@ public class Histogram extends Stage {
         this.minLabel = new Label();
         this.maxLabel = new Label();
 
-        XYChart<String, Number> c = createChart();
+        XYChart<Number, Number> c = createChart();
 
         Region filler = new Region();
         HBox labelBox = new HBox(minLabel, filler, maxLabel);
@@ -61,10 +60,10 @@ public class Histogram extends Stage {
      *
      * @return the chart
      */
-    private XYChart<String, Number> createChart() {
-        CategoryAxis xAxis = new CategoryAxis();
+    private XYChart<Number, Number> createChart() {
+        NumberAxis xAxis = new NumberAxis(0, 255, 20);
         NumberAxis yAxis = new NumberAxis();
-        BarChart<String, Number> chart = new BarChart<>(xAxis, yAxis);
+        AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
 
         xAxis.setLabel("Pixel Value");
         yAxis.setLabel("Quantity");
@@ -72,8 +71,7 @@ public class Histogram extends Stage {
         chart.setAnimated(false);
         chart.setVerticalGridLinesVisible(false);
         chart.setHorizontalGridLinesVisible(false);
-        chart.setBarGap(0d);
-        chart.setCategoryGap(10d);
+        chart.setCreateSymbols(false);
 
         Task<int[]> dataWorker = new Task<int[]>() {
 
@@ -104,8 +102,8 @@ public class Histogram extends Stage {
 
         dataWorker.setOnSucceeded(value -> {
             int[] values = dataWorker.getValue();
-            XYChart.Series<String, Number> series = new XYChart.Series<>();
-            ObservableList<XYChart.Data<String, Number>> data = series.getData();
+            XYChart.Series<Number, Number> series = new XYChart.Series<>();
+            ObservableList<XYChart.Data<Number, Number>> data = series.getData();
 
             int min = 0;
             int max = values.length - 1;
@@ -114,7 +112,12 @@ public class Histogram extends Stage {
             maxLabel.setText(String.format("Number of occurrences of the maximum value %d : %d", max, values[max]));
 
             for (int i = 1; i < values.length - 1; i++) {
-                data.add(new XYChart.Data<>(String.valueOf(i), values[i]));
+                data.add(new XYChart.Data<>(i, values[i]));
+                data.add(new XYChart.Data<>(i + 1, values[i]));
+
+                if (i < values.length - 2) {
+                    data.add(new XYChart.Data<>(i + 1, values[i + 1]));
+                }
             }
 
             chart.getData().add(series);
