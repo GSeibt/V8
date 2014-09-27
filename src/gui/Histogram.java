@@ -1,13 +1,18 @@
 package gui;
 
 import controller.DCMImage;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.chart.BarChart;
-import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -19,6 +24,8 @@ import javafx.stage.Stage;
 public class Histogram extends Stage {
 
     private DCMImage image;
+    private Label minLabel;
+    private Label maxLabel;
 
     /**
      * Constructs a new <code>Histogram</code> for the given <code>DCMImage</code>.
@@ -27,12 +34,22 @@ public class Histogram extends Stage {
      */
     public Histogram(DCMImage image) {
         this.image = image;
+        this.minLabel = new Label();
+        this.maxLabel = new Label();
 
-        BarChart<String, Number> c = createChart();
+        AreaChart<Number, Number> c = createChart();
+
+        Region filler = new Region();
+        HBox labelBox = new HBox(minLabel, filler, maxLabel);
+        filler.setPrefWidth(15);
+        labelBox.setSpacing(5);
+        labelBox.setOpaqueInsets(new Insets(10, 10, 10, 10));
+        labelBox.setAlignment(Pos.BASELINE_CENTER);
 
         BorderPane root = new BorderPane();
         root.setCenter(c);
-        root.setPrefSize(500, 500);
+        root.setBottom(labelBox);
+        root.setPrefSize(700, 600);
 
         setScene(new Scene(root));
         initModality(Modality.APPLICATION_MODAL);
@@ -43,21 +60,23 @@ public class Histogram extends Stage {
      *
      * @return the chart
      */
-    private BarChart<String, Number> createChart() {
-        CategoryAxis xAxis = new CategoryAxis();
+    private AreaChart<Number, Number> createChart() {
+        NumberAxis xAxis = new NumberAxis(1, 254, 20);
         NumberAxis yAxis = new NumberAxis();
-        BarChart<String, Number> chart = new BarChart<>(xAxis, yAxis);
+        AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
 
         xAxis.setLabel("Pixel Value");
         yAxis.setLabel("Quantity");
         chart.setLegendVisible(false);
         chart.setAnimated(false);
+        chart.setVerticalGridLinesVisible(false);
+        chart.setHorizontalGridLinesVisible(false);
+        chart.setCreateSymbols(false);
 
-        Task<XYChart.Series<String, Number>> dataWorker = new Task<XYChart.Series<String, Number>>() {
+        Task<int[]> dataWorker = new Task<int[]>() {
 
             @Override
-            protected XYChart.Series<String, Number> call() throws Exception {
-                XYChart.Series<String, Number> series = new XYChart.Series<>();
+            protected int[] call() throws Exception {
                 int[] values = new int[256];
                 float[][] pixels = image.getImageRaster();
 
@@ -65,10 +84,6 @@ public class Histogram extends Stage {
                 double ceil;
                 for (float[] row : pixels) {
                     for (float pixelValue : row) {
-
-                        if (Float.compare(0, pixelValue) == 0) {
-                            continue;
-                        }
 
                         floor = Math.floor(pixelValue);
                         ceil = Math.ceil(pixelValue);
@@ -81,17 +96,27 @@ public class Histogram extends Stage {
                     }
                 }
 
-                for (int i = 0; i < values.length; i++) {
-                    if (values[i] != 0) {
-                        series.getData().add(new XYChart.Data<>(String.valueOf(i), values[i]));
-                    }
-                }
-
-                return series;
+                return values;
             }
         };
 
-        dataWorker.setOnSucceeded(value -> chart.getData().add(dataWorker.getValue()));
+        dataWorker.setOnSucceeded(value -> {
+            int[] values = dataWorker.getValue();
+            XYChart.Series<Number, Number> series = new XYChart.Series<>();
+            ObservableList<XYChart.Data<Number, Number>> data = series.getData();
+
+            int min = 0;
+            int max = values.length - 1;
+
+            minLabel.setText(String.format("Number of occurrences of the minimum value %d : %d", min, values[min]));
+            maxLabel.setText(String.format("Number of occurrences of the maximum value %d : %d", max, values[max]));
+
+            for (int i = 1; i < values.length - 1; i++) {
+                data.add(new XYChart.Data<>(i, values[i]));
+            }
+
+            chart.getData().add(series);
+        });
 
         new Thread(dataWorker).start();
 
