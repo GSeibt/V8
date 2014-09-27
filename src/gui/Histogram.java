@@ -108,8 +108,8 @@ public class Histogram extends Stage {
             int min = 0;
             int max = values.length - 1;
 
-            minLabel.setText(String.format("Number of occurrences of the minimum value %d : %d", min, values[min]));
-            maxLabel.setText(String.format("Number of occurrences of the maximum value %d : %d", max, values[max]));
+            minLabel.setText(String.format("Quantity of value %d : %d", min, values[min]));
+            maxLabel.setText(String.format("Quantity of value %d : %d", max, values[max]));
 
             for (int i = 1; i < values.length - 1; i++) {
                 data.add(new XYChart.Data<>(i, values[i]));
