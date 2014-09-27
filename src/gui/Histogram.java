@@ -52,7 +52,7 @@ public class Histogram extends Stage {
         root.setPrefSize(700, 600);
 
         setScene(new Scene(root));
-        initModality(Modality.APPLICATION_MODAL);
+        initModality(Modality.WINDOW_MODAL);
     }
 
     /**
@@ -61,7 +61,7 @@ public class Histogram extends Stage {
      * @return the chart
      */
     private AreaChart<Number, Number> createChart() {
-        NumberAxis xAxis = new NumberAxis(1, 254, 20);
+        NumberAxis xAxis = new NumberAxis(0, 255, 20);
         NumberAxis yAxis = new NumberAxis();
         AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
 
