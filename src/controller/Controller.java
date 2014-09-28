@@ -3,11 +3,20 @@ package controller;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import javax.imageio.ImageIO;
 
-import gui.*;
-import gui.opengl.OpenGL_V8;
+import gui.Histogram;
+import gui.IntSpinner;
+import gui.MSView;
+import gui.MVolumeDesigner;
+import gui.PreviewImageService;
+import gui.opengl.MeshView3D;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -368,8 +377,8 @@ public class Controller {
                 mcProgress.progressProperty().bind(mcRunner.progressProperty());
                 mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));
 
-                Thread glThread = new Thread(() -> new OpenGL_V8(mcRunner).show());
-                glThread.setName(OpenGL_V8.class.getSimpleName());
+                Thread glThread = new Thread(() -> new MeshView3D(mcRunner).show());
+                glThread.setName(MeshView3D.class.getSimpleName());
                 glThread.start();
             });
         } else {
