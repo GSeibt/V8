@@ -25,7 +25,7 @@ import javafx.stage.Stage;
  */
 public class Histogram extends Stage {
 
-    private HistService service;
+    private HistService histService;
     private ListView<DCMImage> images;
     private Label minLabel;
     private Label maxLabel;
@@ -33,14 +33,14 @@ public class Histogram extends Stage {
     /**
      * Collects the histogram data for the currently focused image.
      */
-    private class HistService extends Service<int[]> {
+    private class HistService extends Service<XYChart.Series<Number, Number>> {
 
         @Override
-        protected Task<int[]> createTask() {
-            return new Task<int[]>() {
+        protected Task<XYChart.Series<Number, Number>> createTask() {
+            return new Task<XYChart.Series<Number, Number>>() {
 
                 @Override
-                protected int[] call() throws Exception {
+                protected XYChart.Series<Number, Number> call() throws Exception {
                     int[] values = new int[256];
                     DCMImage focusedItem = images.getFocusModel().getFocusedItem();
                     float[][] pixels = (focusedItem != null) ? focusedItem.getImageRaster() : new float[0][0];
@@ -61,7 +61,19 @@ public class Histogram extends Stage {
                         }
                     }
 
-                    return values;
+                    XYChart.Series<Number, Number> series = new XYChart.Series<>();
+                    ObservableList<XYChart.Data<Number, Number>> data = series.getData();
+
+                    for (int i = 1; i < values.length - 1; i++) {
+                        data.add(new XYChart.Data<>(i, values[i]));
+                        data.add(new XYChart.Data<>(i + 1, values[i]));
+
+                        if (i < values.length - 2) {
+                            data.add(new XYChart.Data<>(i + 1, values[i + 1]));
+                        }
+                    }
+
+                    return series;
                 }
             };
         }
@@ -73,7 +85,7 @@ public class Histogram extends Stage {
      * @param images the images for which a <code>Histogram</code> is to be shown
      */
     public Histogram(ListView<DCMImage> images) {
-        this.service = new HistService();
+        this.histService = new HistService();
         this.images = images;
         this.minLabel = new Label();
         this.maxLabel = new Label();
@@ -101,6 +113,7 @@ public class Histogram extends Stage {
      *
      * @return the chart
      */
+    @SuppressWarnings("unchecked")
     private XYChart<Number, Number> createChart() {
         NumberAxis xAxis = new NumberAxis(0, 255, 20);
         NumberAxis yAxis = new NumberAxis();
@@ -116,35 +129,28 @@ public class Histogram extends Stage {
 
         images.getFocusModel().focusedItemProperty().addListener((obs, newV, oldV) -> {
             if (newV != null) {
-                service.restart();
+                histService.restart();
             }
         });
 
-        service.setOnSucceeded(event -> {
-            int[] values = (int[]) event.getSource().getValue();
-            XYChart.Series<Number, Number> series = new XYChart.Series<>();
-            ObservableList<XYChart.Data<Number, Number>> data = series.getData();
+        histService.setOnSucceeded(event -> {
+
+            // XYChart.Series<Number, Number> is the return type of histService, this cast is safe
+            XYChart.Series<Number, Number> data = (XYChart.Series<Number, Number>) event.getSource().getValue();
 
             int min = 0;
-            int max = values.length - 1;
+            int max = 255;
+            int minValue = data.getData().get(min).getYValue().intValue();
+            int maxValue = data.getData().get(max).getYValue().intValue();
 
-            minLabel.setText(String.format("Quantity of value %d : %d", min, values[min]));
-            maxLabel.setText(String.format("Quantity of value %d : %d", max, values[max]));
-
-            for (int i = 1; i < values.length - 1; i++) {
-                data.add(new XYChart.Data<>(i, values[i]));
-                data.add(new XYChart.Data<>(i + 1, values[i]));
-
-                if (i < values.length - 2) {
-                    data.add(new XYChart.Data<>(i + 1, values[i + 1]));
-                }
-            }
+            minLabel.setText(String.format("Quantity of value %d : %d", min, minValue));
+            maxLabel.setText(String.format("Quantity of value %d : %d", max, maxValue));
 
             chart.getData().clear();
-            chart.getData().add(series);
+            chart.getData().add(data);
         });
 
-        service.start();
+        histService.start();
 
         return chart;
     }
