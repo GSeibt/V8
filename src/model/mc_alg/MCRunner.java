@@ -244,9 +244,22 @@ public class MCRunner implements Runnable {
                         outputMesh();
                     }
 
-                    interrupted = Thread.interrupted();
-                    if (interrupted) {
+                    if (interrupted || Thread.interrupted()) {
                         break outer;
+                    }
+
+                    if (paused) {
+                        synchronized (this) {
+
+                            while (paused) {
+                                try {
+                                    wait();
+                                } catch (InterruptedException e) {
+                                    interrupted = true;
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -733,29 +746,16 @@ public class MCRunner implements Runnable {
      * {@link #continueRun()} is called.
      */
     public void pauseRun() {
-
-        synchronized (this) {
-            paused = true;
-
-            while (paused) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    interrupted = true;
-                    break;
-                }
-            }
-        }
+        paused = true;
     }
 
     /**
      * Restarts the execution of the Marching Cubes algorithm.
      */
     public void continueRun() {
-
         synchronized (this) {
             paused = false;
-            this.notify();
+            notify();
         }
     }
 }
