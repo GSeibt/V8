@@ -264,11 +264,7 @@ public class Controller {
      */
     @FXML
     private void histogramClicked() {
-        DCMImage focusedItem = filesList.getFocusModel().getFocusedItem();
-
-        if (focusedItem != null) {
-            new Histogram(focusedItem).show();
-        }
+        new Histogram(filesList).show();
     }
 
     /**

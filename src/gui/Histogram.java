@@ -2,6 +2,7 @@ package gui;
 
 import controller.DCMImage;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -10,6 +11,7 @@ import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -17,30 +19,69 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 /**
- * A JavaFX <code>Stage</code> showing a XY plot of the pixel values in the given image and their frequency.
+ * A JavaFX <code>Stage</code> showing a XY plot of the pixel values in the currently focused image and their frequency.
  * As the pixel values are floats these will be collected in the nearest integer bin.
- * 0 will be excluded from the histogram.
+ * 0 and 255 will be excluded from the histogram and shown separately in labels.
  */
 public class Histogram extends Stage {
 
-    private DCMImage image;
+    private HistService service;
+    private ListView<DCMImage> images;
     private Label minLabel;
     private Label maxLabel;
 
     /**
-     * Constructs a new <code>Histogram</code> for the given <code>DCMImage</code>.
-     *
-     * @param image the image for which a <code>Histogram</code> is to be shown
+     * Collects the histogram data for the currently focused image.
      */
-    public Histogram(DCMImage image) {
-        this.image = image;
+    private class HistService extends Service<int[]> {
+
+        @Override
+        protected Task<int[]> createTask() {
+            return new Task<int[]>() {
+
+                @Override
+                protected int[] call() throws Exception {
+                    int[] values = new int[256];
+                    DCMImage focusedItem = images.getFocusModel().getFocusedItem();
+                    float[][] pixels = (focusedItem != null) ? focusedItem.getImageRaster() : new float[0][0];
+
+                    double floor;
+                    double ceil;
+                    for (float[] row : pixels) {
+                        for (float pixelValue : row) {
+
+                            floor = Math.floor(pixelValue);
+                            ceil = Math.ceil(pixelValue);
+
+                            if ((pixelValue - floor) < (ceil - pixelValue)) {
+                                values[(int) floor]++;
+                            } else {
+                                values[(int) ceil]++;
+                            }
+                        }
+                    }
+
+                    return values;
+                }
+            };
+        }
+    }
+
+    /**
+     * Constructs a new <code>Histogram</code> for the currently focused <code>DCMImage</code> from <code>images</code>.
+     *
+     * @param images the images for which a <code>Histogram</code> is to be shown
+     */
+    public Histogram(ListView<DCMImage> images) {
+        this.service = new HistService();
+        this.images = images;
         this.minLabel = new Label();
         this.maxLabel = new Label();
 
         XYChart<Number, Number> c = createChart();
-
         Region filler = new Region();
         HBox labelBox = new HBox(minLabel, filler, maxLabel);
+
         filler.setPrefWidth(15);
         labelBox.setSpacing(5);
         labelBox.setOpaqueInsets(new Insets(10, 10, 10, 10));
@@ -73,35 +114,14 @@ public class Histogram extends Stage {
         chart.setHorizontalGridLinesVisible(false);
         chart.setCreateSymbols(false);
 
-        Task<int[]> dataWorker = new Task<int[]>() {
-
-            @Override
-            protected int[] call() throws Exception {
-                int[] values = new int[256];
-                float[][] pixels = image.getImageRaster();
-
-                double floor;
-                double ceil;
-                for (float[] row : pixels) {
-                    for (float pixelValue : row) {
-
-                        floor = Math.floor(pixelValue);
-                        ceil = Math.ceil(pixelValue);
-
-                        if ((pixelValue - floor) < (ceil - pixelValue)) {
-                            values[(int) floor]++;
-                        } else {
-                            values[(int) ceil]++;
-                        }
-                    }
-                }
-
-                return values;
+        images.getFocusModel().focusedItemProperty().addListener((obs, newV, oldV) -> {
+            if (newV != null) {
+                service.restart();
             }
-        };
+        });
 
-        dataWorker.setOnSucceeded(value -> {
-            int[] values = dataWorker.getValue();
+        service.setOnSucceeded(event -> {
+            int[] values = (int[]) event.getSource().getValue();
             XYChart.Series<Number, Number> series = new XYChart.Series<>();
             ObservableList<XYChart.Data<Number, Number>> data = series.getData();
 
@@ -120,10 +140,11 @@ public class Histogram extends Stage {
                 }
             }
 
+            chart.getData().clear();
             chart.getData().add(series);
         });
 
-        new Thread(dataWorker).start();
+        service.start();
 
         return chart;
     }
