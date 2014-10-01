@@ -205,7 +205,7 @@ public class MCRunner implements Runnable {
 
     /**
      * Sets the method that will be called after the Marching Cubes algorithm is finished.
-     * The <code>Consumer</code> will be supplied with a <code>Long</code> representing the time in nanoseconds
+     * The <code>Consumer</code> will be supplied with a <code>Long</code> representing the time in milliseconds
      * the execution took.
      *
      * @param onFinish the method to be called after the MC algorithm is finished
@@ -216,7 +216,7 @@ public class MCRunner implements Runnable {
 
     @Override
     public void run() {
-        long startTime = System.nanoTime();
+        long startTime = System.currentTimeMillis();
         int cubesInSlice = data.xSize() * data.ySize() / gridSize * gridSize;
         int numCubes = (data.zSize() * cubesInSlice) / gridSize;
         Cube cube = new Cube();
@@ -278,7 +278,7 @@ public class MCRunner implements Runnable {
         }
 
         if (onFinish != null) {
-            onFinish.accept(System.nanoTime() - startTime);
+            onFinish.accept(System.currentTimeMillis() - startTime);
         }
     }
 
