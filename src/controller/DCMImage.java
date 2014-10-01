@@ -11,10 +11,8 @@ import javax.imageio.stream.FileImageInputStream;
 
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.WritableImage;
-import org.dcm4che3.data.Attributes;
 import org.dcm4che3.imageio.plugins.dcm.DicomImageReader;
 import org.dcm4che3.imageio.plugins.dcm.DicomImageReaderSpi;
-import org.dcm4che3.imageio.plugins.dcm.DicomMetaData;
 
 /**
  * A lazy loading DICOM image constructed from a file.
@@ -153,26 +151,6 @@ public class DCMImage {
         }
 
         return pixels;
-    }
-
-    /**
-     * Gets the DICOM attributes of this <code>DCMImage</code>.
-     *
-     * @return
-     *      the <code>Attributes</code>
-     */
-    public Attributes getAttributes() {
-        Attributes attributes;
-
-        try {
-            imageReader.setInput(new FileImageInputStream(file));
-            attributes = ((DicomMetaData) imageReader.getStreamMetadata()).getAttributes();
-        } catch (IOException e) {
-            System.err.println("Could not read the attributes. " + e);
-            return null;
-        }
-
-        return attributes;
     }
 
     /**
