@@ -381,7 +381,6 @@ public class MCRunner implements Runnable {
             normals.flip();
             indices.flip();
 
-            System.out.println("Pushing " + indices.limit() / 3 + " triangles."); //TODO remove
             meshConsumer.accept(new Mesh(points, normals, indices));
         }
 
