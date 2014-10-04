@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.file.Files;
@@ -14,6 +15,7 @@ import java.util.Scanner;
 import java.util.concurrent.SynchronousQueue;
 import javax.imageio.ImageIO;
 
+import gui.V8;
 import model.mc_alg.MCRunner;
 import model.mc_alg.Mesh;
 import org.lwjgl.BufferUtils;
@@ -74,51 +76,71 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 public class MeshView3D {
 
     static {
+        String noLibError = "Could not find an appropriate native LWJGL library for %s %s.";
+        String copyError = "Could not copy the required library to where it can be loaded.%n%s";
+        String classPathError = "Could not construct the classpath to start the %s%n";
         String os = System.getProperty("os.name").toLowerCase();
         String arch = System.getProperty("os.arch").toLowerCase();
+        String tempDir = System.getProperty("java.io.tmpdir");
+        String fileName;
         File libFile;
-        String name;
 
         if (os.contains("windows")) {
             if (arch.contains("64")) {
-                name = "lwjgl64.dll";
+                fileName = "lwjgl64.dll";
             } else {
-                name = "lwjgl.dll";
+                fileName = "lwjgl.dll";
             }
         } else if (os.contains("linux")){
             if (arch.contains("64")) {
-                name = "liblwjgl64.so";
+                fileName = "liblwjgl64.so";
             } else {
-                name = "liblwjgl.so";
+                fileName = "liblwjgl.so";
             }
         } else if (os.contains("mac")) {
-            name = "liblwjgl.jnilib";
+            fileName = "liblwjgl.jnilib";
         } else {
-            throw new UnsatisfiedLinkError(
-                    "Could not find an appropriate native LWJGL library for " + os + " " + arch + ".");
+            throw new UnsatisfiedLinkError(String.format(noLibError, os, arch));
         }
-        libFile = new File(name);
+
+        libFile = new File(tempDir, fileName);
+        libFile.deleteOnExit();
 
         if (!libFile.exists()) {
-            try (InputStream libStream = MeshView3D.class.getResourceAsStream("/" + name)) {
+            try (InputStream libStream = MeshView3D.class.getResourceAsStream("/" + fileName)) {
                 Files.copy(libStream, libFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
-                throw new UnsatisfiedLinkError(
-                        "Could not copy the required library to where it can be loaded. " + e.getMessage());
+                throw new UnsatisfiedLinkError(String.format(copyError, e.getMessage()));
             }
         }
 
         System.load(libFile.getAbsolutePath());
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+
+        Thread shutdownThread = new Thread(() -> {
             try {
-                String cPath = new File(MeshView3D.class.getResource("/").toURI()).getAbsolutePath();
+                URL cURL = MeshView3D.class.getResource("/");
+                File jarFile = new File(V8.class.getSimpleName() + ".jar");
+                String classPath;
+
+                if (cURL != null) { // we are running from some directory
+                    classPath = new File(cURL.toURI()).getAbsolutePath();
+                } else if (jarFile.exists()) { // we are running from a .jar file
+                    classPath = jarFile.getAbsolutePath();
+                } else {
+
+                    System.err.format(classPathError, FileDeleter.class.getSimpleName());
+                    return;
+                }
+
                 String cName = FileDeleter.class.getCanonicalName();
                 String path = libFile.getAbsolutePath();
-                Runtime.getRuntime().exec(new String[] {"java", "-cp", cPath, cName, "5000", path});
+                Runtime.getRuntime().exec(new String[] {"java", "-cp", classPath, cName, "5000", path});
             } catch (IOException | URISyntaxException e) {
                 e.printStackTrace();
             }
-        }));
+        });
+        shutdownThread.setName("Shutdown Thread");
+        Runtime.getRuntime().addShutdownHook(shutdownThread);
     }
 
     private SynchronousQueue<Mesh> newBuffer;
@@ -472,7 +494,11 @@ public class MeshView3D {
      * @param mesh the new mesh
      */
     private void receiveUpdate(Mesh mesh) {
-        try { newBuffer.put(mesh); } catch (InterruptedException ignored) {}
+        try {
+            newBuffer.put(mesh);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**
@@ -598,7 +624,7 @@ public class MeshView3D {
         glReadBuffer(GL_FRONT);
         glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 
-        new Thread(() -> {
+        Thread screenshotThread = new Thread(() -> {
             String format = "PNG";
             File screenshot;
 
@@ -647,7 +673,9 @@ public class MeshView3D {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }).start();
+        });
+        screenshotThread.setName("Screenshot Thread");
+        screenshotThread.start();
     }
 
     /**

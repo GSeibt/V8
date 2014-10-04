@@ -352,13 +352,18 @@ public class Controller {
 
                 mcProgress.progressProperty().bind(mcRunner.progressProperty());
                 mcRunner.setOnRunFinished(l -> Platform.runLater(() -> loadingBarBox.setVisible(false)));
-                mcRunner.setOnMeshFinished(m -> new Thread(() -> {
-                    if (saveFile.getName().endsWith("obj")) {
-                        Exporter.exportOBJ(m, saveFile);
-                    } else if (saveFile.getName().endsWith("stl")) {
-                        Exporter.exportSTL(m, saveFile);
-                    }
-                }).start());
+                mcRunner.setOnMeshFinished(m -> {
+                    Thread exporter = new Thread(() -> {
+
+                        if (saveFile.getName().endsWith("obj")) {
+                            Exporter.exportOBJ(m, saveFile);
+                        } else if (saveFile.getName().endsWith("stl")) {
+                            Exporter.exportSTL(m, saveFile);
+                        }
+                    });
+                    exporter.setName(Exporter.class.getSimpleName());
+                    exporter.start();
+                });
 
                 Thread runnerThread = new Thread(mcRunner);
                 runnerThread.setName(MCRunner.class.getSimpleName());

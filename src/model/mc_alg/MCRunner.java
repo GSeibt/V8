@@ -61,7 +61,6 @@ public class MCRunner implements Runnable {
 
     private volatile boolean pausing; // whether this MCRunner stops after every mesh update
     private volatile boolean paused; // whether this MCRunner was paused
-    private boolean interrupted; // whether the executing Thread was interrupted
 
     private int numLastTriangles; // how many triangles were pushed in the last mesh update
     private Map<Vertex, Integer> points; // the mesh vertices, a Map with iteration order = insertion order is used
@@ -125,7 +124,6 @@ public class MCRunner implements Runnable {
 
         this.pausing = false;
         this.paused = false;
-        this.interrupted = false;
         this.numLastTriangles = 0;
 
         int capacity = 100000;
@@ -225,11 +223,8 @@ public class MCRunner implements Runnable {
 
         progress.set(0);
 
-        outer:
         for (int z = 0; z < data.zSize() - gridSize; z += gridSize) {
-
             for (int y = 0; y < data.ySize() - gridSize; y += gridSize) {
-
                 for (int x = 0; x < data.xSize() - gridSize; x += gridSize) {
 
                     computeVertices(x, y, z, cube);
@@ -244,8 +239,8 @@ public class MCRunner implements Runnable {
                         outputMesh();
                     }
 
-                    if (interrupted || Thread.interrupted()) {
-                        break outer;
+                    if (Thread.interrupted()) {
+                        return;
                     }
 
                     if (paused) {
@@ -255,8 +250,7 @@ public class MCRunner implements Runnable {
                                 try {
                                     wait();
                                 } catch (InterruptedException e) {
-                                    interrupted = true;
-                                    break;
+                                    return;
                                 }
                             }
                         }
@@ -273,7 +267,7 @@ public class MCRunner implements Runnable {
             progress.set((doneCubes += cubesInSlice) / (float) numCubes);
         }
 
-        if (type == COMPLETE && !interrupted) {
+        if (type == COMPLETE) {
             outputMesh();
         }
 
