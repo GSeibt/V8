@@ -24,7 +24,7 @@ public class V8 extends Application {
 
         primaryStage.setScene(root);
         primaryStage.setTitle("V8");
-        primaryStage.setResizable(false);
+        primaryStage.setResizable(true);
 
         primaryStage.show();
     }
