@@ -172,23 +172,10 @@ public class MeshView3D {
 
     /**
      * Constructs a new <code>OpenGL_V8</code> window that will show the results of the given <code>mcRunner</code>.
-     * Note that this constructor must be called in the same thread as the {@link #show()} method.
      *
      * @param mcRunner the <code>MCRunner</code> for this <code>OpenGL_V8</code>
      */
     public MeshView3D(MCRunner mcRunner) {
-
-        try {
-            initDisplay();
-            initGL();
-            initGLLight();
-            initGLObjects();
-            initInput();
-        } catch (LWJGLException e) {
-            e.printStackTrace();
-            System.exit(0);
-        }
-
         int fov = 70;
         float aspectRatio = Display.getWidth() / (float) Display.getHeight();
         float nearClip = 0.1f;
@@ -208,6 +195,8 @@ public class MeshView3D {
      * Initializes general OpenGL settings.
      */
     private void initGL() {
+        camera.initGL();
+
         glMatrixMode(GL_MODELVIEW);
         glClearColor(0, 0, 0, 1);
         glClearDepth(1);
@@ -310,10 +299,22 @@ public class MeshView3D {
 
     /**
      * Shows the window and starts the <code>MCRunner</code> in a new thread. This method blocks until the window is
-     * closed. Note that this method must be called in the same thread as the constructor of this instance of
-     * <code>GL_V8</code>.
+     * closed. This method will return immediately if there is an error initializing OpenGL.
      */
     public void show() {
+
+        try {
+            initDisplay();
+            initGL();
+            initGLLight();
+            initGLObjects();
+            initInput();
+        } catch (LWJGLException | UnsatisfiedLinkError e) {
+            System.err.println("Could not initialize LWJGL.");
+            System.err.println(e.getMessage());
+            return;
+        }
+
         Thread runner = new Thread(mcRunner);
         runner.setName(mcRunner.getClass().getSimpleName());
 

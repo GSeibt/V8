@@ -28,7 +28,7 @@ public class Camera {
     /**
      * Constructs a new <code>Camera</code> using the given parameters.
      * The <code>Camera</code> will be placed at (0,0,0) looking into the first octant.
-     * OpenGL calls to initialise the projection matrix will be made.
+     * {@link #initGL()} must be called before the <code>Camera</code> can be used.
      *
      * @param fov
      *         the field of view in degrees
@@ -47,14 +47,12 @@ public class Camera {
         this.position = new Vector3f(0, 0, 0);
         this.forward = new Vector3f(1, 0, 1);
         this.upward = new Vector3f(0, 1, 0);
-
-        initGL();
     }
 
     /**
      * Initialises the OpenGL projection matrix.
      */
-    private void initGL() {
+    public void initGL() {
         int prevMode = glGetInteger(GL_MATRIX_MODE);
 
         glMatrixMode(GL_PROJECTION);
