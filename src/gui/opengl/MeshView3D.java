@@ -3,19 +3,13 @@ package gui.opengl;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.SynchronousQueue;
 import javax.imageio.ImageIO;
 
-import gui.V8;
 import model.mc_alg.MCRunner;
 import model.mc_alg.Mesh;
 import org.lwjgl.BufferUtils;
@@ -76,71 +70,13 @@ import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 public class MeshView3D {
 
     static {
-        String noLibError = "Could not find an appropriate native LWJGL library for %s %s.";
-        String copyError = "Could not copy the required library to where it can be loaded.%n%s";
-        String classPathError = "Could not construct the classpath to start the %s%n";
-        String os = System.getProperty("os.name").toLowerCase();
-        String arch = System.getProperty("os.arch").toLowerCase();
-        String tempDir = System.getProperty("java.io.tmpdir");
-        String fileName;
-        File libFile;
+        File lib = new File("lib/natives");
 
-        if (os.contains("windows")) {
-            if (arch.contains("64")) {
-                fileName = "lwjgl64.dll";
-            } else {
-                fileName = "lwjgl.dll";
-            }
-        } else if (os.contains("linux")){
-            if (arch.contains("64")) {
-                fileName = "liblwjgl64.so";
-            } else {
-                fileName = "liblwjgl.so";
-            }
-        } else if (os.contains("mac")) {
-            fileName = "liblwjgl.jnilib";
+        if (!lib.exists()) {
+            System.err.println("Could not find the native libraries required for OpenGL.");
         } else {
-            throw new UnsatisfiedLinkError(String.format(noLibError, os, arch));
+            System.setProperty("org.lwjgl.librarypath", lib.getAbsolutePath());
         }
-
-        libFile = new File(tempDir, fileName);
-        libFile.deleteOnExit();
-
-        if (!libFile.exists()) {
-            try (InputStream libStream = MeshView3D.class.getResourceAsStream("/" + fileName)) {
-                Files.copy(libStream, libFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                throw new UnsatisfiedLinkError(String.format(copyError, e.getMessage()));
-            }
-        }
-
-        System.load(libFile.getAbsolutePath());
-
-        Thread shutdownThread = new Thread(() -> {
-            try {
-                URL cURL = MeshView3D.class.getResource("/");
-                File jarFile = new File(V8.class.getSimpleName() + ".jar");
-                String classPath;
-
-                if (cURL != null) { // we are running from some directory
-                    classPath = new File(cURL.toURI()).getAbsolutePath();
-                } else if (jarFile.exists()) { // we are running from a .jar file
-                    classPath = jarFile.getAbsolutePath();
-                } else {
-
-                    System.err.format(classPathError, FileDeleter.class.getSimpleName());
-                    return;
-                }
-
-                String cName = FileDeleter.class.getCanonicalName();
-                String path = libFile.getAbsolutePath();
-                Runtime.getRuntime().exec(new String[] {"java", "-cp", classPath, cName, "5000", path});
-            } catch (IOException | URISyntaxException e) {
-                e.printStackTrace();
-            }
-        });
-        shutdownThread.setName("Shutdown Thread");
-        Runtime.getRuntime().addShutdownHook(shutdownThread);
     }
 
     private SynchronousQueue<Mesh> newBuffer;
@@ -171,11 +107,24 @@ public class MeshView3D {
     private boolean stopping = false;
 
     /**
-     * Constructs a new <code>OpenGL_V8</code> window that will show the results of the given <code>mcRunner</code>.
+     * Constructs a new <code>MeshView3D</code> window that will show the results of the given <code>mcRunner</code>.
+     * Note that this constructor must be called in the same thread as the {@link #show()} method.
      *
-     * @param mcRunner the <code>MCRunner</code> for this <code>OpenGL_V8</code>
+     * @param mcRunner the <code>MCRunner</code> for this <code>MeshView3D</code>
      */
     public MeshView3D(MCRunner mcRunner) {
+
+        try {
+            initDisplay();
+            initGL();
+            initGLLight();
+            initGLObjects();
+            initInput();
+        } catch (LWJGLException | UnsatisfiedLinkError e) {
+            System.err.println("Could not initialize LWJGL.");
+            System.err.println(e.getMessage());
+        }
+
         int fov = 70;
         float aspectRatio = Display.getWidth() / (float) Display.getHeight();
         float nearClip = 0.1f;
@@ -183,6 +132,7 @@ public class MeshView3D {
 
         this.newBuffer = new SynchronousQueue<>();
         this.camera = new Camera(fov, aspectRatio, nearClip, farClip);
+        this.camera.initGL();
         this.mcRunner = mcRunner;
         this.mcRunner.setOnMeshFinished(this::receiveUpdate);
         this.showNormalLines = false;
@@ -195,8 +145,6 @@ public class MeshView3D {
      * Initializes general OpenGL settings.
      */
     private void initGL() {
-        camera.initGL();
-
         glMatrixMode(GL_MODELVIEW);
         glClearColor(0, 0, 0, 1);
         glClearDepth(1);
@@ -299,21 +247,10 @@ public class MeshView3D {
 
     /**
      * Shows the window and starts the <code>MCRunner</code> in a new thread. This method blocks until the window is
-     * closed. This method will return immediately if there is an error initializing OpenGL.
+     * closed. Note that this method must be called in the same thread as the constructor of this instance of
+     * <code>GL_V8</code>.
      */
     public void show() {
-
-        try {
-            initDisplay();
-            initGL();
-            initGLLight();
-            initGLObjects();
-            initInput();
-        } catch (LWJGLException | UnsatisfiedLinkError e) {
-            System.err.println("Could not initialize LWJGL.");
-            System.err.println(e.getMessage());
-            return;
-        }
 
         Thread runner = new Thread(mcRunner);
         runner.setName(mcRunner.getClass().getSimpleName());
