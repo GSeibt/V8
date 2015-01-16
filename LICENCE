@@ -19,3 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+LWJGL (http://lwjgl.org/) is used by this software. Its licence can be found
+under (http://lwjgl.org/license.php) or attached as 'res/LWJGL_LICENCE.txt'.
+
+dcm4che (http://www.dcm4che.org) is used by this software. Its licence can be
+found under (http://www.dcm4che.org/confluence/display/proj/license) or attached as
+'res/MPL_1_1.txt'.
