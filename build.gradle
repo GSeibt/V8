@@ -32,6 +32,7 @@ dependencies {
 def installDir = new File(rootProject.buildDir, 'install')
 def projInstallDir = new File(installDir, rootProject.name)
 def libsDir = new File(projInstallDir, 'lib')
+def resDir = new File(projInstallDir, 'res')
 def nativeDir = new File(libsDir, 'natives')
 
 def getClassPath() {
@@ -39,15 +40,21 @@ def getClassPath() {
     return deps.collect {'lib/' + it}.join(' ')
 }
 
+def pattern = Pattern.compile(".+natives-(linux|osx|windows)\\.jar");
+
 task libs(type: Copy) {
     from configurations.runtime, jar
+    exclude {it.getFile().getName().matches(pattern)}
     into libsDir
 }
 
-task natives(type: Copy, dependsOn: libs) {
-    def pattern = Pattern.compile(".+natives-(linux|osx|windows)\\.jar");
+task natives(type: Copy) {
     from {
         configurations.runtime.filter {it.getName().matches(pattern)}.collect {zipTree(it)}
+    }
+    exclude {
+        def name = it.file.getName()
+        return "META-INF".equals(name) || "MANIFEST.MF".equals(name)
     }
     into nativeDir
 }
@@ -61,6 +68,11 @@ task v8Jar(type: Jar) {
 
 def relInstallDirPath = rootProject.projectDir.toURI().relativize(projInstallDir.toURI()).getPath()
 
+task res(type: Copy) {
+    from '/dist'
+    into resDir
+}
+
 task dist(type: Copy) {
     group 'Distribution'
     description "Assembles a distribution of the application in the ${relInstallDirPath} directory."
@@ -68,6 +80,7 @@ task dist(type: Copy) {
     into projInstallDir
 }
 
+dist.dependsOn res
 dist.dependsOn libs
 dist.dependsOn natives
 
