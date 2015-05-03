@@ -4,7 +4,6 @@ allprojects {
 
 apply plugin: 'application'
 
-
 sourceSets {
     main {
         java {
@@ -30,4 +29,4 @@ dependencies {
     compile 'org.dcm4che:dcm4che-imageio:3.3.6'
 }
 
-mainClassName = 'gui.V8'
+mainClassName = 'de.uni_passau.fim.seibt.v8.V8'
