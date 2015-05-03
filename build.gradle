@@ -1,8 +1,8 @@
+import java.util.regex.Pattern
+
 allprojects {
     apply plugin: 'java'
 }
-
-apply plugin: 'application'
 
 sourceSets {
     main {
@@ -29,4 +29,51 @@ dependencies {
     compile 'org.dcm4che:dcm4che-imageio:3.3.6'
 }
 
-mainClassName = 'de.uni_passau.fim.seibt.v8.V8'
+def installDir = new File(rootProject.buildDir, 'install')
+def projInstallDir = new File(installDir, rootProject.name)
+def libsDir = new File(projInstallDir, 'lib')
+def nativeDir = new File(libsDir, 'natives')
+
+def getClassPath() {
+    def deps = configurations.runtime.collect {it.getName()} + jar.archiveName
+    return deps.collect {'lib/' + it}.join(' ')
+}
+
+task libs(type: Copy) {
+    from configurations.runtime, jar
+    into libsDir
+}
+
+task natives(type: Copy, dependsOn: libs) {
+    def pattern = Pattern.compile(".+natives-(linux|osx|windows)\\.jar");
+    from {
+        configurations.runtime.filter {it.getName().matches(pattern)}.collect {zipTree(it)}
+    }
+    into nativeDir
+}
+
+task v8Jar(type: Jar) {
+    archiveName = 'V8.jar'
+    manifest {
+        attributes('Main-Class': 'de.uni_passau.fim.seibt.v8.V8', 'Class-Path': getClassPath())
+    }
+}
+
+def relInstallDirPath = rootProject.projectDir.toURI().relativize(projInstallDir.toURI()).getPath()
+
+task dist(type: Copy) {
+    group 'Distribution'
+    description "Assembles a distribution of the application in the ${relInstallDirPath} directory."
+    from v8Jar
+    into projInstallDir
+}
+
+dist.dependsOn libs
+dist.dependsOn natives
+
+task distZip(type: Zip) {
+    group 'Distribution'
+    description "Assembles a .zip file containing the application in the ${relInstallDirPath} directory."
+    from dist
+    destinationDir = installDir
+}
