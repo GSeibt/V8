@@ -1,0 +1,33 @@
+allprojects {
+    apply plugin: 'java'
+}
+
+apply plugin: 'application'
+
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+        resources {
+            srcDir 'res'
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'http://www.dcm4che.org/maven2/'
+    }
+}
+
+dependencies {
+    compile project(':IntSpinner')
+    compile 'org.lwjgl.lwjgl:lwjgl:2.9.3'
+    compile 'org.lwjgl.lwjgl:lwjgl_util:2.9.3'
+    compile 'org.dcm4che:dcm4che-imageio:3.3.6'
+}
+
+mainClassName = 'gui.V8'
